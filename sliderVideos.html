@@ -44,11 +44,6 @@
       text-align: center;
       color: #f1f1f1;
     }
-    /* Flechas */
-    .swiper-button-next, .swiper-button-prev {
-      color: #fff;
-      text-shadow: 0 0 8px rgba(0,0,0,0.6);
-    }
     /* Puntos */
     .swiper-pagination-bullet {
       background: #fff !important;
@@ -67,9 +62,7 @@
     <div class="swiper-wrapper" id="videoContainer">
       <!-- Aquí se insertan los videos dinámicamente -->
     </div>
-    <!-- Controles -->
-    <div class="swiper-button-next"></div>
-    <div class="swiper-button-prev"></div>
+    <!-- Solo los punticos -->
     <div class="swiper-pagination"></div>
   </div>
 
@@ -104,11 +97,10 @@
             contenedor.appendChild(slide);
           });
 
-          // Inicializar Swiper
+          // Inicializar Swiper (solo puntos y swipe con dedo)
           new Swiper(".swiper", {
             loop: true,
             pagination: { el: ".swiper-pagination", clickable: true },
-            navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" },
           });
         }
       } catch (e) {
