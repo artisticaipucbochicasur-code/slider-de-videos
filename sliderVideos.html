@@ -144,6 +144,14 @@
       display: inline-block;
       animation: spin 1.1s linear infinite;
     }
+
+    /* Capa transparente que bloquea los toques en el iframe */
+    .touch-blocker {
+      position: absolute;
+      inset: 0;
+      z-index: 1; /* Asegura que esté por encima del iframe */
+      display: none; /* Se mostrará solo cuando el video esté reproduciéndose */
+    }
   </style>
 </head>
 <body>
@@ -208,6 +216,12 @@
       card.className = "player-card";
       card.dataset.embed = embedSrc;
 
+      // Nuevo: Capa bloqueadora de toques
+      const touchBlocker = document.createElement("div");
+      touchBlocker.className = "touch-blocker";
+      // El evento touchstart en esta capa será detectado por el Swiper
+      card.appendChild(touchBlocker);
+
       const posterEl = document.createElement("div");
       posterEl.className = "poster";
       if (poster) {
@@ -219,9 +233,7 @@
       playBtn.textContent = "▶";
       posterEl.appendChild(playBtn);
 
-      posterEl.addEventListener("click", (e) => {
-        // Detener la propagación del evento para evitar conflictos con el swiper
-        e.stopPropagation(); 
+      posterEl.addEventListener("click", () => {
         mountIframe(card);
       });
 
@@ -251,9 +263,10 @@
       const poster = cardEl.querySelector(".poster");
       if (poster) poster.remove();
       cardEl.appendChild(iframe);
+      // Muestra la capa bloqueadora para que capture los toques
+      cardEl.querySelector('.touch-blocker').style.display = 'block';
     }
 
-    // Nueva función para restaurar el póster en una tarjeta
     function restorePoster(card) {
       const iframe = card.querySelector("iframe");
       if (iframe) {
@@ -274,6 +287,9 @@
         posterEl.addEventListener("click", () => mountIframe(card));
         card.appendChild(posterEl);
       }
+      // Oculta la capa bloqueadora
+      const blocker = card.querySelector('.touch-blocker');
+      if(blocker) blocker.style.display = 'none';
     }
 
     function cleanupIframesExceptActive() {
@@ -283,7 +299,7 @@
         if (index !== activeIndex) { 
           const card = slide.querySelector(".player-card");
           if (card) {
-            restorePoster(card); // Usa la nueva función
+            restorePoster(card);
           }
         }
       });
@@ -320,13 +336,6 @@
           threshold: 5,
           resistanceRatio: 0.85,
           on: {
-            touchStart(swiper, e) {
-              const touchedSlide = e.target.closest('.swiper-slide');
-              if (touchedSlide && touchedSlide.querySelector('iframe')) {
-                // Si el toque es en un slide con un iframe, detenemos el video
-                restorePoster(touchedSlide.querySelector('.player-card'));
-              }
-            },
             slideChange() {
               cleanupIframesExceptActive();
             },
