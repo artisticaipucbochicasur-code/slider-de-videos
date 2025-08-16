@@ -14,8 +14,8 @@
   />
   <style>
     :root {
-      --bg1: #1e3c72;
-      --bg2: #2a5298;
+      --bg1: #000; /* negro en vez de azul */
+      --bg2: #000;
       --text: #fff;
       --dot: #ffffffcc;
       --dot-active: #ffcc00;
@@ -29,7 +29,7 @@
     body {
       margin: 0;
       padding: 0;
-      background: linear-gradient(135deg, var(--bg1), var(--bg2));
+      background: linear-gradient(135deg, var(--bg1), var(--bg2)); /* ahora negro */
       font-family: "Segoe UI", Arial, sans-serif;
       color: var(--text);
       overflow: hidden;
@@ -168,16 +168,10 @@
 
     let swiper = null;
 
-    /** Extrae info de embed y poster a partir del link */
     function getEmbedInfo(link) {
-      // Normaliza
       const url = new URL(link, location.href);
 
-      // YouTube (watch o youtu.be)
-      if (
-        url.hostname.includes("youtube.com") ||
-        url.hostname.includes("youtu.be")
-      ) {
+      if (url.hostname.includes("youtube.com") || url.hostname.includes("youtu.be")) {
         let videoId = "";
         if (url.hostname.includes("youtube.com")) {
           videoId = url.searchParams.get("v") || "";
@@ -186,15 +180,12 @@
         }
         if (videoId) {
           const embedSrc = `https://www.youtube.com/embed/${videoId}?rel=0&playsinline=1`;
-          const poster =
-            "https://img.youtube.com/vi/" + videoId + "/hqdefault.jpg";
+          const poster = "https://img.youtube.com/vi/" + videoId + "/hqdefault.jpg";
           return { type: "youtube", embedSrc, poster };
         }
       }
 
-      // Archive.org
       if (url.hostname.includes("archive.org")) {
-        // Si viene como /embed/ID lo usamos tal cual; si no, intentamos formar /embed/ID
         let embedSrc = link;
         let identifier = "";
         const m = link.match(/archive\.org\/embed\/([^?&#/]+)/i);
@@ -207,17 +198,13 @@
             embedSrc = `https://archive.org/embed/${identifier}`;
           }
         }
-        const poster = identifier
-          ? `https://archive.org/services/img/${identifier}`
-          : "";
+        const poster = identifier ? `https://archive.org/services/img/${identifier}` : "";
         return { type: "archive", embedSrc, poster };
       }
 
-      // Desconocido: sin poster, usamos el link como src (puede no funcionar)
       return { type: "other", embedSrc: link, poster: "" };
     }
 
-    /** Crea un slide con poster y botón play (sin iframe) */
     function createSlide(titulo, link) {
       const { embedSrc, poster } = getEmbedInfo(link);
 
@@ -239,7 +226,6 @@
       playBtn.textContent = "▶";
       posterEl.appendChild(playBtn);
 
-      // Al tocar el poster, reemplazamos por el iframe
       posterEl.addEventListener("click", () => {
         mountIframe(card);
       });
@@ -255,7 +241,6 @@
       return slide;
     }
 
-    /** Inserta el iframe en la tarjeta si no existe todavía */
     function mountIframe(cardEl) {
       if (cardEl.querySelector("iframe")) return;
       const src = cardEl.dataset.embed;
@@ -267,13 +252,11 @@
       );
       iframe.setAttribute("allowfullscreen", "true");
       iframe.src = src;
-      // Quitamos el poster y montamos iframe
       const poster = cardEl.querySelector(".poster");
       if (poster) poster.remove();
       cardEl.appendChild(iframe);
     }
 
-    /** Limpia iframes de los slides que no están activos (para que el swipe siempre funcione) */
     function cleanupIframesExceptActive() {
       if (!swiper) return;
       const active = swiper.slides[swiper.activeIndex];
@@ -281,15 +264,13 @@
         if (slide !== active) {
           const iframe = slide.querySelector("iframe");
           if (iframe) {
-            // Reemplazar por poster otra vez
+            iframe.remove();
             const card = slide.querySelector(".player-card");
             if (card) {
-              iframe.remove();
-              // reconstruir poster
-              const posterEl = document.createElement("div");
-              posterEl.className = "poster";
               const src = card.dataset.embed;
               const info = getEmbedInfo(src);
+              const posterEl = document.createElement("div");
+              posterEl.className = "poster";
               if (info.poster) {
                 posterEl.style.backgroundImage = `url("${info.poster}")`;
               }
@@ -305,7 +286,6 @@
       });
     }
 
-    /** Activa/desactiva pointer-events en todos los iframes durante el gesto táctil */
     function setIframesPointer(enabled) {
       document.querySelectorAll(".player-iframe").forEach((f) => {
         if (enabled) f.classList.remove("no-pointer");
@@ -331,7 +311,6 @@
           });
         }
 
-        // Inicializa Swiper (sin flechas, con dots y swipe táctil)
         if (swiper) swiper.destroy(true, true);
         swiper = new Swiper(".swiper", {
           loop: true,
@@ -339,13 +318,11 @@
           slidesPerView: 1,
           spaceBetween: 10,
           pagination: { el: ".swiper-pagination", clickable: true },
-          // Ajustes que ayudan en WebViewer/App Inventor
           simulateTouch: true,
           allowTouchMove: true,
           touchEventsTarget: "container",
           threshold: 5,
           resistanceRatio: 0.85,
-          // Durante el gesto táctil deshabilitamos los iframes
           on: {
             touchStart() {
               setIframesPointer(false);
@@ -354,13 +331,11 @@
               setIframesPointer(true);
             },
             slideChange() {
-              // al cambiar de slide, limpiar iframes de los no activos
               cleanupIframesExceptActive();
             },
           },
         });
 
-        // Asegura que el primer slide no tenga iframes en otros
         cleanupIframesExceptActive();
       } catch (e) {
         console.error("Error cargando videos:", e);
