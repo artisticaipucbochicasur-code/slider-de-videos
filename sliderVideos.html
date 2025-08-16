@@ -219,7 +219,6 @@
       // Nuevo: Capa bloqueadora de toques
       const touchBlocker = document.createElement("div");
       touchBlocker.className = "touch-blocker";
-      // El evento touchstart en esta capa será detectado por el Swiper
       card.appendChild(touchBlocker);
 
       const posterEl = document.createElement("div");
@@ -263,8 +262,30 @@
       const poster = cardEl.querySelector(".poster");
       if (poster) poster.remove();
       cardEl.appendChild(iframe);
-      // Muestra la capa bloqueadora para que capture los toques
-      cardEl.querySelector('.touch-blocker').style.display = 'block';
+
+      // Desactivamos temporalmente el bloqueador de toques para permitir interacción con el video
+      const blocker = cardEl.querySelector('.touch-blocker');
+      if (blocker) {
+        blocker.style.display = 'none';
+      }
+
+      // Volvemos a mostrar el bloqueador de toques después de un breve periodo
+      // Esto permite la interacción con el video (play/pausa) y luego vuelve a habilitar el deslizamiento
+      setTimeout(() => {
+        if (blocker) {
+          blocker.style.display = 'block';
+        }
+      }, 5000); // 5 segundos, tiempo suficiente para que el usuario interactúe con el video. Puedes ajustar este valor.
+
+      // Agregamos un evento para detectar cuando se inicia el deslizamiento dentro del Swiper
+      // y detener el video activo en ese momento.
+      swiper.on('touchStart', () => {
+        const activeSlide = swiper.slides[swiper.activeIndex];
+        const activeCard = activeSlide.querySelector('.player-card');
+        if (activeCard) {
+          restorePoster(activeCard);
+        }
+      });
     }
 
     function restorePoster(card) {
@@ -287,7 +308,6 @@
         posterEl.addEventListener("click", () => mountIframe(card));
         card.appendChild(posterEl);
       }
-      // Oculta la capa bloqueadora
       const blocker = card.querySelector('.touch-blocker');
       if(blocker) blocker.style.display = 'none';
     }
@@ -339,6 +359,14 @@
             slideChange() {
               cleanupIframesExceptActive();
             },
+            touchStart() {
+              // Detener el video activo al deslizar
+              const activeSlide = swiper.slides[swiper.activeIndex];
+              const activeCard = activeSlide.querySelector('.player-card');
+              if (activeCard) {
+                restorePoster(activeCard);
+              }
+            }
           },
         });
 
