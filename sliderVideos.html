@@ -145,12 +145,7 @@
       animation: spin 1.1s linear infinite;
     }
 
-    .touch-blocker {
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-      display: none;
-    }
+    /* La capa de bloqueo táctil ya no es necesaria con esta nueva lógica */
   </style>
 </head>
 <body>
@@ -162,14 +157,11 @@
   <div id="loader"><span class="spinner">⏳</span></div>
 
   <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-  <script src="https://www.youtube.com/iframe_api"></script>
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
+    const SCRIPT_URL =
+      "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
 
     let swiper = null;
-
-    // Almacena los objetos del reproductor de YouTube
-    const youtubePlayers = {};
 
     function getEmbedInfo(link) {
       const url = new URL(link, location.href);
@@ -220,10 +212,6 @@
       card.dataset.videoId = info.videoId || '';
       card.dataset.index = index;
 
-      const touchBlocker = document.createElement("div");
-      touchBlocker.className = "touch-blocker";
-      card.appendChild(touchBlocker);
-
       const posterEl = document.createElement("div");
       posterEl.className = "poster";
       if (info.poster) {
@@ -252,71 +240,41 @@
 
     function mountIframe(cardEl) {
       if (cardEl.querySelector("iframe")) return;
+      
       const info = getEmbedInfo(cardEl.dataset.embed);
       
+      const iframe = document.createElement("iframe");
+      iframe.className = "player-iframe";
+      iframe.id = `player-${cardEl.dataset.index}`;
+      iframe.setAttribute(
+        "allow",
+        "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      );
+      iframe.setAttribute("allowfullscreen", "true");
+
+      let src = info.embedSrc;
       if (info.type === 'youtube') {
-        // Para YouTube, usamos la API del reproductor
-        const newIframeId = `Youtubeer-${cardEl.dataset.index}`;
-        const iframePlaceholder = document.createElement('div');
-        iframePlaceholder.id = newIframeId;
-        cardEl.appendChild(iframePlaceholder);
-        
-        const player = new YT.Player(newIframeId, {
-          videoId: info.videoId,
-          playerVars: {
-            'autoplay': 1,
-            'controls': 1,
-            'rel': 0,
-            'playsinline': 1,
-            'modestbranding': 1
-          },
-          events: {
-            'onReady': (event) => {
-              event.target.playVideo();
-            },
-            'onStateChange': (event) => {
-              // Si el video está reproduciéndose, ocultamos el bloqueador
-              const blocker = cardEl.querySelector('.touch-blocker');
-              if (blocker) {
-                if (event.data === YT.PlayerState.PLAYING) {
-                  blocker.style.display = 'none';
-                } else {
-                  blocker.style.display = 'block';
-                }
-              }
-            }
-          }
-        });
-        youtubePlayers[newIframeId] = player;
-      } else {
-        // Para otros videos, volvemos a la lógica anterior
-        const iframe = document.createElement("iframe");
-        iframe.className = "player-iframe";
-        iframe.setAttribute(
-          "allow",
-          "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        );
-        iframe.setAttribute("allowfullscreen", "true");
-        iframe.src = info.embedSrc + (info.embedSrc.includes("?") ? "&" : "?") + "autoplay=1"; 
-        cardEl.appendChild(iframe);
-        const blocker = cardEl.querySelector('.touch-blocker');
-        if (blocker) blocker.style.display = 'block';
+        src += (src.includes("?") ? "&" : "?") + "autoplay=1";
       }
 
+      iframe.src = src; 
+      
       const poster = cardEl.querySelector(".poster");
       if (poster) poster.remove();
+      cardEl.appendChild(iframe);
     }
 
     function restorePoster(card) {
       const iframe = card.querySelector("iframe");
-      const videoId = card.dataset.videoId;
-
-      if (videoId && youtubePlayers[`Youtubeer-${card.dataset.index}`]) {
-        // Para YouTube, simplemente pausamos el video sin eliminar el iframe
-        youtubePlayers[`Youtubeer-${card.dataset.index}`].pauseVideo();
-      } else if (iframe) {
-        // Para otros iframes, los eliminamos y restauramos el póster
-        iframe.remove();
+      if (iframe) {
+        // Pausar el video en lugar de eliminar el iframe
+        if (iframe.src.includes('youtube.com')) {
+          const player = new YT.Player(iframe.id);
+          player.pauseVideo();
+        } else {
+          // Para otros iframes, la única opción es eliminarlos
+          iframe.remove();
+        }
       }
 
       if (!card.querySelector(".poster")) {
@@ -333,9 +291,6 @@
         posterEl.addEventListener("click", () => mountIframe(card));
         card.appendChild(posterEl);
       }
-      
-      const blocker = card.querySelector('.touch-blocker');
-      if(blocker) blocker.style.display = 'none';
     }
 
     function cleanupIframesExceptActive() {
@@ -385,12 +340,21 @@
             slideChange() {
               cleanupIframesExceptActive();
             },
+            touchStart() {
+                // Desactivar el pointer-events del iframe cuando el usuario desliza
+                document.querySelectorAll('.player-iframe').forEach(iframe => {
+                    iframe.style.pointerEvents = 'none';
+                });
+            },
+            touchEnd() {
+                // Reactivar el pointer-events al soltar el dedo
+                document.querySelectorAll('.player-iframe').forEach(iframe => {
+                    iframe.style.pointerEvents = 'auto';
+                });
+            }
           },
         });
         
-        // El touchStart ya no es necesario aquí, ya que el blocker se encarga
-        // y la lógica de pausa se maneja en el slideChange
-
         cleanupIframesExceptActive(); 
       } catch (e) {
         console.error("Error cargando videos:", e);
@@ -399,7 +363,7 @@
       }
     }
 
-    // Esta función es requerida por la API de YouTube
+    // Esta función es necesaria para la API de YouTube
     function onYouTubeIframeAPIReady() {
         cargarVideos();
     }
