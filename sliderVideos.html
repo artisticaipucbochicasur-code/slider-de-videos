@@ -53,6 +53,14 @@
       background: #ffcc00 !important;
       opacity: 1;
     }
+
+    /* --- FIX para permitir deslizar sobre iframes ---
+       Mientras se detecta el gesto de deslizamiento,
+       deshabilitamos temporalmente la interacción del iframe
+       para que el swipe funcione en WebView/App Inventor. */
+    .video-frame.swipe-lock {
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
@@ -81,7 +89,7 @@
             const titulo = row[0];
             const link = row[1];
 
-            // Embed automático para YouTube o Archive.org
+            // Embed automático para YouTube; Archive.org se usa tal cual si ya es /embed/
             let embedLink = link;
             if (link.includes("youtube.com/watch")) {
               const videoId = new URL(link).searchParams.get("v");
@@ -91,16 +99,34 @@
             const slide = document.createElement("div");
             slide.className = "swiper-slide";
             slide.innerHTML = `
-              <iframe src="${embedLink}" allowfullscreen></iframe>
+              <iframe class="video-frame" src="${embedLink}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
               <div class="video-title">${titulo}</div>
             `;
             contenedor.appendChild(slide);
           });
 
           // Inicializar Swiper (solo puntos y swipe con dedo)
-          new Swiper(".swiper", {
+          const swiper = new Swiper(".swiper", {
             loop: true,
             pagination: { el: ".swiper-pagination", clickable: true },
+            simulateTouch: true,
+            allowTouchMove: true,
+            // FIX: Bloquear eventos del iframe SOLO durante el gesto de swipe
+            on: {
+              touchStart() {
+                document.querySelectorAll('.video-frame').forEach(el => el.classList.add('swipe-lock'));
+              },
+              touchEnd() {
+                document.querySelectorAll('.video-frame').forEach(el => el.classList.remove('swipe-lock'));
+              },
+              // Por si hay mouse drag en escritorio
+              sliderFirstMove() {
+                document.querySelectorAll('.video-frame').forEach(el => el.classList.add('swipe-lock'));
+              },
+              transitionEnd() {
+                document.querySelectorAll('.video-frame').forEach(el => el.classList.remove('swipe-lock'));
+              }
+            }
           });
         }
       } catch (e) {
