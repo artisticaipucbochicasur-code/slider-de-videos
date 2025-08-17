@@ -16,8 +16,6 @@
       --bg1: #000;
       --bg2: #000;
       --text: #fff;
-      --dot: #ffffffcc;
-      --dot-active: #ffcc00;
       --card-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
     }
 
@@ -109,23 +107,16 @@
     }
 
     .swipe-hint {
-      height: 32px;
+      height: 60px; /* 🔹 más alta para deslizar mejor */
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 14px;
+      font-size: 16px;
       color: #aaa;
       font-style: italic;
       margin-top: 6px;
-    }
-
-    .swiper-pagination-bullet {
-      background: var(--dot) !important;
-      opacity: 1 !important;
-    }
-
-    .swiper-pagination-bullet-active {
-      background: var(--dot-active) !important;
+      user-select: none;
+      touch-action: pan-y pan-x; /* 🔹 asegura que registre swipe */
     }
 
     #loader {
@@ -177,7 +168,6 @@
 <body>
   <div class="swiper">
     <div class="swiper-wrapper" id="slides"></div>
-    <div class="swiper-pagination"></div>
   </div>
 
   <div id="loader"><span class="spinner">⏳</span></div>
@@ -228,64 +218,58 @@
       return { type: "other", embedSrc: link, poster: "" };
     }
 
-   function createSlide(titulo, link) {
-  const { embedSrc, poster } = getEmbedInfo(link);
+    function createSlide(titulo, link) {
+      const { embedSrc, poster } = getEmbedInfo(link);
 
-  const slide = document.createElement("div");
-  slide.className = "swiper-slide";
+      const slide = document.createElement("div");
+      slide.className = "swiper-slide";
 
-  // 🔹 contenedor que ocupa todo el alto del slide
-  const wrapper = document.createElement("div");
-  wrapper.style.display = "flex";
-  wrapper.style.flexDirection = "column";
-  wrapper.style.height = "100%";
-  wrapper.style.justifyContent = "space-between"; // reparte arriba/centro/abajo
+      const wrapper = document.createElement("div");
+      wrapper.style.display = "flex";
+      wrapper.style.flexDirection = "column";
+      wrapper.style.height = "100%";
+      wrapper.style.justifyContent = "space-between";
 
-  // título arriba
-  const title = document.createElement("div");
-  title.className = "video-title";
-  title.textContent = titulo || "Video";
-  wrapper.appendChild(title);
+      const title = document.createElement("div");
+      title.className = "video-title";
+      title.textContent = titulo || "Video";
+      wrapper.appendChild(title);
 
-  // tarjeta con video en el centro
-  const card = document.createElement("div");
-  card.className = "player-card";
-  card.dataset.embed = embedSrc;
+      const card = document.createElement("div");
+      card.className = "player-card";
+      card.dataset.embed = embedSrc;
 
-  const touchBlocker = document.createElement("div");
-  touchBlocker.className = "touch-blocker";
-  card.appendChild(touchBlocker);
+      const touchBlocker = document.createElement("div");
+      touchBlocker.className = "touch-blocker";
+      card.appendChild(touchBlocker);
 
-  const posterEl = document.createElement("div");
-  posterEl.className = "poster";
-  if (poster) {
-    posterEl.style.backgroundImage = `url("${poster}")`;
-  }
+      const posterEl = document.createElement("div");
+      posterEl.className = "poster";
+      if (poster) {
+        posterEl.style.backgroundImage = `url("${poster}")`;
+      }
 
-  const playBtn = document.createElement("div");
-  playBtn.className = "play-btn";
-  playBtn.textContent = "▶";
-  posterEl.appendChild(playBtn);
+      const playBtn = document.createElement("div");
+      playBtn.className = "play-btn";
+      playBtn.textContent = "▶";
+      posterEl.appendChild(playBtn);
 
-  posterEl.addEventListener("click", () => {
-    mountIframe(card);
-  });
+      posterEl.addEventListener("click", () => {
+        mountIframe(card);
+      });
 
-  card.appendChild(posterEl);
-  wrapper.appendChild(card);
+      card.appendChild(posterEl);
+      wrapper.appendChild(card);
 
-  // texto "Desliza aquí para cambiar" abajo
-  const hint = document.createElement("div");
-  hint.className = "swipe-hint";
-  hint.textContent = "⬅️ Desliza aquí para cambiar ➡️";
-  wrapper.appendChild(hint);
+      const hint = document.createElement("div");
+      hint.className = "swipe-hint";
+      hint.textContent = "⬅️ Desliza aquí para cambiar ➡️";
+      wrapper.appendChild(hint);
 
-  // meter todo al slide
-  slide.appendChild(wrapper);
+      slide.appendChild(wrapper);
 
-  return slide;
-}
-
+      return slide;
+    }
 
     function mountIframe(cardEl) {
       if (cardEl.querySelector("iframe")) return;
@@ -406,7 +390,7 @@
           direction: "horizontal",
           slidesPerView: 1,
           spaceBetween: 10,
-          pagination: { el: ".swiper-pagination", clickable: true },
+          pagination: false, // 🔹 ya no hay punticos
           on: {
             slideChange() {
               cleanupIframesExceptActive();
@@ -426,4 +410,3 @@
   </script>
 </body>
 </html>
-
