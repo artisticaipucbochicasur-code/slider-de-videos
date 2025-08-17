@@ -13,7 +13,7 @@
   />
   <style>
     :root {
-      --bg1: #000; /* negro en vez de azul */
+      --bg1: #000;
       --bg2: #000;
       --text: #fff;
       --dot: #ffffffcc;
@@ -28,7 +28,7 @@
     body {
       margin: 0;
       padding: 0;
-      background: linear-gradient(135deg, var(--bg1), var(--bg2)); /* ahora negro */
+      background: linear-gradient(135deg, var(--bg1), var(--bg2));
       font-family: "Segoe UI", Arial, sans-serif;
       color: var(--text);
       overflow: hidden;
@@ -141,10 +141,9 @@
       position: absolute;
       inset: 0;
       z-index: 1;
-      display: none;
+      display: block; /* activo por defecto */
     }
 
-    /* Botón Play/Pause */
     .play-pause-btn {
       position: absolute;
       bottom: 15px;
@@ -230,6 +229,10 @@
 
       const touchBlocker = document.createElement("div");
       touchBlocker.className = "touch-blocker";
+      // al tocar el overlay, se quita
+      touchBlocker.addEventListener("click", () => {
+        touchBlocker.style.display = "none";
+      });
       card.appendChild(touchBlocker);
 
       const posterEl = document.createElement("div");
@@ -245,6 +248,7 @@
 
       posterEl.addEventListener("click", () => {
         mountIframe(card);
+        touchBlocker.style.display = "none"; // quitar overlay al reproducir
       });
 
       card.appendChild(posterEl);
@@ -335,9 +339,17 @@
         playBtn.className = "play-btn";
         playBtn.textContent = "▶";
         posterEl.appendChild(playBtn);
-        posterEl.addEventListener("click", () => mountIframe(card));
+        posterEl.addEventListener("click", () => {
+          mountIframe(card);
+          const blocker = card.querySelector(".touch-blocker");
+          if (blocker) blocker.style.display = "none";
+        });
         card.appendChild(posterEl);
       }
+
+      // volver a activar el overlay
+      const blocker = card.querySelector(".touch-blocker");
+      if (blocker) blocker.style.display = "block";
     }
 
     function cleanupIframesExceptActive() {
