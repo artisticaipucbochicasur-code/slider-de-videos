@@ -117,15 +117,21 @@
       background: var(--dot-active) !important;
     }
 
-    /* FOOTER: mensaje deslizar */
+    /* FOOTER: mensaje deslizar animado */
     .swiper-footer {
       flex: 0 0 auto;
       text-align: center;
-      padding: 10px;
-      font-size: 14px;
+      padding: 16px 10px;
+      font-size: 15px;
       color: #aaa;
       letter-spacing: 0.5px;
       font-weight: 400;
+      opacity: 0;
+      transition: opacity 0.6s;
+      user-select: none;
+    }
+
+    .swiper-footer.show {
       opacity: 0.9;
     }
 
@@ -171,7 +177,7 @@
     <div class="swiper-wrapper" id="slides"></div>
 
     <!-- FOOTER -->
-    <div class="swiper-footer">⬅️ Desliza para cambiar de video ➡️</div>
+    <div class="swiper-footer" id="swiper-footer">⬅️ Desliza para cambiar de video ➡️</div>
   </div>
 
   <div id="loader"><span class="spinner">⏳</span></div>
@@ -235,16 +241,30 @@
       if (cardEl.querySelector("iframe")) return;
       const src = cardEl.dataset.embed;
       const info = getEmbedInfo(src);
+
+      // Bloquear swiper mientras se reproduce
+      if (swiper) {
+        swiper.allowSlideNext = false;
+        swiper.allowSlidePrev = false;
+      }
+
+      // Mostrar footer animado
+      const footer = document.getElementById("swiper-footer");
+      if (footer) footer.classList.add("show");
+
       if (info.type === "youtube") {
         const container = document.createElement("div");
         container.className = "player-iframe";
         cardEl.appendChild(container);
+
         const poster = cardEl.querySelector(".poster");
         if (poster) poster.remove();
+
         const ppBtn = document.createElement("div");
         ppBtn.className = "play-pause-btn";
         ppBtn.textContent = "⏸";
         cardEl.appendChild(ppBtn);
+
         players[src] = new YT.Player(container, {
           videoId: info.videoId,
           playerVars: { autoplay: 1, rel: 0, playsinline: 1 },
@@ -256,11 +276,27 @@
                 if (state === YT.PlayerState.PLAYING) {
                   event.target.pauseVideo();
                   ppBtn.textContent = "▶";
+                  if (swiper) {
+                    swiper.allowSlideNext = true;
+                    swiper.allowSlidePrev = true;
+                  }
                 } else {
                   event.target.playVideo();
                   ppBtn.textContent = "⏸";
+                  if (swiper) {
+                    swiper.allowSlideNext = false;
+                    swiper.allowSlidePrev = false;
+                  }
                 }
               });
+            },
+            onStateChange: (event) => {
+              // desbloquear swiper cuando termina el video
+              if (event.data === YT.PlayerState.ENDED && swiper) {
+                swiper.allowSlideNext = true;
+                swiper.allowSlidePrev = true;
+                if (footer) footer.classList.remove("show");
+              }
             },
           },
         });
@@ -283,6 +319,8 @@
       if (iframeContainer) iframeContainer.remove();
       const btn = card.querySelector(".play-pause-btn");
       if (btn) btn.remove();
+      const footer = document.getElementById("swiper-footer");
+      if (footer) footer.classList.remove("show");
       if (!card.querySelector(".poster")) {
         const info = getEmbedInfo(src);
         const posterEl = document.createElement("div");
