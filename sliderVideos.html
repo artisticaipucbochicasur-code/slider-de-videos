@@ -140,8 +140,10 @@
     .touch-blocker {
       position: absolute;
       inset: 0;
-      z-index: 1;
+      z-index: 2;
       display: none;
+      background: transparent;
+      pointer-events: auto; /* permite swipe encima del video */
     }
 
     /* Botón Play/Pause */
@@ -160,7 +162,7 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      z-index: 5;
+      z-index: 5; /* siempre por encima del blocker */
     }
   </style>
 </head>
@@ -264,6 +266,9 @@
       const src = cardEl.dataset.embed;
       const info = getEmbedInfo(src);
 
+      const touchBlocker = cardEl.querySelector(".touch-blocker");
+      if (touchBlocker) touchBlocker.style.display = "block"; // ✅ activar capa swipe
+
       if (info.type === "youtube") {
         const container = document.createElement("div");
         container.className = "player-iframe";
@@ -323,6 +328,9 @@
 
       const btn = card.querySelector(".play-pause-btn");
       if (btn) btn.remove();
+
+      const touchBlocker = card.querySelector(".touch-blocker");
+      if (touchBlocker) touchBlocker.style.display = "none"; // ✅ ocultar capa al restaurar
 
       if (!card.querySelector(".poster")) {
         const info = getEmbedInfo(src);
