@@ -13,7 +13,7 @@
   />
   <style>
     :root {
-      --bg1: #000;
+      --bg1: #000; /* negro en vez de azul */
       --bg2: #000;
       --text: #fff;
       --dot: #ffffffcc;
@@ -28,12 +28,13 @@
     body {
       margin: 0;
       padding: 0;
-      background: linear-gradient(135deg, var(--bg1), var(--bg2));
+      background: linear-gradient(135deg, var(--bg1), var(--bg2)); /* ahora negro */
       font-family: "Segoe UI", Arial, sans-serif;
       color: var(--text);
       overflow: hidden;
     }
 
+    /* Contenedor principal a pantalla completa */
     .swiper {
       width: 100vw;
       height: 100vh;
@@ -48,10 +49,11 @@
       background: #000;
     }
 
+    /* Tarjeta del player con poster + botón play */
     .player-card {
       position: relative;
       width: 100%;
-      height: calc(100vh - 80px);
+      height: calc(100vh - 80px); /* deja espacio para el título */
       background: #000;
       overflow: hidden;
       box-shadow: var(--card-shadow);
@@ -86,6 +88,7 @@
       border: 2px solid #fff;
     }
 
+    /* Iframe ocupa toda la tarjeta */
     .player-iframe {
       position: absolute;
       inset: 0;
@@ -95,6 +98,7 @@
       background: #000;
     }
 
+    /* Título */
     .video-title {
       height: 64px;
       display: flex;
@@ -108,6 +112,7 @@
       text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
     }
 
+    /* Puntos de paginación */
     .swiper-pagination-bullet {
       background: var(--dot) !important;
       opacity: 1 !important;
@@ -117,6 +122,7 @@
       background: var(--dot-active) !important;
     }
 
+    /* Loader simple */
     #loader {
       position: fixed;
       inset: 0;
@@ -138,6 +144,14 @@
       display: inline-block;
       animation: spin 1.1s linear infinite;
     }
+
+    /* Capa transparente que bloquea los toques en el iframe */
+    .touch-blocker {
+      position: absolute;
+      inset: 0;
+      z-index: 1; /* Asegura que esté por encima del iframe */
+      display: none; /* Se mostrará solo cuando el video esté reproduciéndose */
+    }
   </style>
 </head>
 <body>
@@ -148,15 +162,12 @@
 
   <div id="loader"><span class="spinner">⏳</span></div>
 
-  <!-- API YouTube -->
-  <script src="https://www.youtube.com/iframe_api"></script>
   <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   <script>
     const SCRIPT_URL =
       "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
 
     let swiper = null;
-    let players = {}; // guardar instancias de players YT
 
     function getEmbedInfo(link) {
       const url = new URL(link, location.href);
@@ -169,9 +180,9 @@
           videoId = url.pathname.replace("/", "");
         }
         if (videoId) {
-          const embedSrc = `https://www.youtube.com/embed/${videoId}?rel=0&playsinline=1&enablejsapi=1`;
+          const embedSrc = `https://www.youtube.com/embed/${videoId}?rel=0&playsinline=1`;
           const poster = "https://img.youtube.com/vi/" + videoId + "/hqdefault.jpg";
-          return { type: "youtube", embedSrc, poster, videoId };
+          return { type: "youtube", embedSrc, poster };
         }
       }
 
@@ -204,7 +215,11 @@
       const card = document.createElement("div");
       card.className = "player-card";
       card.dataset.embed = embedSrc;
-      card.dataset.link = link; // guardar link original
+
+      // Nuevo: Capa bloqueadora de toques
+      const touchBlocker = document.createElement("div");
+      touchBlocker.className = "touch-blocker";
+      card.appendChild(touchBlocker);
 
       const posterEl = document.createElement("div");
       posterEl.className = "poster";
@@ -217,8 +232,7 @@
       playBtn.textContent = "▶";
       posterEl.appendChild(playBtn);
 
-      posterEl.addEventListener("click", (e) => {
-        e.stopPropagation();
+      posterEl.addEventListener("click", () => {
         mountIframe(card);
       });
 
@@ -234,79 +248,79 @@
     }
 
     function mountIframe(cardEl) {
-      const info = getEmbedInfo(cardEl.dataset.link);
+      if (cardEl.querySelector("iframe")) return;
+      const src = cardEl.dataset.embed;
+      const iframe = document.createElement("iframe");
+      iframe.className = "player-iframe";
+      iframe.setAttribute(
+        "allow",
+        "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      );
+      iframe.setAttribute("allowfullscreen", "true");
+      iframe.src = src + (src.includes("?") ? "&" : "?") + "autoplay=1"; 
+      
+      const poster = cardEl.querySelector(".poster");
+      if (poster) poster.remove();
+      cardEl.appendChild(iframe);
 
-      if (info.type === "youtube") {
-        if (players[info.videoId]) {
-          const state = players[info.videoId].getPlayerState();
-          if (state === YT.PlayerState.PLAYING) {
-            players[info.videoId].pauseVideo();
-          } else {
-            players[info.videoId].playVideo();
-          }
-          return;
-        }
-        const container = document.createElement("div");
-        container.className = "player-iframe";
-        cardEl.appendChild(container);
-        const poster = cardEl.querySelector(".poster");
-        if (poster) poster.remove();
-
-        players[info.videoId] = new YT.Player(container, {
-          videoId: info.videoId,
-          playerVars: { rel: 0, playsinline: 1 },
-          events: {
-            onReady: (event) => event.target.playVideo()
-          }
-        });
-      } else {
-        if (cardEl.querySelector("iframe")) return;
-        const iframe = document.createElement("iframe");
-        iframe.className = "player-iframe";
-        iframe.setAttribute(
-          "allow",
-          "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        );
-        iframe.setAttribute("allowfullscreen", "true");
-        iframe.src = info.embedSrc + (info.embedSrc.includes("?") ? "&" : "?") + "autoplay=1";
-        const poster = cardEl.querySelector(".poster");
-        if (poster) poster.remove();
-        cardEl.appendChild(iframe);
+      // Desactivamos temporalmente el bloqueador de toques para permitir interacción con el video
+      const blocker = cardEl.querySelector('.touch-blocker');
+      if (blocker) {
+        blocker.style.display = 'none';
       }
+
+      // Volvemos a mostrar el bloqueador de toques después de un breve periodo
+      // Esto permite la interacción con el video (play/pausa) y luego vuelve a habilitar el deslizamiento
+      setTimeout(() => {
+        if (blocker) {
+          blocker.style.display = 'block';
+        }
+      }, 5000); // 5 segundos, tiempo suficiente para que el usuario interactúe con el video. Puedes ajustar este valor.
+
+      // Agregamos un evento para detectar cuando se inicia el deslizamiento dentro del Swiper
+      // y detener el video activo en ese momento.
+      swiper.on('touchStart', () => {
+        const activeSlide = swiper.slides[swiper.activeIndex];
+        const activeCard = activeSlide.querySelector('.player-card');
+        if (activeCard) {
+          restorePoster(activeCard);
+        }
+      });
     }
 
     function restorePoster(card) {
-      const info = getEmbedInfo(card.dataset.link);
-      if (info.type === "youtube") {
-        if (players[info.videoId]) {
-          players[info.videoId].pauseVideo();
-        }
-      } else {
-        const iframe = card.querySelector("iframe");
-        if (iframe) iframe.remove();
-        if (!card.querySelector(".poster")) {
-          const posterEl = document.createElement("div");
-          posterEl.className = "poster";
-          if (info.poster) {
-            posterEl.style.backgroundImage = `url("${info.poster}")`;
-          }
-          const playBtn = document.createElement("div");
-          playBtn.className = "play-btn";
-          playBtn.textContent = "▶";
-          posterEl.appendChild(playBtn);
-          posterEl.addEventListener("click", () => mountIframe(card));
-          card.appendChild(posterEl);
-        }
+      const iframe = card.querySelector("iframe");
+      if (iframe) {
+        iframe.remove();
       }
+      if (!card.querySelector(".poster")) {
+        const src = card.dataset.embed;
+        const info = getEmbedInfo(src);
+        const posterEl = document.createElement("div");
+        posterEl.className = "poster";
+        if (info.poster) {
+          posterEl.style.backgroundImage = `url("${info.poster}")`;
+        }
+        const playBtn = document.createElement("div");
+        playBtn.className = "play-btn";
+        playBtn.textContent = "▶";
+        posterEl.appendChild(playBtn);
+        posterEl.addEventListener("click", () => mountIframe(card));
+        card.appendChild(posterEl);
+      }
+      const blocker = card.querySelector('.touch-blocker');
+      if(blocker) blocker.style.display = 'none';
     }
 
     function cleanupIframesExceptActive() {
       if (!swiper) return;
       const activeIndex = swiper.realIndex;
       swiper.slides.forEach((slide, index) => {
-        if (index !== activeIndex) {
+        if (index !== activeIndex) { 
           const card = slide.querySelector(".player-card");
-          if (card) restorePoster(card);
+          if (card) {
+            restorePoster(card);
+          }
         }
       });
     }
@@ -345,14 +359,22 @@
             slideChange() {
               cleanupIframesExceptActive();
             },
+            touchStart() {
+              // Detener el video activo al deslizar
+              const activeSlide = swiper.slides[swiper.activeIndex];
+              const activeCard = activeSlide.querySelector('.player-card');
+              if (activeCard) {
+                restorePoster(activeCard);
+              }
+            }
           },
         });
 
-        cleanupIframesExceptActive();
+        cleanupIframesExceptActive(); 
       } catch (e) {
         console.error("Error cargando videos:", e);
       } finally {
-        loader.style.display = "none";
+        document.getElementById("loader").style.display = "none";
       }
     }
 
