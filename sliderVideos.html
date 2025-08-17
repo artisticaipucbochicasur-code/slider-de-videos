@@ -2,18 +2,12 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
-  />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
   <title>Galería de Videos</title>
-  <link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"
-  />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
   <style>
     :root {
-      --bg1: #000; /* negro en vez de azul */
+      --bg1: #000;
       --bg2: #000;
       --text: #fff;
       --dot: #ffffffcc;
@@ -28,7 +22,7 @@
     body {
       margin: 0;
       padding: 0;
-      background: linear-gradient(135deg, var(--bg1), var(--bg2)); /* ahora negro */
+      background: linear-gradient(135deg, var(--bg1), var(--bg2));
       font-family: "Segoe UI", Arial, sans-serif;
       color: var(--text);
       overflow: hidden;
@@ -37,21 +31,45 @@
     .swiper {
       width: 100vw;
       height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* HEADER: titulo + paginación */
+    .swiper-header {
+      flex: 0 0 auto;
+      text-align: center;
+      padding: 12px 8px 4px;
+    }
+
+    .video-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #f1f1f1;
+      margin-bottom: 6px;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+    }
+
+    .swiper-pagination {
+      position: static !important; /* que no flote, queda bajo el título */
+    }
+
+    /* CONTENEDOR DE VIDEOS */
+    .swiper-wrapper {
+      flex: 1 1 auto;
     }
 
     .swiper-slide {
       display: flex;
-      flex-direction: column;
       justify-content: center;
-      align-items: stretch;
-      position: relative;
+      align-items: center;
       background: #000;
     }
 
     .player-card {
       position: relative;
       width: 100%;
-      height: calc(100vh - 80px);
+      height: 100%;
       background: #000;
       overflow: hidden;
       box-shadow: var(--card-shadow);
@@ -68,9 +86,6 @@
       background-size: cover;
       background-position: center center;
       cursor: pointer;
-      user-select: none;
-      -webkit-user-select: none;
-      touch-action: manipulation;
     }
 
     .play-btn {
@@ -80,9 +95,7 @@
       height: 70px;
       border-radius: 50%;
       background: rgba(0, 0, 0, 0.55);
-      backdrop-filter: blur(2px);
       font-size: 28px;
-      line-height: 1;
       border: 2px solid #fff;
     }
 
@@ -95,19 +108,6 @@
       background: #000;
     }
 
-    .video-title {
-      height: 64px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 8px 12px;
-      font-size: 18px;
-      font-weight: 600;
-      text-align: center;
-      color: #f1f1f1;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
-    }
-
     .swiper-pagination-bullet {
       background: var(--dot) !important;
       opacity: 1 !important;
@@ -115,6 +115,18 @@
 
     .swiper-pagination-bullet-active {
       background: var(--dot-active) !important;
+    }
+
+    /* FOOTER: mensaje deslizar */
+    .swiper-footer {
+      flex: 0 0 auto;
+      text-align: center;
+      padding: 10px;
+      font-size: 14px;
+      color: #aaa;
+      letter-spacing: 0.5px;
+      font-weight: 400;
+      opacity: 0.9;
     }
 
     #loader {
@@ -126,25 +138,8 @@
       font-size: 28px;
       z-index: 10;
       color: #fff;
-      text-shadow: 0 0 8px rgba(0, 0, 0, 0.7);
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    #loader .spinner {
-      display: inline-block;
-      animation: spin 1.1s linear infinite;
-    }
-
-    .touch-blocker {
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-      display: none;
-    }
-
-    /* Botón Play/Pause */
     .play-pause-btn {
       position: absolute;
       bottom: 15px;
@@ -166,8 +161,17 @@
 </head>
 <body>
   <div class="swiper">
+    <!-- HEADER -->
+    <div class="swiper-header">
+      <div id="video-title" class="video-title">Cargando...</div>
+      <div class="swiper-pagination"></div>
+    </div>
+
+    <!-- VIDEOS -->
     <div class="swiper-wrapper" id="slides"></div>
-    <div class="swiper-pagination"></div>
+
+    <!-- FOOTER -->
+    <div class="swiper-footer">⬅️ Desliza para cambiar de video ➡️</div>
   </div>
 
   <div id="loader"><span class="spinner">⏳</span></div>
@@ -175,108 +179,72 @@
   <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   <script src="https://www.youtube.com/iframe_api"></script>
   <script>
-    const SCRIPT_URL =
-      "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
-
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
     let swiper = null;
     let players = {};
+    let videoTitles = [];
 
     function getEmbedInfo(link) {
       const url = new URL(link, location.href);
-
       if (url.hostname.includes("youtube.com") || url.hostname.includes("youtu.be")) {
-        let videoId = "";
-        if (url.hostname.includes("youtube.com")) {
-          videoId = url.searchParams.get("v") || "";
-        } else if (url.hostname.includes("youtu.be")) {
-          videoId = url.pathname.replace("/", "");
-        }
+        let videoId = url.hostname.includes("youtube.com")
+          ? url.searchParams.get("v") || ""
+          : url.pathname.replace("/", "");
         if (videoId) {
-          const embedSrc = `https://www.youtube.com/embed/${videoId}?rel=0&playsinline=1`;
-          const poster = "https://img.youtube.com/vi/" + videoId + "/hqdefault.jpg";
-          return { type: "youtube", embedSrc, poster, videoId };
+          return {
+            type: "youtube",
+            embedSrc: `https://www.youtube.com/embed/${videoId}?rel=0&playsinline=1`,
+            poster: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+            videoId,
+          };
         }
       }
-
       if (url.hostname.includes("archive.org")) {
-        let embedSrc = link;
-        let identifier = "";
-        const m = link.match(/archive\.org\/embed\/([^?&#/]+)/i);
-        if (m && m[1]) {
-          identifier = m[1];
-        } else {
-          const m2 = link.match(/archive\.org\/download\/([^/?#]+)/i);
-          if (m2 && m2[1]) {
-            identifier = m2[1];
-            embedSrc = `https://archive.org/embed/${identifier}`;
-          }
-        }
-        const poster = identifier ? `https://archive.org/services/img/${identifier}` : "";
-        return { type: "archive", embedSrc, poster };
+        const m = link.match(/archive\.org\/embed\/([^?&#/]+)/i) || link.match(/archive\.org\/download\/([^/?#]+)/i);
+        let identifier = m ? m[1] : "";
+        return {
+          type: "archive",
+          embedSrc: identifier ? `https://archive.org/embed/${identifier}` : link,
+          poster: identifier ? `https://archive.org/services/img/${identifier}` : "",
+        };
       }
-
       return { type: "other", embedSrc: link, poster: "" };
     }
 
     function createSlide(titulo, link) {
       const { embedSrc, poster } = getEmbedInfo(link);
-
       const slide = document.createElement("div");
       slide.className = "swiper-slide";
-
       const card = document.createElement("div");
       card.className = "player-card";
       card.dataset.embed = embedSrc;
-
-      const touchBlocker = document.createElement("div");
-      touchBlocker.className = "touch-blocker";
-      card.appendChild(touchBlocker);
-
       const posterEl = document.createElement("div");
       posterEl.className = "poster";
-      if (poster) {
-        posterEl.style.backgroundImage = `url("${poster}")`;
-      }
-
+      if (poster) posterEl.style.backgroundImage = `url("${poster}")`;
       const playBtn = document.createElement("div");
       playBtn.className = "play-btn";
       playBtn.textContent = "▶";
       posterEl.appendChild(playBtn);
-
-      posterEl.addEventListener("click", () => {
-        mountIframe(card);
-      });
-
+      posterEl.addEventListener("click", () => mountIframe(card));
       card.appendChild(posterEl);
-
-      const title = document.createElement("div");
-      title.className = "video-title";
-      title.textContent = titulo || "Video";
-
       slide.appendChild(card);
-      slide.appendChild(title);
       return slide;
     }
 
     function mountIframe(cardEl) {
       if (cardEl.querySelector("iframe")) return;
-
       const src = cardEl.dataset.embed;
       const info = getEmbedInfo(src);
-
       if (info.type === "youtube") {
         const container = document.createElement("div");
         container.className = "player-iframe";
         cardEl.appendChild(container);
-
         const poster = cardEl.querySelector(".poster");
         if (poster) poster.remove();
-
         const ppBtn = document.createElement("div");
         ppBtn.className = "play-pause-btn";
         ppBtn.textContent = "⏸";
         cardEl.appendChild(ppBtn);
-
         players[src] = new YT.Player(container, {
           videoId: info.videoId,
           playerVars: { autoplay: 1, rel: 0, playsinline: 1 },
@@ -293,18 +261,14 @@
                   ppBtn.textContent = "⏸";
                 }
               });
-            }
-          }
+            },
+          },
         });
       } else {
         const iframe = document.createElement("iframe");
         iframe.className = "player-iframe";
-        iframe.setAttribute(
-          "allow",
-          "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        );
-        iframe.setAttribute("allowfullscreen", "true");
-        iframe.src = src + (src.includes("?") ? "&" : "?") + "autoplay=1"; 
+        iframe.allow = "autoplay; fullscreen";
+        iframe.src = src + (src.includes("?") ? "&" : "?") + "autoplay=1";
         const poster = cardEl.querySelector(".poster");
         if (poster) poster.remove();
         cardEl.appendChild(iframe);
@@ -314,23 +278,16 @@
     function restorePoster(card) {
       const src = card.dataset.embed;
       const player = players[src];
-      if (player) {
-        player.pauseVideo();
-      }
-
+      if (player) player.pauseVideo();
       const iframeContainer = card.querySelector(".player-iframe");
       if (iframeContainer) iframeContainer.remove();
-
       const btn = card.querySelector(".play-pause-btn");
       if (btn) btn.remove();
-
       if (!card.querySelector(".poster")) {
         const info = getEmbedInfo(src);
         const posterEl = document.createElement("div");
         posterEl.className = "poster";
-        if (info.poster) {
-          posterEl.style.backgroundImage = `url("${info.poster}")`;
-        }
+        if (info.poster) posterEl.style.backgroundImage = `url("${info.poster}")`;
         const playBtn = document.createElement("div");
         playBtn.className = "play-btn";
         playBtn.textContent = "▶";
@@ -344,13 +301,13 @@
       if (!swiper) return;
       const activeIndex = swiper.realIndex;
       swiper.slides.forEach((slide, index) => {
-        if (index !== activeIndex) { 
+        if (index !== activeIndex) {
           const card = slide.querySelector(".player-card");
-          if (card) {
-            restorePoster(card);
-          }
+          if (card) restorePoster(card);
         }
       });
+      // actualizar título dinámico
+      document.getElementById("video-title").textContent = videoTitles[activeIndex] || "Video";
     }
 
     async function cargarVideos() {
@@ -359,18 +316,17 @@
       try {
         const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
         const data = await res.json();
-
         const wrapper = document.getElementById("slides");
         wrapper.innerHTML = "";
-
+        videoTitles = [];
         if (Array.isArray(data.data)) {
           data.data.forEach((row) => {
             const titulo = row[0];
             const link = row[1];
             wrapper.appendChild(createSlide(titulo, link));
+            videoTitles.push(titulo);
           });
         }
-
         if (swiper) swiper.destroy(true, true);
         swiper = new Swiper(".swiper", {
           loop: true,
@@ -378,18 +334,13 @@
           slidesPerView: 1,
           spaceBetween: 10,
           pagination: { el: ".swiper-pagination", clickable: true },
-          on: {
-            slideChange() {
-              cleanupIframesExceptActive();
-            }
-          },
+          on: { slideChange: cleanupIframesExceptActive },
         });
-
-        cleanupIframesExceptActive(); 
+        cleanupIframesExceptActive();
       } catch (e) {
         console.error("Error cargando videos:", e);
       } finally {
-        document.getElementById("loader").style.display = "none";
+        loader.style.display = "none";
       }
     }
 
