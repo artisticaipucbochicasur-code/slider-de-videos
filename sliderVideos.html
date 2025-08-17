@@ -141,7 +141,7 @@
       position: absolute;
       inset: 0;
       z-index: 1;
-      display: block; /* Asegura que esté visible por defecto */
+      display: none;
     }
 
     /* Botón Play/Pause */
@@ -192,7 +192,7 @@
           videoId = url.pathname.replace("/", "");
         }
         if (videoId) {
-          const embedSrc = `https://www.youtube.com/embed/${videoId}?rel=0&playsinline=1&enablejsapi=1`;
+          const embedSrc = `https://www.youtube.com/embed/${videoId}?rel=0&playsinline=1`;
           const poster = "https://img.youtube.com/vi/" + videoId + "/hqdefault.jpg";
           return { type: "youtube", embedSrc, poster, videoId };
         }
@@ -264,9 +264,6 @@
       const src = cardEl.dataset.embed;
       const info = getEmbedInfo(src);
 
-      const touchBlocker = cardEl.querySelector(".touch-blocker");
-      if (touchBlocker) touchBlocker.style.display = "block";
-
       if (info.type === "youtube") {
         const container = document.createElement("div");
         container.className = "player-iframe";
@@ -278,7 +275,6 @@
         const ppBtn = document.createElement("div");
         ppBtn.className = "play-pause-btn";
         ppBtn.textContent = "⏸";
-        ppBtn.style.display = 'none'; // Ocultar hasta que el video esté listo
         cardEl.appendChild(ppBtn);
 
         players[src] = new YT.Player(container, {
@@ -287,30 +283,16 @@
           events: {
             onReady: (event) => {
               event.target.playVideo();
-              ppBtn.style.display = 'flex';
-              
-              const state = event.target.getPlayerState();
-              if (state === YT.PlayerState.PLAYING) {
-                if (touchBlocker) touchBlocker.style.display = "none";
-              }
-
               ppBtn.addEventListener("click", () => {
                 const state = event.target.getPlayerState();
                 if (state === YT.PlayerState.PLAYING) {
                   event.target.pauseVideo();
+                  ppBtn.textContent = "▶";
                 } else {
                   event.target.playVideo();
+                  ppBtn.textContent = "⏸";
                 }
               });
-            },
-            onStateChange: (event) => {
-              if (event.data === YT.PlayerState.PLAYING) {
-                ppBtn.textContent = "⏸";
-                if (touchBlocker) touchBlocker.style.display = "none";
-              } else {
-                ppBtn.textContent = "▶";
-                if (touchBlocker) touchBlocker.style.display = "block";
-              }
             }
           }
         });
@@ -322,25 +304,17 @@
           "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         );
         iframe.setAttribute("allowfullscreen", "true");
-        iframe.src = src + (src.includes("?") ? "&" : "?") + "autoplay=1";
+        iframe.src = src + (src.includes("?") ? "&" : "?") + "autoplay=1"; 
         const poster = cardEl.querySelector(".poster");
         if (poster) poster.remove();
         cardEl.appendChild(iframe);
-
-        // Para videos que no son de YouTube, no hay control de API, por lo que el botón solo será estético.
-        const ppBtn = document.createElement("div");
-        ppBtn.className = "play-pause-btn";
-        ppBtn.textContent = "⏸";
-        cardEl.appendChild(ppBtn);
-
-        if (touchBlocker) touchBlocker.style.display = "none";
       }
     }
 
     function restorePoster(card) {
       const src = card.dataset.embed;
       const player = players[src];
-      if (player && typeof player.pauseVideo === 'function') {
+      if (player) {
         player.pauseVideo();
       }
 
@@ -349,9 +323,6 @@
 
       const btn = card.querySelector(".play-pause-btn");
       if (btn) btn.remove();
-
-      const touchBlocker = card.querySelector(".touch-blocker");
-      if (touchBlocker) touchBlocker.style.display = "block";
 
       if (!card.querySelector(".poster")) {
         const info = getEmbedInfo(src);
@@ -373,7 +344,7 @@
       if (!swiper) return;
       const activeIndex = swiper.realIndex;
       swiper.slides.forEach((slide, index) => {
-        if (index !== activeIndex) {
+        if (index !== activeIndex) { 
           const card = slide.querySelector(".player-card");
           if (card) {
             restorePoster(card);
@@ -414,7 +385,7 @@
           },
         });
 
-        cleanupIframesExceptActive();
+        cleanupIframesExceptActive(); 
       } catch (e) {
         console.error("Error cargando videos:", e);
       } finally {
