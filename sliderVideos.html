@@ -107,19 +107,6 @@
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
         }
 
-        .swipe-hint {
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            color: #aaa;
-            font-style: italic;
-            margin-top: 6px;
-            user-select: none;
-            touch-action: pan-y pan-x;
-        }
-
         #loader {
             position: fixed;
             inset: 0;
@@ -248,7 +235,7 @@
         <div class="swiper-wrapper" id="slides"></div>
     </div>
 
-    <div id="loader"><span class="spinner">⏳</span></div>
+    <div id="loader"><span class="spinner">⏳2</span></div>
 
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script src="https://www.youtube.com/iframe_api"></script>
@@ -329,12 +316,6 @@
 
             card.appendChild(posterEl);
             wrapper.appendChild(card);
-
-            // Se elimina la parte del texto "Desliza aquí para cambiar"
-            // const hint = document.createElement("div");
-            // hint.className = "swipe-hint";
-            // hint.textContent = "⬅️ Desliza aquí para cambiar ➡️";
-            // wrapper.appendChild(hint);
 
             slide.appendChild(wrapper);
 
@@ -603,18 +584,20 @@
             }
         }
 
+        // --- INICIO DE LA CORRECCIÓN ---
         function cleanupIframesExceptActive() {
             if (!swiper) return;
-            const activeIndex = swiper.realIndex;
-            swiper.slides.forEach((slide, index) => {
-                if (index !== activeIndex) {
-                    const card = slide.querySelector(".player-card");
-                    if (card) {
-                        restorePoster(card);
-                    }
+            const prevIndex = swiper.previousIndex;
+            
+            // Si hay un slide anterior, asegúrate de restaurar su póster y detener su video.
+            if (prevIndex !== undefined && swiper.slides[prevIndex]) {
+                const card = swiper.slides[prevIndex].querySelector(".player-card");
+                if (card) {
+                    restorePoster(card);
                 }
-            });
+            }
         }
+        // --- FIN DE LA CORRECCIÓN ---
 
         async function cargarVideos() {
             const loader = document.getElementById("loader");
