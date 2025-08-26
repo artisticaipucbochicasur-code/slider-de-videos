@@ -170,7 +170,7 @@
     <div class="swiper-wrapper" id="slides"></div>
   </div>
 
-  <div id="loader"><span class="spinner">⏳</span></div>
+  <div id="loader"><span class="spinner">⏳h</span></div>
 
   <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   <script src="https://www.youtube.com/iframe_api"></script>
@@ -272,7 +272,7 @@
     }
 
     function mountIframe(cardEl) {
-  if (cardEl.querySelector("iframe")) return;
+  if (cardEl.querySelector("iframe") || cardEl.querySelector("video")) return;
 
   const src = cardEl.dataset.embed;
   const info = getEmbedInfo(src);
@@ -309,22 +309,34 @@
         }
       }
     });
+
   } else if (info.type === "archive") {
-    const iframe = document.createElement("iframe");
-    iframe.className = "player-iframe";
-    // Solo lo esencial
-    iframe.setAttribute("allow", "autoplay; encrypted-media");
-    // 🚫 No permitir pantalla completa
-    iframe.removeAttribute("allowfullscreen");
-    // Quitar cabecera y extras de archive.org
-    iframe.src =
-      info.embedSrc +
-      (info.embedSrc.includes("?") ? "&" : "?") +
-      "autoplay=1&controls=1&noheader=1";
+    const video = document.createElement("video");
+    video.className = "player-iframe";
+    video.setAttribute("controls", "true");
+    video.setAttribute("autoplay", "true");
+    video.setAttribute("playsinline", "true");
+    video.style.width = "100%";
+    video.style.height = "100%";
+    video.style.background = "#000";
+
+    // Intentamos detectar la URL directa del MP4
+    // Archive.org normalmente tiene: https://archive.org/download/IDENTIFIER/IDENTIFIER.mp4
+    let mp4Url = info.embedSrc;
+    const m = info.embedSrc.match(/archive\.org\/embed\/([^?&#/]+)/i);
+    if (m && m[1]) {
+      const identifier = m[1];
+      mp4Url = `https://archive.org/download/${identifier}/${identifier}.mp4`;
+    }
+    const source = document.createElement("source");
+    source.src = mp4Url;
+    source.type = "video/mp4";
+    video.appendChild(source);
 
     const poster = cardEl.querySelector(".poster");
     if (poster) poster.remove();
-    cardEl.appendChild(iframe);
+    cardEl.appendChild(video);
+
   } else {
     const iframe = document.createElement("iframe");
     iframe.className = "player-iframe";
@@ -340,6 +352,7 @@
     cardEl.appendChild(iframe);
   }
 }
+
 
 
     function restorePoster(card) {
@@ -435,5 +448,6 @@
   </script>
 </body>
 </html>
+
 
 
