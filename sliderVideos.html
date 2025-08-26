@@ -272,57 +272,75 @@
     }
 
     function mountIframe(cardEl) {
-      if (cardEl.querySelector("iframe")) return;
+  if (cardEl.querySelector("iframe")) return;
 
-      const src = cardEl.dataset.embed;
-      const info = getEmbedInfo(src);
+  const src = cardEl.dataset.embed;
+  const info = getEmbedInfo(src);
 
-      if (info.type === "youtube") {
-        const container = document.createElement("div");
-        container.className = "player-iframe";
-        cardEl.appendChild(container);
+  if (info.type === "youtube") {
+    const container = document.createElement("div");
+    container.className = "player-iframe";
+    cardEl.appendChild(container);
 
-        const poster = cardEl.querySelector(".poster");
-        if (poster) poster.remove();
+    const poster = cardEl.querySelector(".poster");
+    if (poster) poster.remove();
 
-        const ppBtn = document.createElement("div");
-        ppBtn.className = "play-pause-btn";
-        ppBtn.textContent = "⏸";
-        cardEl.appendChild(ppBtn);
+    const ppBtn = document.createElement("div");
+    ppBtn.className = "play-pause-btn";
+    ppBtn.textContent = "⏸";
+    cardEl.appendChild(ppBtn);
 
-        players[src] = new YT.Player(container, {
-          videoId: info.videoId,
-          playerVars: { autoplay: 1, rel: 0, playsinline: 1 },
-          events: {
-            onReady: (event) => {
+    players[src] = new YT.Player(container, {
+      videoId: info.videoId,
+      playerVars: { autoplay: 1, rel: 0, playsinline: 1 },
+      events: {
+        onReady: (event) => {
+          event.target.playVideo();
+          ppBtn.addEventListener("click", () => {
+            const state = event.target.getPlayerState();
+            if (state === YT.PlayerState.PLAYING) {
+              event.target.pauseVideo();
+              ppBtn.textContent = "▶";
+            } else {
               event.target.playVideo();
-              ppBtn.addEventListener("click", () => {
-                const state = event.target.getPlayerState();
-                if (state === YT.PlayerState.PLAYING) {
-                  event.target.pauseVideo();
-                  ppBtn.textContent = "▶";
-                } else {
-                  event.target.playVideo();
-                  ppBtn.textContent = "⏸";
-                }
-              });
+              ppBtn.textContent = "⏸";
             }
-          }
-        });
-      } else {
-        const iframe = document.createElement("iframe");
-        iframe.className = "player-iframe";
-        iframe.setAttribute(
-          "allow",
-          "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        );
-        iframe.setAttribute("allowfullscreen", "true");
-        iframe.src = src + (src.includes("?") ? "&" : "?") + "autoplay=1"; 
-        const poster = cardEl.querySelector(".poster");
-        if (poster) poster.remove();
-        cardEl.appendChild(iframe);
+          });
+        }
       }
-    }
+    });
+  } else if (info.type === "archive") {
+    const iframe = document.createElement("iframe");
+    iframe.className = "player-iframe";
+    // Solo lo esencial
+    iframe.setAttribute("allow", "autoplay; encrypted-media");
+    // 🚫 No permitir pantalla completa
+    iframe.removeAttribute("allowfullscreen");
+    // Quitar cabecera y extras de archive.org
+    iframe.src =
+      info.embedSrc +
+      (info.embedSrc.includes("?") ? "&" : "?") +
+      "autoplay=1&controls=1&noheader=1";
+
+    const poster = cardEl.querySelector(".poster");
+    if (poster) poster.remove();
+    cardEl.appendChild(iframe);
+  } else {
+    const iframe = document.createElement("iframe");
+    iframe.className = "player-iframe";
+    iframe.setAttribute(
+      "allow",
+      "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    );
+    iframe.setAttribute("allowfullscreen", "true");
+    iframe.src = src + (src.includes("?") ? "&" : "?") + "autoplay=1";
+
+    const poster = cardEl.querySelector(".poster");
+    if (poster) poster.remove();
+    cardEl.appendChild(iframe);
+  }
+}
+
 
     function restorePoster(card) {
       const src = card.dataset.embed;
@@ -417,4 +435,5 @@
   </script>
 </body>
 </html>
+
 
