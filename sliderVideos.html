@@ -366,7 +366,7 @@
       });
     }
 
-    async function cargarVideos() {
+        async function cargarVideos() {
       const loader = document.getElementById("loader");
       loader.style.display = "flex";
       try {
@@ -390,7 +390,7 @@
           direction: "horizontal",
           slidesPerView: 1,
           spaceBetween: 10,
-          pagination: false, // 🔹 ya no hay punticos
+          pagination: false,
           on: {
             slideChange() {
               cleanupIframesExceptActive();
@@ -399,6 +399,12 @@
         });
 
         cleanupIframesExceptActive(); 
+
+        // 🔹 Avisar a App Inventor que todo cargó bien
+        if (window.AppInventor) {
+          window.AppInventor.setWebViewString("success");
+        }
+
       } catch (e) {
         console.error("Error cargando videos:", e);
       } finally {
@@ -406,7 +412,9 @@
       }
     }
 
+
     cargarVideos();
   </script>
 </body>
 </html>
+
