@@ -33,6 +33,26 @@
             overflow: hidden;
         }
 
+        /* Título fijo */
+        #video-title-display {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 10px;
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            color: #f1f1f1;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+            z-index: 10;
+            transition: opacity 0.3s ease;
+        }
+
         .swiper {
             width: 100vw;
             height: 100vh;
@@ -50,7 +70,7 @@
         .player-card {
             position: relative;
             width: 100%;
-            height: calc(100vh - 120px);
+            height: calc(100vh - 48px); /* Se ajusta la altura para el título fijo */
             background: #000;
             overflow: hidden;
             box-shadow: var(--card-shadow);
@@ -231,11 +251,12 @@
     </style>
 </head>
 <body>
+    <div id="video-title-display"></div>
     <div class="swiper">
         <div class="swiper-wrapper" id="slides"></div>
     </div>
 
-    <div id="loader"><span class="spinner">⏳2</span></div>
+    <div id="loader"><span class="spinner">⏳</span></div>
 
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script src="https://www.youtube.com/iframe_api"></script>
@@ -283,17 +304,13 @@
 
             const slide = document.createElement("div");
             slide.className = "swiper-slide";
+            slide.dataset.title = titulo || "Video"; // Se guarda el título en el data-attribute
 
             const wrapper = document.createElement("div");
             wrapper.style.display = "flex";
             wrapper.style.flexDirection = "column";
             wrapper.style.height = "100%";
             wrapper.style.justifyContent = "space-between";
-
-            const title = document.createElement("div");
-            title.className = "video-title";
-            title.textContent = titulo || "Video";
-            wrapper.appendChild(title);
 
             const card = document.createElement("div");
             card.className = "player-card";
@@ -584,12 +601,10 @@
             }
         }
 
-        // --- INICIO DE LA CORRECCIÓN ---
         function cleanupIframesExceptActive() {
             if (!swiper) return;
             const prevIndex = swiper.previousIndex;
             
-            // Si hay un slide anterior, asegúrate de restaurar su póster y detener su video.
             if (prevIndex !== undefined && swiper.slides[prevIndex]) {
                 const card = swiper.slides[prevIndex].querySelector(".player-card");
                 if (card) {
@@ -597,7 +612,13 @@
                 }
             }
         }
-        // --- FIN DE LA CORRECCIÓN ---
+
+        function updateTitle(title) {
+            const titleEl = document.getElementById("video-title-display");
+            if (titleEl) {
+                titleEl.textContent = title;
+            }
+        }
 
         async function cargarVideos() {
             const loader = document.getElementById("loader");
@@ -627,11 +648,20 @@
                     on: {
                         slideChange() {
                             cleanupIframesExceptActive();
+                            const activeSlide = swiper.slides[swiper.realIndex];
+                            if (activeSlide) {
+                                updateTitle(activeSlide.dataset.title);
+                            }
                         }
                     },
                 });
 
                 cleanupIframesExceptActive();
+                // Se actualiza el título al cargar por primera vez
+                const firstSlide = swiper.slides[swiper.realIndex];
+                if (firstSlide) {
+                    updateTitle(firstSlide.dataset.title);
+                }
             } catch (e) {
                 console.error("Error cargando videos:", e);
             } finally {
