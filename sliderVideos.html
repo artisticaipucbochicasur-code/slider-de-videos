@@ -11,6 +11,7 @@
         rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"
     />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --bg1: #000;
@@ -249,7 +250,7 @@
         <div class="swiper-wrapper" id="slides"></div>
     </div>
 
-    <div id="loader"><span class="spinner">⏳EH</span></div>
+    <div id="loader"><span class="spinner">⏳</span></div>
 
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script src="https://www.youtube.com/iframe_api"></script>
@@ -321,7 +322,7 @@
 
             const playBtn = document.createElement("div");
             playBtn.className = "play-btn";
-            playBtn.textContent = "▶";
+            playBtn.innerHTML = '<i class="fas fa-play"></i>';
             posterEl.appendChild(playBtn);
 
             posterEl.addEventListener("click", () => {
@@ -355,7 +356,7 @@
 
             const centerPlayPauseBtn = document.createElement("div");
             centerPlayPauseBtn.className = "center-play-pause-btn";
-            centerPlayPauseBtn.textContent = "⏸";
+            centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
             cardEl.appendChild(centerPlayPauseBtn);
             
             let player;
@@ -371,17 +372,18 @@
                     events: {
                         onReady: (event) => {
                             event.target.playVideo();
-                            setupControls(event.target, 'youtube', controls, centerPlayPauseBtn);
+                            setupControls(event.target, 'youtube', controls, centerPlayPauseBtn, cardEl);
                         },
                         onStateChange: (event) => {
                             const state = event.data;
                             if (state === YT.PlayerState.PLAYING) {
-                                centerPlayPauseBtn.textContent = "⏸";
+                                centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                                centerPlayPauseBtn.style.opacity = 0;
                             } else if (state === YT.PlayerState.PAUSED) {
-                                centerPlayPauseBtn.textContent = "▶";
+                                centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
                                 centerPlayPauseBtn.style.opacity = 1;
                             } else {
-                                centerPlayPauseBtn.textContent = "▶";
+                                centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
                             }
                         }
                     }
@@ -406,14 +408,20 @@
                 players[src] = player;
 
                 video.addEventListener('loadedmetadata', () => {
-                    setupControls(video, 'mp4', controls, centerPlayPauseBtn);
+                    setupControls(video, 'mp4', controls, centerPlayPauseBtn, cardEl);
                 });
-                video.addEventListener('play', () => centerPlayPauseBtn.textContent = "⏸");
+                video.addEventListener('play', () => {
+                    centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    centerPlayPauseBtn.style.opacity = 0;
+                });
                 video.addEventListener('pause', () => {
-                    centerPlayPauseBtn.textContent = "▶";
+                    centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
                     centerPlayPauseBtn.style.opacity = 1;
                 });
-                video.addEventListener('ended', () => centerPlayPauseBtn.textContent = "▶");
+                video.addEventListener('ended', () => {
+                    centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                    centerPlayPauseBtn.style.opacity = 1;
+                });
 
             } else {
                  const iframe = document.createElement("iframe");
@@ -431,7 +439,7 @@
 
             const playPauseBtn = document.createElement("button");
             playPauseBtn.className = "play-pause-btn";
-            playPauseBtn.textContent = "⏸";
+            playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
 
             const progressBarContainer = document.createElement("div");
             progressBarContainer.className = "progress-bar";
@@ -447,7 +455,7 @@
             volumeControl.className = "volume-control";
             const volumeIcon = document.createElement("span");
             volumeIcon.className = "volume-icon";
-            volumeIcon.textContent = "🔊";
+            volumeIcon.innerHTML = '<i class="fas fa-volume-up"></i>';
             const volumeSlider = document.createElement("input");
             volumeSlider.type = "range";
             volumeSlider.min = "0";
@@ -476,13 +484,30 @@
                 .replace(/^00:/, '');
         }
 
-        function setupControls(player, type, controls, centerPlayPauseBtn) {
+        function setupControls(player, type, controls, centerPlayPauseBtn, cardEl) {
             const playPauseBtn = controls.querySelector('.play-pause-btn');
             const progressBarContainer = controls.querySelector('.progress-bar');
             const progress = controls.querySelector('.progress');
             const volumeSlider = controls.querySelector('.volume-control input');
             const timeDisplay = controls.querySelector('.time');
             let totalTime = 0;
+            let timeoutId;
+            
+            const hideControls = () => {
+                controls.style.opacity = 0;
+                if (type === 'youtube' && player.getPlayerState() === YT.PlayerState.PLAYING) {
+                    centerPlayPauseBtn.style.opacity = 0;
+                } else if (type === 'mp4' && !player.paused) {
+                    centerPlayPauseBtn.style.opacity = 0;
+                }
+            };
+            
+            const showControls = () => {
+                clearTimeout(timeoutId);
+                controls.style.opacity = 1;
+                centerPlayPauseBtn.style.opacity = 1;
+                timeoutId = setTimeout(hideControls, 3000);
+            };
 
             const updateTime = () => {
                 let currentTime = 0;
@@ -498,6 +523,10 @@
 
             const interval = setInterval(updateTime, 1000);
 
+            cardEl.addEventListener('mouseenter', showControls);
+            cardEl.addEventListener('mouseleave', hideControls);
+            cardEl.addEventListener('mousemove', showControls);
+            
             if (type === 'youtube') {
                 totalTime = player.getDuration();
                 updateTime();
@@ -569,7 +598,7 @@
                 }
                 const playBtn = document.createElement("div");
                 playBtn.className = "play-btn";
-                playBtn.textContent = "▶";
+                playBtn.innerHTML = '<i class="fas fa-play"></i>';
                 posterEl.appendChild(playBtn);
                 posterEl.addEventListener("click", () => mountIframe(card));
                 card.appendChild(posterEl);
