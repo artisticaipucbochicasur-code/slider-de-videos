@@ -1,453 +1,563 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
-  />
-  <title>Galería de Videos</title>
-  <link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"
-  />
-  <style>
-    :root {
-      --bg1: #000;
-      --bg2: #000;
-      --text: #fff;
-      --card-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
-    }
+    <meta charset="UTF-8" />
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+    />
+    <title>Galería de Videos</title>
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"
+    />
+    <style>
+        :root {
+            --bg1: #000;
+            --bg2: #000;
+            --text: #fff;
+            --card-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+        }
 
-    html, body {
-      height: 100%;
-    }
+        html, body {
+            height: 100%;
+        }
 
-    body {
-      margin: 0;
-      padding: 0;
-      background: linear-gradient(135deg, var(--bg1), var(--bg2));
-      font-family: "Segoe UI", Arial, sans-serif;
-      color: var(--text);
-      overflow: hidden;
-    }
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, var(--bg1), var(--bg2));
+            font-family: "Segoe UI", Arial, sans-serif;
+            color: var(--text);
+            overflow: hidden;
+        }
 
-    .swiper {
-      width: 100vw;
-      height: 100vh;
-    }
+        .swiper {
+            width: 100vw;
+            height: 100vh;
+        }
 
-    .swiper-slide {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: stretch;
-      position: relative;
-      background: #000;
-    }
+        .swiper-slide {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: stretch;
+            position: relative;
+            background: #000;
+        }
 
-    .player-card {
-      position: relative;
-      width: 100%;
-      height: calc(100vh - 120px);
-      background: #000;
-      overflow: hidden;
-      box-shadow: var(--card-shadow);
-      border-radius: 10px;
-    }
+        .player-card {
+            position: relative;
+            width: 100%;
+            height: calc(100vh - 120px);
+            background: #000;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+            border-radius: 10px;
+        }
 
-    .poster {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #111;
-      background-size: cover;
-      background-position: center center;
-      cursor: pointer;
-      user-select: none;
-      -webkit-user-select: none;
-      touch-action: manipulation;
-    }
+        .poster {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #111;
+            background-size: cover;
+            background-position: center center;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
 
-    .play-btn {
-      display: grid;
-      place-items: center;
-      width: 70px;
-      height: 70px;
-      border-radius: 50%;
-      background: rgba(0, 0, 0, 0.55);
-      backdrop-filter: blur(2px);
-      font-size: 28px;
-      line-height: 1;
-      border: 2px solid #fff;
-    }
+        .play-btn {
+            display: grid;
+            place-items: center;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(2px);
+            font-size: 28px;
+            line-height: 1;
+            border: 2px solid #fff;
+        }
 
-    .player-iframe {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      border: 0;
-      background: #000;
-    }
+        .player-iframe {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+            background: #000;
+        }
 
-    .video-title {
-      height: 48px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 6px 10px;
-      font-size: 18px;
-      font-weight: 600;
-      text-align: center;
-      color: #f1f1f1;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
-    }
+        .video-title {
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 10px;
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            color: #f1f1f1;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+        }
 
-    .swipe-hint {
-      height: 60px; /* 🔹 más alta para deslizar mejor */
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
-      color: #aaa;
-      font-style: italic;
-      margin-top: 6px;
-      user-select: none;
-      touch-action: pan-y pan-x; /* 🔹 asegura que registre swipe */
-    }
+        .swipe-hint {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: #aaa;
+            font-style: italic;
+            margin-top: 6px;
+            user-select: none;
+            touch-action: pan-y pan-x;
+        }
 
-    #loader {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 28px;
-      z-index: 10;
-      color: #fff;
-      text-shadow: 0 0 8px rgba(0, 0, 0, 0.7);
-    }
+        #loader {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            z-index: 10;
+            color: #fff;
+            text-shadow: 0 0 8px rgba(0, 0, 0, 0.7);
+        }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    #loader .spinner {
-      display: inline-block;
-      animation: spin 1.1s linear infinite;
-    }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        #loader .spinner {
+            display: inline-block;
+            animation: spin 1.1s linear infinite;
+        }
 
-    .touch-blocker {
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-      display: none;
-    }
+        .touch-blocker {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            display: none;
+        }
 
-    .play-pause-btn {
-      position: absolute;
-      bottom: 15px;
-      right: 15px;
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      background: rgba(0, 0, 0, 0.6);
-      border: 2px solid #fff;
-      color: #fff;
-      font-size: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      z-index: 5;
-    }
-  </style>
+        /* Agregando estilos para los nuevos controles */
+        .controls-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 5;
+            transition: opacity 0.3s ease;
+        }
+
+        .player-card:hover .controls-bar {
+            opacity: 1;
+        }
+
+        .play-pause-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .progress-bar {
+            flex-grow: 1;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+        }
+        .progress {
+            height: 100%;
+            width: 0%;
+            background: #ff0000;
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .volume-control input[type="range"] {
+            width: 60px;
+        }
+        .volume-icon {
+            font-size: 20px;
+        }
+
+        .time {
+            font-size: 12px;
+            color: #fff;
+        }
+    </style>
 </head>
 <body>
-  <div class="swiper">
-    <div class="swiper-wrapper" id="slides"></div>
-  </div>
+    <div class="swiper">
+        <div class="swiper-wrapper" id="slides"></div>
+    </div>
 
-  <div id="loader"><span class="spinner">⏳m</span></div>
+    <div id="loader"><span class="spinner">⏳22</span></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-  <script src="https://www.youtube.com/iframe_api"></script>
-  <script>
-    const SCRIPT_URL =
-      "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script>
+        const SCRIPT_URL =
+            "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
 
-    let swiper = null;
-    let players = {};
+        let swiper = null;
+        let players = {};
 
-    function getEmbedInfo(link) {
-  const url = new URL(link, location.href);
+        function getEmbedInfo(link) {
+            const url = new URL(link, location.href);
 
-  if (url.hostname.includes("youtube.com") || url.hostname.includes("youtu.be")) {
-    let videoId = "";
-    if (url.hostname.includes("youtube.com")) {
-      videoId = url.searchParams.get("v") || "";
-    } else if (url.hostname.includes("youtu.be")) {
-      videoId = url.pathname.replace("/", "");
-    }
-    if (videoId) {
-      const embedSrc = `https://www.youtube.com/embed/${videoId}?rel=0&playsinline=1`;
-      const poster = "https://img.youtube.com/vi/" + videoId + "/hqdefault.jpg";
-      return { type: "youtube", embedSrc, poster, videoId };
-    }
-  }
-
-  if (url.hostname.includes("archive.org")) {
-    let embedSrc = link;
-    let identifier = "";
-    let mp4Src = "";
-    const m = link.match(/archive\.org\/embed\/([^?&#/]+)/i);
-    if (m && m[1]) {
-      identifier = m[1];
-      embedSrc = `https://archive.org/embed/${identifier}`;
-      mp4Src = `https://archive.org/download/${identifier}/${identifier}.mp4`;
-    } else {
-      const m2 = link.match(/archive\.org\/download\/([^/?#]+)/i);
-      if (m2 && m2[1]) {
-        identifier = m2[1];
-        embedSrc = `https://archive.org/embed/${identifier}`;
-        mp4Src = link.endsWith(".mp4") ? link : `https://archive.org/download/${identifier}/${identifier}.mp4`;
-      }
-    }
-    const poster = identifier ? `https://archive.org/services/img/${identifier}` : "";
-    return { type: "archive", embedSrc, poster, mp4Src };
-  }
-
-  return { type: "other", embedSrc: link, poster: "" };
-}
-
-    function createSlide(titulo, link) {
-      const { embedSrc, poster } = getEmbedInfo(link);
-
-      const slide = document.createElement("div");
-      slide.className = "swiper-slide";
-
-      const wrapper = document.createElement("div");
-      wrapper.style.display = "flex";
-      wrapper.style.flexDirection = "column";
-      wrapper.style.height = "100%";
-      wrapper.style.justifyContent = "space-between";
-
-      const title = document.createElement("div");
-      title.className = "video-title";
-      title.textContent = titulo || "Video";
-      wrapper.appendChild(title);
-
-      const card = document.createElement("div");
-      card.className = "player-card";
-      card.dataset.embed = embedSrc;
-
-      const touchBlocker = document.createElement("div");
-      touchBlocker.className = "touch-blocker";
-      card.appendChild(touchBlocker);
-
-      const posterEl = document.createElement("div");
-      posterEl.className = "poster";
-      if (poster) {
-        posterEl.style.backgroundImage = `url("${poster}")`;
-      }
-
-      const playBtn = document.createElement("div");
-      playBtn.className = "play-btn";
-      playBtn.textContent = "▶";
-      posterEl.appendChild(playBtn);
-
-      posterEl.addEventListener("click", () => {
-        mountIframe(card);
-      });
-
-      card.appendChild(posterEl);
-      wrapper.appendChild(card);
-
-      const hint = document.createElement("div");
-      hint.className = "swipe-hint";
-      hint.textContent = "⬅️ Desliza aquí para cambiar ➡️";
-      wrapper.appendChild(hint);
-
-      slide.appendChild(wrapper);
-
-      return slide;
-    }
-
-    function mountIframe(cardEl) {
-  if (cardEl.querySelector("iframe") || cardEl.querySelector("video")) return;
-
-  const src = cardEl.dataset.embed;
-  const info = getEmbedInfo(src);
-
-  if (info.type === "youtube") {
-    const container = document.createElement("div");
-    container.className = "player-iframe";
-    cardEl.appendChild(container);
-
-    const poster = cardEl.querySelector(".poster");
-    if (poster) poster.remove();
-
-    const ppBtn = document.createElement("div");
-    ppBtn.className = "play-pause-btn";
-    ppBtn.textContent = "⏸";
-    cardEl.appendChild(ppBtn);
-
-    players[src] = new YT.Player(container, {
-      videoId: info.videoId,
-      playerVars: { autoplay: 1, rel: 0, playsinline: 1 },
-      events: {
-        onReady: (event) => {
-          event.target.playVideo();
-          ppBtn.addEventListener("click", () => {
-            const state = event.target.getPlayerState();
-            if (state === YT.PlayerState.PLAYING) {
-              event.target.pauseVideo();
-              ppBtn.textContent = "▶";
-            } else {
-              event.target.playVideo();
-              ppBtn.textContent = "⏸";
+            if (url.hostname.includes("youtube.com") || url.hostname.includes("youtu.be")) {
+                let videoId = "";
+                if (url.hostname.includes("youtube.com")) {
+                    videoId = url.searchParams.get("v") || "";
+                } else if (url.hostname.includes("youtu.be")) {
+                    videoId = url.pathname.replace("/", "");
+                }
+                if (videoId) {
+                    const embedSrc = `https://www.youtube.com/embed/${videoId}?rel=0&playsinline=1&controls=0&modestbranding=1`;
+                    const poster = "https://img.youtube.com/vi/" + videoId + "/hqdefault.jpg";
+                    return { type: "youtube", embedSrc, poster, videoId };
+                }
             }
-          });
+            if (url.hostname.includes("archive.org") || url.pathname.endsWith(".mp4")) {
+                return { type: "mp4", embedSrc: link, poster: "" };
+            }
+
+            return { type: "other", embedSrc: link, poster: "" };
         }
-      }
-    });
 
-  } else if (info.type === "archive" || src.endsWith(".mp4")) {
-    // Usamos directamente el MP4 del link
-    const video = document.createElement("video");
-    video.className = "player-iframe";
-    video.setAttribute("controls", "true");
-    video.setAttribute("autoplay", "true");
-    video.setAttribute("playsinline", "true");
-    video.style.width = "100%";
-    video.style.height = "100%";
-    video.style.background = "#000";
+        function createSlide(titulo, link) {
+            const { embedSrc, poster } = getEmbedInfo(link);
 
-    const source = document.createElement("source");
-    source.src = src; // 🔹 usamos exactamente el link de la hoja
-    source.type = "video/mp4";
-    video.appendChild(source);
+            const slide = document.createElement("div");
+            slide.className = "swiper-slide";
 
-    const poster = cardEl.querySelector(".poster");
-    if (poster) poster.remove();
-    cardEl.appendChild(video);
+            const wrapper = document.createElement("div");
+            wrapper.style.display = "flex";
+            wrapper.style.flexDirection = "column";
+            wrapper.style.height = "100%";
+            wrapper.style.justifyContent = "space-between";
 
-  } else {
-    const iframe = document.createElement("iframe");
-    iframe.className = "player-iframe";
-    iframe.setAttribute(
-      "allow",
-      "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-    );
-    iframe.setAttribute("allowfullscreen", "true");
-    iframe.src = src + (src.includes("?") ? "&" : "?") + "autoplay=1";
+            const title = document.createElement("div");
+            title.className = "video-title";
+            title.textContent = titulo || "Video";
+            wrapper.appendChild(title);
 
-    const poster = cardEl.querySelector(".poster");
-    if (poster) poster.remove();
-    cardEl.appendChild(iframe);
-  }
-}
+            const card = document.createElement("div");
+            card.className = "player-card";
+            card.dataset.embed = embedSrc;
 
+            const posterEl = document.createElement("div");
+            posterEl.className = "poster";
+            if (poster) {
+                posterEl.style.backgroundImage = `url("${poster}")`;
+            }
 
+            const playBtn = document.createElement("div");
+            playBtn.className = "play-btn";
+            playBtn.textContent = "▶";
+            posterEl.appendChild(playBtn);
 
-    function restorePoster(card) {
-      const src = card.dataset.embed;
-      const player = players[src];
-      if (player) {
-        player.pauseVideo();
-      }
+            posterEl.addEventListener("click", () => {
+                mountIframe(card);
+            });
 
-      const iframeContainer = card.querySelector(".player-iframe");
-      if (iframeContainer) iframeContainer.remove();
+            card.appendChild(posterEl);
+            wrapper.appendChild(card);
 
-      const btn = card.querySelector(".play-pause-btn");
-      if (btn) btn.remove();
+            const hint = document.createElement("div");
+            hint.className = "swipe-hint";
+            hint.textContent = "⬅️ Desliza aquí para cambiar ➡️";
+            wrapper.appendChild(hint);
 
-      if (!card.querySelector(".poster")) {
-        const info = getEmbedInfo(src);
-        const posterEl = document.createElement("div");
-        posterEl.className = "poster";
-        if (info.poster) {
-          posterEl.style.backgroundImage = `url("${info.poster}")`;
+            slide.appendChild(wrapper);
+
+            return slide;
         }
-        const playBtn = document.createElement("div");
-        playBtn.className = "play-btn";
-        playBtn.textContent = "▶";
-        posterEl.appendChild(playBtn);
-        posterEl.addEventListener("click", () => mountIframe(card));
-        card.appendChild(posterEl);
-      }
-    }
 
-    function cleanupIframesExceptActive() {
-      if (!swiper) return;
-      const activeIndex = swiper.realIndex;
-      swiper.slides.forEach((slide, index) => {
-        if (index !== activeIndex) { 
-          const card = slide.querySelector(".player-card");
-          if (card) {
-            restorePoster(card);
-          }
+        function mountIframe(cardEl) {
+            if (cardEl.querySelector("iframe") || cardEl.querySelector("video")) return;
+
+            const src = cardEl.dataset.embed;
+            const info = getEmbedInfo(src);
+
+            const poster = cardEl.querySelector(".poster");
+            if (poster) poster.remove();
+            
+            const controls = createControls();
+            cardEl.appendChild(controls);
+
+            if (info.type === "youtube") {
+                const container = document.createElement("div");
+                container.className = "player-iframe";
+                cardEl.appendChild(container);
+
+                players[src] = new YT.Player(container, {
+                    videoId: info.videoId,
+                    playerVars: { autoplay: 1, rel: 0, playsinline: 1, controls: 0, modestbranding: 1 },
+                    events: {
+                        onReady: (event) => {
+                            event.target.playVideo();
+                            setupControls(event.target, 'youtube', controls);
+                        },
+                        onStateChange: (event) => {
+                            updatePlayPauseButton(event.data === YT.PlayerState.PLAYING, controls);
+                        }
+                    }
+                });
+            } else if (info.type === "mp4") {
+                const video = document.createElement("video");
+                video.className = "player-iframe";
+                video.setAttribute("autoplay", "true");
+                video.setAttribute("playsinline", "true");
+                video.style.width = "100%";
+                video.style.height = "100%";
+                video.style.background = "#000";
+
+                const source = document.createElement("source");
+                source.src = src;
+                source.type = "video/mp4";
+                video.appendChild(source);
+                cardEl.appendChild(video);
+
+                video.addEventListener('loadedmetadata', () => {
+                    setupControls(video, 'mp4', controls);
+                });
+                video.addEventListener('play', () => updatePlayPauseButton(true, controls));
+                video.addEventListener('pause', () => updatePlayPauseButton(false, controls));
+                video.addEventListener('ended', () => updatePlayPauseButton(false, controls));
+
+            } else {
+                 const iframe = document.createElement("iframe");
+                 iframe.className = "player-iframe";
+                 iframe.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share");
+                 iframe.setAttribute("allowfullscreen", "true");
+                 iframe.src = src + (src.includes("?") ? "&" : "?") + "autoplay=1";
+                 cardEl.appendChild(iframe);
+            }
         }
-      });
-    }
+        
+        function createControls() {
+            const controlsBar = document.createElement("div");
+            controlsBar.className = "controls-bar";
+
+            const playPauseBtn = document.createElement("button");
+            playPauseBtn.className = "play-pause-btn";
+            playPauseBtn.textContent = "⏸";
+
+            const progressBarContainer = document.createElement("div");
+            progressBarContainer.className = "progress-bar";
+            const progress = document.createElement("div");
+            progress.className = "progress";
+            progressBarContainer.appendChild(progress);
+
+            const timeDisplay = document.createElement("div");
+            timeDisplay.className = "time";
+            timeDisplay.textContent = "00:00 / 00:00";
+
+            const volumeControl = document.createElement("div");
+            volumeControl.className = "volume-control";
+            const volumeIcon = document.createElement("span");
+            volumeIcon.className = "volume-icon";
+            volumeIcon.textContent = "🔊";
+            const volumeSlider = document.createElement("input");
+            volumeSlider.type = "range";
+            volumeSlider.min = "0";
+            volumeSlider.max = "1";
+            volumeSlider.step = "0.01";
+            volumeSlider.value = "1";
+            volumeControl.appendChild(volumeIcon);
+            volumeControl.appendChild(volumeSlider);
+
+            controlsBar.appendChild(playPauseBtn);
+            controlsBar.appendChild(progressBarContainer);
+            controlsBar.appendChild(timeDisplay);
+            controlsBar.appendChild(volumeControl);
+
+            return controlsBar;
+        }
+
+        function formatTime(seconds) {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            return [h, m, s]
+                .filter(v => v > 0 || v === 0)
+                .map(v => v.toString().padStart(2, '0'))
+                .join(':')
+                .replace(/^00:/, '');
+        }
+
+        function updatePlayPauseButton(isPlaying, controls) {
+            const btn = controls.querySelector('.play-pause-btn');
+            btn.textContent = isPlaying ? "⏸" : "▶";
+        }
+
+        function setupControls(player, type, controls) {
+            const playPauseBtn = controls.querySelector('.play-pause-btn');
+            const progressBarContainer = controls.querySelector('.progress-bar');
+            const progress = controls.querySelector('.progress');
+            const volumeSlider = controls.querySelector('.volume-control input');
+            const timeDisplay = controls.querySelector('.time');
+            let totalTime = 0;
+
+            const updateTime = () => {
+                let currentTime = 0;
+                if (type === 'youtube') {
+                    if (player.getPlayerState() === YT.PlayerState.PLAYING) {
+                        currentTime = player.getCurrentTime();
+                    }
+                } else {
+                    currentTime = player.currentTime;
+                }
+                const progressPercentage = (currentTime / totalTime) * 100;
+                progress.style.width = `${progressPercentage}%`;
+                timeDisplay.textContent = `${formatTime(currentTime)} / ${formatTime(totalTime)}`;
+            };
+
+            const interval = setInterval(updateTime, 1000);
+
+            if (type === 'youtube') {
+                totalTime = player.getDuration();
+                updateTime();
+                playPauseBtn.onclick = () => {
+                    if (player.getPlayerState() === YT.PlayerState.PLAYING) {
+                        player.pauseVideo();
+                    } else {
+                        player.playVideo();
+                    }
+                };
+                progressBarContainer.onclick = (e) => {
+                    const clickX = e.offsetX;
+                    const totalWidth = progressBarContainer.clientWidth;
+                    const newTime = (clickX / totalWidth) * totalTime;
+                    player.seekTo(newTime, true);
+                };
+                volumeSlider.oninput = (e) => player.setVolume(e.target.value * 100);
+            } else if (type === 'mp4') {
+                totalTime = player.duration;
+                updateTime();
+                playPauseBtn.onclick = () => {
+                    if (player.paused) {
+                        player.play();
+                    } else {
+                        player.pause();
+                    }
+                };
+                progressBarContainer.onclick = (e) => {
+                    const clickX = e.offsetX;
+                    const totalWidth = progressBarContainer.clientWidth;
+                    const newTime = (clickX / totalWidth) * totalTime;
+                    player.currentTime = newTime;
+                };
+                volumeSlider.oninput = (e) => player.volume = e.target.value;
+                player.addEventListener('timeupdate', updateTime);
+            }
+        }
+
+        function restorePoster(card) {
+            const src = card.dataset.embed;
+            const player = players[src];
+            if (player) {
+                if (typeof player.pauseVideo === 'function') {
+                    player.pauseVideo();
+                } else if (typeof player.pause === 'function') {
+                    player.pause();
+                }
+            }
+
+            const iframeContainer = card.querySelector(".player-iframe");
+            if (iframeContainer) iframeContainer.remove();
+
+            const controlsBar = card.querySelector(".controls-bar");
+            if (controlsBar) controlsBar.remove();
+
+            if (!card.querySelector(".poster")) {
+                const info = getEmbedInfo(src);
+                const posterEl = document.createElement("div");
+                posterEl.className = "poster";
+                if (info.poster) {
+                    posterEl.style.backgroundImage = `url("${info.poster}")`;
+                }
+                const playBtn = document.createElement("div");
+                playBtn.className = "play-btn";
+                playBtn.textContent = "▶";
+                posterEl.appendChild(playBtn);
+                posterEl.addEventListener("click", () => mountIframe(card));
+                card.appendChild(posterEl);
+            }
+        }
+
+        function cleanupIframesExceptActive() {
+            if (!swiper) return;
+            const activeIndex = swiper.realIndex;
+            swiper.slides.forEach((slide, index) => {
+                if (index !== activeIndex) {
+                    const card = slide.querySelector(".player-card");
+                    if (card) {
+                        restorePoster(card);
+                    }
+                }
+            });
+        }
 
         async function cargarVideos() {
-      const loader = document.getElementById("loader");
-      loader.style.display = "flex";
-      try {
-        const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
-        const data = await res.json();
+            const loader = document.getElementById("loader");
+            loader.style.display = "flex";
+            try {
+                const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
+                const data = await res.json();
 
-        const wrapper = document.getElementById("slides");
-        wrapper.innerHTML = "";
+                const wrapper = document.getElementById("slides");
+                wrapper.innerHTML = "";
 
-        if (Array.isArray(data.data)) {
-          data.data.forEach((row) => {
-            const titulo = row[0];
-            const link = row[1];
-            wrapper.appendChild(createSlide(titulo, link));
-          });
-        }
+                if (Array.isArray(data.data)) {
+                    data.data.forEach((row) => {
+                        const titulo = row[0];
+                        const link = row[1];
+                        wrapper.appendChild(createSlide(titulo, link));
+                    });
+                }
 
-        if (swiper) swiper.destroy(true, true);
-        swiper = new Swiper(".swiper", {
-          loop: true,
-          direction: "horizontal",
-          slidesPerView: 1,
-          spaceBetween: 10,
-          pagination: false,
-          on: {
-            slideChange() {
-              cleanupIframesExceptActive();
+                if (swiper) swiper.destroy(true, true);
+                swiper = new Swiper(".swiper", {
+                    loop: true,
+                    direction: "horizontal",
+                    slidesPerView: 1,
+                    spaceBetween: 10,
+                    pagination: false,
+                    on: {
+                        slideChange() {
+                            cleanupIframesExceptActive();
+                        }
+                    },
+                });
+
+                cleanupIframesExceptActive();
+            } catch (e) {
+                console.error("Error cargando videos:", e);
+            } finally {
+                document.getElementById("loader").style.display = "none";
             }
-          },
-        });
-
-        cleanupIframesExceptActive(); 
-
-        // 🔹 Avisar a App Inventor que todo cargó bien
-        if (window.AppInventor) {
-          window.AppInventor.setWebViewString("success");
         }
 
-      } catch (e) {
-        console.error("Error cargando videos:", e);
-      } finally {
-        document.getElementById("loader").style.display = "none";
-      }
-    }
-
-
-    cargarVideos();
-  </script>
+        cargarVideos();
+    </script>
 </body>
 </html>
-
-
-
-
-
-
