@@ -170,7 +170,7 @@
     <div class="swiper-wrapper" id="slides"></div>
   </div>
 
-  <div id="loader"><span class="spinner">⏳h</span></div>
+  <div id="loader"><span class="spinner">⏳</span></div>
 
   <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   <script src="https://www.youtube.com/iframe_api"></script>
@@ -182,41 +182,45 @@
     let players = {};
 
     function getEmbedInfo(link) {
-      const url = new URL(link, location.href);
+  const url = new URL(link, location.href);
 
-      if (url.hostname.includes("youtube.com") || url.hostname.includes("youtu.be")) {
-        let videoId = "";
-        if (url.hostname.includes("youtube.com")) {
-          videoId = url.searchParams.get("v") || "";
-        } else if (url.hostname.includes("youtu.be")) {
-          videoId = url.pathname.replace("/", "");
-        }
-        if (videoId) {
-          const embedSrc = `https://www.youtube.com/embed/${videoId}?rel=0&playsinline=1`;
-          const poster = "https://img.youtube.com/vi/" + videoId + "/hqdefault.jpg";
-          return { type: "youtube", embedSrc, poster, videoId };
-        }
-      }
-
-      if (url.hostname.includes("archive.org")) {
-        let embedSrc = link;
-        let identifier = "";
-        const m = link.match(/archive\.org\/embed\/([^?&#/]+)/i);
-        if (m && m[1]) {
-          identifier = m[1];
-        } else {
-          const m2 = link.match(/archive\.org\/download\/([^/?#]+)/i);
-          if (m2 && m2[1]) {
-            identifier = m2[1];
-            embedSrc = `https://archive.org/embed/${identifier}`;
-          }
-        }
-        const poster = identifier ? `https://archive.org/services/img/${identifier}` : "";
-        return { type: "archive", embedSrc, poster };
-      }
-
-      return { type: "other", embedSrc: link, poster: "" };
+  if (url.hostname.includes("youtube.com") || url.hostname.includes("youtu.be")) {
+    let videoId = "";
+    if (url.hostname.includes("youtube.com")) {
+      videoId = url.searchParams.get("v") || "";
+    } else if (url.hostname.includes("youtu.be")) {
+      videoId = url.pathname.replace("/", "");
     }
+    if (videoId) {
+      const embedSrc = `https://www.youtube.com/embed/${videoId}?rel=0&playsinline=1`;
+      const poster = "https://img.youtube.com/vi/" + videoId + "/hqdefault.jpg";
+      return { type: "youtube", embedSrc, poster, videoId };
+    }
+  }
+
+  if (url.hostname.includes("archive.org")) {
+    let embedSrc = link;
+    let identifier = "";
+    let mp4Src = "";
+    const m = link.match(/archive\.org\/embed\/([^?&#/]+)/i);
+    if (m && m[1]) {
+      identifier = m[1];
+      embedSrc = `https://archive.org/embed/${identifier}`;
+      mp4Src = `https://archive.org/download/${identifier}/${identifier}.mp4`;
+    } else {
+      const m2 = link.match(/archive\.org\/download\/([^/?#]+)/i);
+      if (m2 && m2[1]) {
+        identifier = m2[1];
+        embedSrc = `https://archive.org/embed/${identifier}`;
+        mp4Src = link.endsWith(".mp4") ? link : `https://archive.org/download/${identifier}/${identifier}.mp4`;
+      }
+    }
+    const poster = identifier ? `https://archive.org/services/img/${identifier}` : "";
+    return { type: "archive", embedSrc, poster, mp4Src };
+  }
+
+  return { type: "other", embedSrc: link, poster: "" };
+}
 
     function createSlide(titulo, link) {
       const { embedSrc, poster } = getEmbedInfo(link);
@@ -320,16 +324,9 @@
     video.style.height = "100%";
     video.style.background = "#000";
 
-    // Intentamos detectar la URL directa del MP4
-    // Archive.org normalmente tiene: https://archive.org/download/IDENTIFIER/IDENTIFIER.mp4
-    let mp4Url = info.embedSrc;
-    const m = info.embedSrc.match(/archive\.org\/embed\/([^?&#/]+)/i);
-    if (m && m[1]) {
-      const identifier = m[1];
-      mp4Url = `https://archive.org/download/${identifier}/${identifier}.mp4`;
-    }
+    // Usamos la URL correcta del MP4 si existe
     const source = document.createElement("source");
-    source.src = mp4Url;
+    source.src = info.mp4Src || info.embedSrc;
     source.type = "video/mp4";
     video.appendChild(source);
 
@@ -448,6 +445,7 @@
   </script>
 </body>
 </html>
+
 
 
 
