@@ -170,7 +170,7 @@
     <div class="swiper-wrapper" id="slides"></div>
   </div>
 
-  <div id="loader"><span class="spinner">⏳D</span></div>
+  <div id="loader"><span class="spinner">⏳m</span></div>
 
   <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   <script src="https://www.youtube.com/iframe_api"></script>
@@ -314,7 +314,8 @@
       }
     });
 
-  } else if (info.type === "archive") {
+  } else if (info.type === "archive" || src.endsWith(".mp4")) {
+    // Usamos directamente el MP4 del link
     const video = document.createElement("video");
     video.className = "player-iframe";
     video.setAttribute("controls", "true");
@@ -324,9 +325,8 @@
     video.style.height = "100%";
     video.style.background = "#000";
 
-    // Usamos la URL correcta del MP4 si existe
     const source = document.createElement("source");
-    source.src = info.mp4Src || info.embedSrc;
+    source.src = src; // 🔹 usamos exactamente el link de la hoja
     source.type = "video/mp4";
     video.appendChild(source);
 
@@ -445,6 +445,7 @@
   </script>
 </body>
 </html>
+
 
 
 
