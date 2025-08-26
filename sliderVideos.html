@@ -147,7 +147,6 @@
             display: none;
         }
 
-        /* Agregando estilos para los nuevos controles */
         .controls-bar {
             position: absolute;
             bottom: 0;
@@ -167,7 +166,6 @@
             opacity: 1;
         }
         
-        /* Estilos para el botón de play/pausa del centro */
         .center-play-pause-btn {
             position: absolute;
             top: 50%;
@@ -250,7 +248,7 @@
         <div class="swiper-wrapper" id="slides"></div>
     </div>
 
-    <div id="loader"><span class="spinner">⏳DFHB</span></div>
+    <div id="loader"><span class="spinner">⏳</span></div>
 
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script src="https://www.youtube.com/iframe_api"></script>
@@ -332,10 +330,11 @@
             card.appendChild(posterEl);
             wrapper.appendChild(card);
 
-            const hint = document.createElement("div");
-            hint.className = "swipe-hint";
-            hint.textContent = "⬅️ Desliza aquí para cambiar ➡️";
-            wrapper.appendChild(hint);
+            // Se elimina la parte del texto "Desliza aquí para cambiar"
+            // const hint = document.createElement("div");
+            // hint.className = "swipe-hint";
+            // hint.textContent = "⬅️ Desliza aquí para cambiar ➡️";
+            // wrapper.appendChild(hint);
 
             slide.appendChild(wrapper);
 
@@ -422,7 +421,6 @@
                     centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
                     centerPlayPauseBtn.style.opacity = 1;
                 });
-
             } else {
                  const iframe = document.createElement("iframe");
                  iframe.className = "player-iframe";
@@ -662,4 +660,3 @@
     </script>
 </body>
 </html>
-
