@@ -215,12 +215,12 @@
     backdrop-filter: blur(2px);
 }
 
-/* Estilos originales del título y la descripción, necesarios para el diseño */
 #video-title-fixed {
     position: absolute;
     top: 0;
-    left: 0;
-    width: 100%;
+    left: 10px; /* Ajuste: Desplaza el contenedor 10px desde el borde izquierdo */
+    width: auto; /* Ajuste: El ancho se ajustará al contenido + márgenes */
+    max-width: 80%; /* Mantienes este ajuste para el ancho máximo */
     z-index: 1000;
     background: rgba(0,0,0,0.3);
     transition: opacity 0.18s ease;
@@ -229,10 +229,8 @@
     flex-direction: column;
     align-items: flex-start;
     padding: 6px 10px;
-    max-width: 80%; /* <<-- Ajuste: Ancho máximo del contenedor fijo (ej. 90%) */
-    margin: 0 auto; /* Centrar el contenedor si se reduce el ancho */
-    left: 5%; /* Mover a la derecha para que quede centrado con el max-width */
-    right: 5%;
+    margin: 0; /* Ajuste: Elimina el centrado para que 'left' funcione */
+    right: auto; /* Ajuste: Desactiva el valor de la derecha */
 }
 
 #video-title-fixed .video-title {
@@ -935,6 +933,7 @@ deleteConfirm.onclick = async () => {
     </script>
 </body>
 </html>
+
 
 
 
