@@ -58,6 +58,17 @@
         box-shadow: 0 4px 10px rgba(0,0,0,0.4);
     }
     .fab.danger { background: #dc3545; }
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+}
+.modal-actions button {
+    flex: 1;
+}
+
+        
 
     /* Modal */
     .modal {
@@ -316,6 +327,20 @@
     </style>
 </head>
 <body>
+
+<!-- Modal de eliminación -->
+<div id="delete-modal" class="modal hidden">
+  <div class="modal-content">
+    <h3>¿Eliminar Video?</h3>
+    <p id="delete-video-title">¿Seguro que deseas eliminar este video?</p>
+    <div class="modal-actions">
+      <button id="delete-confirm" style="background:#dc3545; color:white; padding:8px; border:none; border-radius:6px; cursor:pointer;">Eliminar</button>
+      <button id="delete-cancel" style="background:#444; color:white; padding:8px; border:none; border-radius:6px; cursor:pointer;">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+    
         <!-- BOTONES flotantes -->
     <div class="floating-buttons">
         <button id="btn-delete" class="fab danger"><i class="fas fa-trash"></i></button>
@@ -338,16 +363,36 @@
 
   
 
-   // --- ELIMINAR ---
+  // --- ELIMINAR ---
 const btnDelete = document.getElementById("btn-delete");
-btnDelete.onclick = async () => {
+const deleteModal = document.getElementById("delete-modal");
+const deleteTitle = document.getElementById("delete-video-title");
+const deleteConfirm = document.getElementById("delete-confirm");
+const deleteCancel = document.getElementById("delete-cancel");
+
+let pendingDelete = null;
+
+btnDelete.onclick = () => {
     if (!swiper) return;
     const activeSlide = document.querySelector(".swiper-slide-active");
     if (!activeSlide) return;
 
     const title = activeSlide.dataset.title;
     const link = activeSlide.querySelector(".player-card")?.dataset.embed;
-    if (!confirm(`¿Eliminar "${title}"?`)) return;
+
+    pendingDelete = { title, link };
+    deleteTitle.textContent = `¿Eliminar "${title}"?`;
+    deleteModal.classList.remove("hidden");
+};
+
+deleteCancel.onclick = () => {
+    deleteModal.classList.add("hidden");
+    pendingDelete = null;
+};
+
+deleteConfirm.onclick = async () => {
+    if (!pendingDelete) return;
+    const { title, link } = pendingDelete;
 
     // Extraemos el identificador de archive.org (si existe)
     let identifier = "";
@@ -355,15 +400,18 @@ btnDelete.onclick = async () => {
 
     let archiveMatch = link.match(/archive\.org\/download\/([^/]+)\/(.+)$/);
     if (archiveMatch) {
-        identifier = archiveMatch[1];   // p.ej. artistica_bochica_123
-        fileName = decodeURIComponent(archiveMatch[2]); // archivo.mp4
+        identifier = archiveMatch[1];   
+        fileName = decodeURIComponent(archiveMatch[2]); 
     }
 
-    // Enviamos al Apps Script: link + id + file
+    // Enviamos al Apps Script
     await fetch(`${SCRIPT_URL}?accion=eliminar&link=${encodeURIComponent(link)}&id=${encodeURIComponent(identifier)}&file=${encodeURIComponent(fileName)}`);
 
+    deleteModal.classList.add("hidden");
+    pendingDelete = null;
     cargarVideos();
 };
+
 
 
         
@@ -794,6 +842,7 @@ btnDelete.onclick = async () => {
     </script>
 </body>
 </html>
+
 
 
 
