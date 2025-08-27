@@ -489,7 +489,7 @@ function renderNotifications() {
   const list = document.getElementById("notification-list");
   const count = document.getElementById("notification-count");
 
-  list.innerHTML = "";
+  list.innerHTML = ""; // siempre limpio
 
   if (notifications.length === 0) {
     count.textContent = "";
@@ -509,14 +509,13 @@ function renderNotifications() {
       if (index !== -1) {
         swiper.slideToLoop(index);
       }
-      // Marcar como leída
+      // Eliminar de notificaciones
       notifications.splice(i, 1);
       renderNotifications();
     };
     list.appendChild(item);
   });
 }
-
 
 // --- MANEJO DE ELIMINACIÓN ---
 
@@ -1108,4 +1107,5 @@ setInterval(() => cargarVideos(true), 30000);
     </script>
 </body>
 </html>
+
 
