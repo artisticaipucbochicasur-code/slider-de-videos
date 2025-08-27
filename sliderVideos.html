@@ -1,72 +1,66 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Subida de Archivos</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Subir video a DECOM</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      background: #f3f3f3;
-    }
-    .container {
-      background: #fff;
-      padding: 25px;
-      border-radius: 12px;
-      box-shadow: 0px 4px 15px rgba(0,0,0,0.15);
-      text-align: center;
-      width: 90%;
-      max-width: 400px;
-    }
-    h2 {
-      margin-bottom: 20px;
-      color: #444;
-    }
-    input[type="file"] {
-      display: none;
-    }
-    label {
-      background: #4CAF50;
-      color: white;
-      padding: 12px 18px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 16px;
-      display: inline-block;
-    }
-    #fileName {
-      margin-top: 15px;
-      font-size: 14px;
-      color: #555;
-    }
+    body { font-family: sans-serif; background: #f0f4f8; margin: 0; padding: 20px; }
+    .card { max-width: 400px; margin: auto; background: #fff; padding: 20px; border-radius: 10px; }
+    input, button { width: 100%; padding: 10px; margin-top: 10px; }
+    #status { margin-top: 15px; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>Seleccionar archivo</h2>
-    <form id="uploadForm" enctype="multipart/form-data">
-      <input type="file" id="fileInput" name="file">
-      <label for="fileInput">📂 Elegir archivo</label>
-      <p id="fileName">Ningún archivo seleccionado</p>
-    </form>
+  <div class="card">
+    <h2>Subir Video</h2>
+    <input type="text" id="titulo" placeholder="Título del video" />
+    <input type="file" id="fileInput" accept="video/*" />
+    <button id="btnUpload">Subir</button>
+    <div id="status"></div>
   </div>
 
   <script>
-    const fileInput = document.getElementById("fileInput");
-    const fileName = document.getElementById("fileName");
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
 
-    fileInput.addEventListener("change", () => {
-      if (fileInput.files.length > 0) {
-        fileName.textContent = "📄 " + fileInput.files[0].name;
-      } else {
-        fileName.textContent = "Ningún archivo seleccionado";
+    document.getElementById("btnUpload").onclick = async () => {
+      const titulo = document.getElementById("titulo").value.trim();
+      const file = document.getElementById("fileInput").files[0];
+      const status = document.getElementById("status");
+      if (!titulo || !file) {
+        alert("Debe escribir un título y elegir un archivo");
+        return;
       }
-    });
+      status.textContent = "⏳ Subiendo...";
+
+      const identifier = "artistica_bochica_" + Date.now();
+      const xhr = new XMLHttpRequest();
+      xhr.open("PUT", `https://s3.us.archive.org/${identifier}/${file.name}`, true);
+      xhr.setRequestHeader("authorization", "LOW KPJmAQCm1UyNJWqv:9JkBrIGexGNOynyf");
+      xhr.setRequestHeader("x-archive-auto-make-bucket", "1");
+      xhr.setRequestHeader("x-archive-meta-title", file.name);
+      xhr.setRequestHeader("x-archive-meta-mediatype", "movies");
+      xhr.setRequestHeader("x-archive-meta-description", "Video subido desde la app DECOM");
+      xhr.setRequestHeader("x-archive-meta-collection", "opensource_movies");
+      xhr.setRequestHeader("x-archive-meta-creator", "artistica_bochica");
+      xhr.setRequestHeader("Content-Type", file.type);
+
+      xhr.onload = async () => {
+        if (xhr.status === 200) {
+          const directLink = `https://archive.org/download/${identifier}/${encodeURIComponent(file.name)}`;
+          status.innerHTML = `✅ ¡Subido!<br><a href="${directLink}" target="_blank">Ver video</a>`;
+
+          const resp = await fetch(`${GAS_URL}?accion=guardar&tipo=video&titulo=${encodeURIComponent(titulo)}&link=${encodeURIComponent(directLink)}`);
+          const data = await resp.json();
+          console.log("Guardado en la hoja:", data);
+        } else {
+          status.textContent = "❌ Error en subida: " + xhr.responseText;
+        }
+      };
+
+      xhr.onerror = () => status.textContent = "❌ Error de red durante la subida";
+      xhr.send(file);
+    };
   </script>
 </body>
 </html>
