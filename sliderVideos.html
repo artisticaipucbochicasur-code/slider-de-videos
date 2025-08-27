@@ -178,17 +178,25 @@
             background: #000;
         }
 
-/* Truncamiento para título y descripción */
+/* Truncamiento para el contenedor del título y la descripción */
 #video-title-fixed .text-container {
     overflow: hidden;
     display: -webkit-box;
     -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2; /* Truncar a 2 líneas */
+    -webkit-line-clamp: 2; /* Truncar a 2 líneas por defecto */
     transition: -webkit-line-clamp 0.3s ease;
+    cursor: pointer; /* Cursor de puntero para indicar que es clicable */
+    position: relative;
+    max-height: 4em; /* Altura máxima cuando está truncado */
+    line-height: 1.2;
 }
 
 #video-title-fixed .text-container.expanded {
     -webkit-line-clamp: unset;
+    cursor: pointer;
+    overflow-y: auto; /* Hacer que el contenedor sea scrollable si el contenido es muy largo */
+    max-height: 10em; /* Altura máxima cuando está expandido */
+    padding-right: 15px; /* Espacio para la barra de desplazamiento */
 }
 
 /* Estilo para el botón de 'más' o 'menos' */
@@ -196,42 +204,30 @@
     color: #ccc;
     font-size: 12px;
     font-weight: bold;
-    cursor: pointer;
-    text-shadow: none;
     user-select: none;
     display: inline-block;
-    margin-left: 5px;
+    position: absolute; /* Colocar en la esquina para que siempre esté visible */
+    bottom: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.5); /* Fondo semitransparente para que sea legible */
+    padding: 2px 5px;
+    border-radius: 3px;
+    backdrop-filter: blur(2px);
 }
-        
-        .video-title {
-            height: 48px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 6px 10px;
-            font-size: 18px;
-            font-weight: 600;
-            text-align: center;
-            color: #f1f1f1;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
-        }
 
-        /* título fijo con transición para evitar parpadeos */
-        #video-title-fixed {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            z-index: 1000;
-            background: rgba(0,0,0,0.3);
-            transition: opacity 0.18s ease;
-            opacity: 1;
-        }
-
-        #video-title-fixed {
+/* Estilos originales del título y la descripción, necesarios para el diseño */
+#video-title-fixed {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    background: rgba(0,0,0,0.3);
+    transition: opacity 0.18s ease;
+    opacity: 1;
     display: flex;
     flex-direction: column;
-    align-items: flex-start; /* 👈 alinea a la izquierda */
+    align-items: flex-start;
     padding: 6px 10px;
 }
 
@@ -248,7 +244,6 @@
     text-align: left;
     color: #ddd;
 }
-
 
         #loader {
             position: fixed;
@@ -813,75 +808,74 @@ deleteConfirm.onclick = async () => {
     const fixedBox = document.getElementById("video-title-fixed");
     if (!fixedBox || !swiperInstance) return;
 
-    let activeSlide = null;
+    // Obtener el slide activo
+    const activeSlide = swiperInstance.slides[swiperInstance.activeIndex] || document.querySelector('.swiper-slide-active');
 
-    // 1) Usar activeIndex
-    if (typeof swiperInstance.activeIndex === 'number' && swiperInstance.slides && swiperInstance.slides[swiperInstance.activeIndex]) {
-        activeSlide = swiperInstance.slides[swiperInstance.activeIndex];
-    }
+    if (!activeSlide) return;
 
-    // 2) Fallback a clase .swiper-slide-active
-    if (!activeSlide) {
-        activeSlide = document.querySelector('.swiper-slide-active');
-    }
-
-    // 3) Fallback a realIndex
-    if (!activeSlide && typeof swiperInstance.realIndex === 'number' && swiperInstance.slides && swiperInstance.slides[swiperInstance.realIndex]) {
-        activeSlide = swiperInstance.slides[swiperInstance.realIndex];
-    }
-
-    const newTitle = activeSlide?.dataset?.title || "Video";
-    const newDesc = activeSlide?.dataset?.descripcion || "";
+    const newTitle = activeSlide.dataset.title || "Video";
+    const newDesc = activeSlide.dataset.descripcion || "";
 
     const titleEl = fixedBox.querySelector(".video-title");
     const descEl = fixedBox.querySelector(".video-desc");
 
-    // Evitar actualización innecesaria
-    if (titleEl.textContent === newTitle && descEl.textContent === newDesc) return;
+    // Verificar si el contenido ya es el mismo para evitar parpadeos innecesarios
+    const currentTitle = titleEl.querySelector('.text-container')?.textContent;
+    const currentDesc = descEl.querySelector('.text-container')?.textContent;
+    
+    if (currentTitle === newTitle && currentDesc === newDesc) {
+        return;
+    }
 
-    // Transición suave
+    // Transición suave al cambiar de título
     fixedBox.style.opacity = 0;
+
     setTimeout(() => {
-        // Reemplazar la estructura interna para poder usar el truncado
-        titleEl.innerHTML = `<span class="text-container">${newTitle}</span>`;
-        descEl.innerHTML = `<span class="text-container">${newDesc}</span>`;
+        // Función genérica para manejar el truncamiento y expansión
+        const setupExpandableText = (element, text) => {
+            // Eliminar contenido anterior para evitar duplicados
+            element.innerHTML = `<span class="text-container">${text}</span>`;
+            const container = element.querySelector('.text-container');
+            
+            // Usar setTimeout para asegurar que la renderización está completa antes de medir
+            setTimeout(() => {
+                // Comprobar si el contenido se desborda y necesita truncamiento
+                if (container.scrollHeight > container.clientHeight) {
+                    const toggleButton = document.createElement('span');
+                    toggleButton.className = 'toggle-text';
+                    toggleButton.textContent = '...más';
+                    element.appendChild(toggleButton);
 
-        const titleContainer = titleEl.querySelector('.text-container');
-        const descContainer = descEl.querySelector('.text-container');
-
-        // Manejar el truncamiento de la descripción
-        const toggleDescription = () => {
-            const isExpanded = descContainer.classList.contains('expanded');
-            if (isExpanded) {
-                descContainer.classList.remove('expanded');
-                toggleButton.textContent = '...más';
-            } else {
-                descContainer.classList.add('expanded');
-                toggleButton.textContent = 'mostrar menos';
-            }
+                    // Añadir el listener para expandir/contraer
+                    element.addEventListener('click', () => {
+                        const isExpanded = container.classList.contains('expanded');
+                        if (isExpanded) {
+                            container.classList.remove('expanded');
+                            toggleButton.textContent = '...más';
+                        } else {
+                            container.classList.add('expanded');
+                            toggleButton.textContent = 'mostrar menos';
+                        }
+                    });
+                } else {
+                    // Si no necesita truncamiento, limpiar el listener y el botón
+                    const existingButton = element.querySelector('.toggle-text');
+                    if (existingButton) existingButton.remove();
+                    // Importante: Eliminar el listener si no es necesario para evitar problemas
+                    const clonedElement = element.cloneNode(true);
+                    element.parentNode.replaceChild(clonedElement, element);
+                }
+            }, 50);
         };
 
-        const toggleButton = document.createElement('span');
-        toggleButton.className = 'toggle-text';
-        toggleButton.textContent = '...más';
-        toggleButton.onclick = toggleDescription;
+        // Aplicar la lógica al título y la descripción
+        setupExpandableText(titleEl, newTitle);
+        setupExpandableText(descEl, newDesc);
 
-        // Un pequeño retraso para asegurar que la renderización inicial del texto esté completa.
-        setTimeout(() => {
-            // Si el texto de la descripción es demasiado largo, agregamos el botón de alternar
-            if (descContainer.scrollHeight > descContainer.clientHeight) {
-                descEl.appendChild(toggleButton);
-            } else {
-                if (descEl.contains(toggleButton)) {
-                    descEl.removeChild(toggleButton);
-                }
-            }
-        }, 100);
-
+        // Mostrar el contenedor de nuevo
         fixedBox.style.opacity = 1;
     }, 120);
 }
-
 
        async function cargarVideos() {
     const loader = document.getElementById("loader");
@@ -937,6 +931,7 @@ deleteConfirm.onclick = async () => {
     </script>
 </body>
 </html>
+
 
 
 
