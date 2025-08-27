@@ -1,31 +1,72 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Probar Carga de Video Móvil</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Subida de Archivos</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background: #f3f3f3;
+    }
+    .container {
+      background: #fff;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0px 4px 15px rgba(0,0,0,0.15);
+      text-align: center;
+      width: 90%;
+      max-width: 400px;
+    }
+    h2 {
+      margin-bottom: 20px;
+      color: #444;
+    }
+    input[type="file"] {
+      display: none;
+    }
+    label {
+      background: #4CAF50;
+      color: white;
+      padding: 12px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      display: inline-block;
+    }
+    #fileName {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #555;
+    }
+  </style>
 </head>
-<body style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; margin: 0;">
+<body>
+  <div class="container">
+    <h2>Seleccionar archivo</h2>
+    <form id="uploadForm" enctype="multipart/form-data">
+      <input type="file" id="fileInput" name="file">
+      <label for="fileInput">📂 Elegir archivo</label>
+      <p id="fileName">Ningún archivo seleccionado</p>
+    </form>
+  </div>
 
-    <h2>Selecciona y reproduce un video</h2>
+  <script>
+    const fileInput = document.getElementById("fileInput");
+    const fileName = document.getElementById("fileName");
 
-    <input type="file" id="videoInput" accept="video/*" style="margin-top: 20px;">
-
-    <video id="videoPlayer" width="300" controls style="margin-top:20px; display:none;"></video>
-
-    <script>
-        const videoInput = document.getElementById('videoInput');
-        const videoPlayer = document.getElementById('videoPlayer');
-
-        videoInput.addEventListener('change', function() {
-            const file = this.files[0];
-            if (file) {
-                // Crea una URL temporal para el archivo seleccionado
-                const videoURL = URL.createObjectURL(file);
-                videoPlayer.src = videoURL;
-                videoPlayer.style.display = 'block';
-            }
-        });
-    </script>
+    fileInput.addEventListener("change", () => {
+      if (fileInput.files.length > 0) {
+        fileName.textContent = "📄 " + fileInput.files[0].name;
+      } else {
+        fileName.textContent = "Ningún archivo seleccionado";
+      }
+    });
+  </script>
 </body>
 </html>
