@@ -346,7 +346,7 @@
         <div class="swiper-wrapper" id="slides"></div>
     </div>
 
-    <div id="loader"><span class="spinner">⏳</span></div>
+    <div id="loader"><span class="spinner">⏳ed</span></div>
 
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script src="https://www.youtube.com/iframe_api"></script>
@@ -375,35 +375,33 @@
         progressBar.style.width = "0%";
         progressMsg.textContent = "Subiendo...";
 
-        // simulación de progreso (ejemplo, aquí debes poner tu lógica de subida real a archive.org)
-        let p = 0;
-        const interval = setInterval(() => {
-            p += 15;
-            progressBar.style.width = p + "%";
-            if (p >= 100) {
-                clearInterval(interval);
-                progressMsg.textContent = "¡Exitoso!";
-                setTimeout(() => progressToast.classList.add("hidden"), 1500);
-                // refrescar lista de videos
-                cargarVideos();
-            }
-        }, 500);
-    };
 
     // --- ELIMINAR ---
-    const btnDelete = document.getElementById("btn-delete");
-    btnDelete.onclick = async () => {
-        if (!swiper) return;
-        const activeSlide = document.querySelector(".swiper-slide-active");
-        if (!activeSlide) return;
-        const title = activeSlide.dataset.title;
-        const link = activeSlide.querySelector(".player-card")?.dataset.embed;
-        if (!confirm(`¿Eliminar "${title}"?`)) return;
+const btnDelete = document.getElementById("btn-delete");
+btnDelete.onclick = async () => {
+    if (!swiper) return;
+    const activeSlide = document.querySelector(".swiper-slide-active");
+    if (!activeSlide) return;
 
-        // Aquí haces fetch a tu script de borrado
-        await fetch(`${SCRIPT_URL}?accion=eliminar&link=${encodeURIComponent(link)}`);
-        cargarVideos();
-    };
+    const title = activeSlide.dataset.title;
+    const link = activeSlide.querySelector(".player-card")?.dataset.embed;
+    if (!confirm(`¿Eliminar "${title}"?`)) return;
+
+    // Extraemos el identificador de archive.org (si existe)
+    let identifier = "";
+    let fileName = "";
+
+    let archiveMatch = link.match(/archive\.org\/download\/([^/]+)\/(.+)$/);
+    if (archiveMatch) {
+        identifier = archiveMatch[1];   // p.ej. artistica_bochica_123
+        fileName = decodeURIComponent(archiveMatch[2]); // archivo.mp4
+    }
+
+    // Enviamos al Apps Script: link + id + file
+    await fetch(`${SCRIPT_URL}?accion=eliminar&link=${encodeURIComponent(link)}&id=${encodeURIComponent(identifier)}&file=${encodeURIComponent(fileName)}`);
+
+    cargarVideos();
+};
 
         
         let swiper = null;
