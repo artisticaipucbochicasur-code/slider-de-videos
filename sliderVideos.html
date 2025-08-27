@@ -3,37 +3,45 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Subir video a DECOM</title>
+  <title>Subir video a DECOM2</title>
   <style>
     body { font-family: sans-serif; background: #f0f4f8; margin: 0; padding: 20px; }
-    .card { max-width: 400px; margin: auto; background: #fff; padding: 20px; border-radius: 10px; }
-    input, button { width: 100%; padding: 10px; margin-top: 10px; }
-    #status { margin-top: 15px; }
+    .card { max-width: 400px; margin: auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    input, button { width: 100%; padding: 10px; margin-top: 10px; border-radius: 6px; border: 1px solid #ccc; }
+    button { background: #2b6cb0; color: white; cursor: pointer; font-weight: bold; border: none; }
+    button:hover { background: #1a4f85; }
+    #status { margin-top: 15px; font-size: 14px; }
+    a { color: #2b6cb0; font-size: 14px; word-break: break-all; }
   </style>
 </head>
 <body>
   <div class="card">
-    <h2>Subir Video</h2>
-    <input type="text" id="titulo" placeholder="Título del video" />
-    <input type="file" id="fileInput" accept="video/*" />
+    <h2>📤 Subir Video2</h2>
+    <input type="text" id="titulo" placeholder="Título del video" required />
+    <input type="file" id="fileInput" accept="video/*" required />
     <button id="btnUpload">Subir</button>
     <div id="status"></div>
   </div>
 
   <script>
+    // URL de tu Apps Script que conecta con la hoja
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
 
     document.getElementById("btnUpload").onclick = async () => {
       const titulo = document.getElementById("titulo").value.trim();
       const file = document.getElementById("fileInput").files[0];
       const status = document.getElementById("status");
+
       if (!titulo || !file) {
         alert("Debe escribir un título y elegir un archivo");
         return;
       }
+
       status.textContent = "⏳ Subiendo...";
 
+      // Se genera un identificador único para cada carpeta en archive.org
       const identifier = "artistica_bochica_" + Date.now();
+
       const xhr = new XMLHttpRequest();
       xhr.open("PUT", `https://s3.us.archive.org/${identifier}/${file.name}`, true);
       xhr.setRequestHeader("authorization", "LOW KPJmAQCm1UyNJWqv:9JkBrIGexGNOynyf");
@@ -50,15 +58,17 @@
           const directLink = `https://archive.org/download/${identifier}/${encodeURIComponent(file.name)}`;
           status.innerHTML = `✅ ¡Subido!<br><a href="${directLink}" target="_blank">Ver video</a>`;
 
+          // Aquí se guarda en tu Google Sheet
           const resp = await fetch(`${GAS_URL}?accion=guardar&tipo=video&titulo=${encodeURIComponent(titulo)}&link=${encodeURIComponent(directLink)}`);
           const data = await resp.json();
-          console.log("Guardado en la hoja:", data);
+          console.log("Guardado en hoja:", data);
         } else {
           status.textContent = "❌ Error en subida: " + xhr.responseText;
         }
       };
 
       xhr.onerror = () => status.textContent = "❌ Error de red durante la subida";
+
       xhr.send(file);
     };
   </script>
