@@ -449,33 +449,54 @@ deleteConfirm.onclick = async () => {
             return { type: "other", embedSrc: link, poster: "" };
         }
 
-        function createSlide(titulo, link) {
-            const { embedSrc, poster } = getEmbedInfo(link);
-            const slide = document.createElement("div");
-            slide.className = "swiper-slide";
-            slide.dataset.title = titulo || "Video";
+       function createSlide(titulo, link, descripcion) {
+    const { embedSrc, poster } = getEmbedInfo(link);
+    const slide = document.createElement("div");
+    slide.className = "swiper-slide";
+    slide.dataset.title = titulo || "Video";
+    slide.dataset.descripcion = descripcion || "";
 
-            const card = document.createElement("div");
-            card.className = "player-card";
-            card.dataset.embed = embedSrc;
+    const card = document.createElement("div");
+    card.className = "player-card";
+    card.dataset.embed = embedSrc;
 
-            const posterEl = document.createElement("div");
-            posterEl.className = "poster";
-            if (poster) posterEl.style.backgroundImage = `url("${poster}")`;
+    const posterEl = document.createElement("div");
+    posterEl.className = "poster";
+    if (poster) posterEl.style.backgroundImage = `url("${poster}")`;
 
-            const playBtn = document.createElement("div");
-            playBtn.className = "play-btn";
-            playBtn.innerHTML = '<i class="fas fa-play"></i>';
-            posterEl.appendChild(playBtn);
+    const playBtn = document.createElement("div");
+    playBtn.className = "play-btn";
+    playBtn.innerHTML = '<i class="fas fa-play"></i>';
+    posterEl.appendChild(playBtn);
 
-            posterEl.addEventListener("click", () => {
-                mountIframe(card);
-            });
+    posterEl.addEventListener("click", () => {
+        mountIframe(card);
+    });
 
-            card.appendChild(posterEl);
-            slide.appendChild(card);
-            return slide;
-        }
+    card.appendChild(posterEl);
+
+    // contenedor de título + descripción
+    const infoBox = document.createElement("div");
+    infoBox.style.padding = "8px";
+    infoBox.style.textAlign = "center";
+
+    const titleEl = document.createElement("div");
+    titleEl.className = "video-title";
+    titleEl.textContent = titulo || "Video";
+
+    const descEl = document.createElement("div");
+    descEl.className = "video-title"; // 👈 mismo estilo que título
+    descEl.textContent = descripcion || "";
+
+    infoBox.appendChild(titleEl);
+    infoBox.appendChild(descEl);
+
+    slide.appendChild(card);
+    slide.appendChild(infoBox);
+
+    return slide;
+}
+
 
         function mountIframe(cardEl) {
             if (cardEl.querySelector("iframe") || cardEl.querySelector("video")) return;
@@ -789,60 +810,61 @@ deleteConfirm.onclick = async () => {
             }, 120);
         }
 
-        async function cargarVideos() {
-            const loader = document.getElementById("loader");
-            loader.style.display = "flex";
-            try {
-                const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
-                const data = await res.json();
+       async function cargarVideos() {
+    const loader = document.getElementById("loader");
+    loader.style.display = "flex";
+    try {
+        const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
+        const data = await res.json();
 
-                const wrapper = document.getElementById("slides");
-                wrapper.innerHTML = "";
+        const wrapper = document.getElementById("slides");
+        wrapper.innerHTML = "";
 
-                if (Array.isArray(data.data)) {
-                    data.data.forEach((row) => {
-                        const titulo = row[0];
-                        const link = row[1];
-                        wrapper.appendChild(createSlide(titulo, link));
-                    });
-                }
-
-                if (swiper) swiper.destroy(true, true);
-                swiper = new Swiper(".swiper", {
-                    loop: true,
-                    direction: "horizontal",
-                    slidesPerView: 1,
-                    spaceBetween: 10,
-                    pagination: false,
-                    on: {
-                        init() {
-                            updateFixedTitle(this);
-                        },
-                        // actualizado en el cambio y al finalizar la transición para mayor robustez
-                        slideChange() {
-                            cleanupIframesExceptActive();
-                            updateFixedTitle(this);
-                        },
-                        slideChangeTransitionEnd() {
-                            updateFixedTitle(this);
-                        }
-                    },
-                });
-
-                cleanupIframesExceptActive();
-                // llamada extra por si algo no quedó listo al init
-                updateFixedTitle(swiper);
-            } catch (e) {
-                console.error("Error cargando videos:", e);
-            } finally {
-                loader.style.display = "none";
-            }
+        if (Array.isArray(data.data)) {
+            data.data.forEach((row) => {
+                const titulo = row[0];       // Columna 1
+                const link = row[1];         // Columna 2
+                const descripcion = row[4] || ""; // Columna 5
+                wrapper.appendChild(createSlide(titulo, link, descripcion));
+            });
         }
+
+        if (swiper) swiper.destroy(true, true);
+        swiper = new Swiper(".swiper", {
+            loop: true,
+            direction: "horizontal",
+            slidesPerView: 1,
+            spaceBetween: 10,
+            pagination: false,
+            on: {
+                init() {
+                    updateFixedTitle(this);
+                },
+                slideChange() {
+                    cleanupIframesExceptActive();
+                    updateFixedTitle(this);
+                },
+                slideChangeTransitionEnd() {
+                    updateFixedTitle(this);
+                }
+            },
+        });
+
+        cleanupIframesExceptActive();
+        updateFixedTitle(swiper);
+    } catch (e) {
+        console.error("Error cargando videos:", e);
+    } finally {
+        loader.style.display = "none";
+    }
+}
+
 
         cargarVideos();
     </script>
 </body>
 </html>
+
 
 
 
