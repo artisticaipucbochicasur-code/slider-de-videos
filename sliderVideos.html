@@ -2,192 +2,686 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Subir Video a DECOM2</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+    />
+    <title>Galería de Videos</title>
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"
+    />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Estilos generales */
+        :root {
+            --bg1: #000;
+            --bg2: #000;
+            --text: #fff;
+            --card-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+        }
+
+        html, body {
+            height: 100%;
+        }
+
         body {
-            font-family: 'Inter', sans-serif;
-            background: #f0f4f8;
             margin: 0;
-            padding: 20px;
+            padding: 0;
+            background: linear-gradient(135deg, var(--bg1), var(--bg2));
+            font-family: "Segoe UI", Arial, sans-serif;
+            color: var(--text);
+            overflow: hidden;
+        }
+
+        .swiper {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        .swiper-slide {
             display: flex;
             flex-direction: column;
+            justify-content: center;
+            align-items: stretch;
+            position: relative;
+            background: #000;
+        }
+
+        .player-card {
+            position: relative;
+            width: 100%;
+            height: calc(100vh - 120px);
+            background: #000;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+            border-radius: 10px;
+        }
+
+        .poster {
+            position: absolute;
+            inset: 0;
+            display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
-        }
-        .card {
-            max-width: 400px;
-            width: 90%;
-            margin: auto;
-            background: #fff;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-            text-align: center;
-        }
-        h2 {
-            color: #2b6cb0;
-            margin-bottom: 20px;
-        }
-        input, button {
-            width: calc(100% - 22px);
-            padding: 12px;
-            margin-top: 15px;
-            border-radius: 8px;
-            border: 1px solid #d1d5db;
-            box-sizing: border-box;
-            font-size: 16px;
-        }
-        input[type="file"] {
-            border: 1px dashed #9ca3af;
-            background-color: #f9fafb;
+            background: #111;
+            background-size: cover;
+            background-position: center center;
             cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
         }
-        button {
-            background: #2b6cb0;
-            color: white;
-            cursor: pointer;
-            font-weight: bold;
-            border: none;
-            transition: background 0.3s ease, transform 0.1s ease;
+
+        .play-btn {
+            display: grid;
+            place-items: center;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(2px);
+            font-size: 28px;
+            line-height: 1;
+            border: 2px solid #fff;
         }
-        button:hover {
-            background: #1a4f85;
-            transform: translateY(-2px);
-        }
-        button:active {
-            transform: translateY(0);
-        }
-        #status {
-            margin-top: 20px;
-            font-size: 14px;
-            min-height: 30px;
-        }
-        #progressBarContainer {
+
+        .player-iframe {
+            position: absolute;
+            inset: 0;
             width: 100%;
-            height: 8px;
-            background-color: #e5e7eb;
-            border-radius: 4px;
-            margin-top: 15px;
-            overflow: hidden;
+            height: 100%;
+            border: 0;
+            background: #000;
+        }
+
+        .video-title {
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 10px;
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            color: #f1f1f1;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+        }
+
+        /* título fijo con transición para evitar parpadeos */
+        #video-title-fixed {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            background: rgba(0,0,0,0.3);
+            transition: opacity 0.18s ease;
+            opacity: 1;
+        }
+
+        #loader {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            z-index: 10;
+            color: #fff;
+            text-shadow: 0 0 8px rgba(0, 0, 0, 0.7);
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        #loader .spinner {
+            display: inline-block;
+            animation: spin 1.1s linear infinite;
+        }
+
+        .touch-blocker {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
             display: none;
         }
-        #progressBar {
-            height: 100%;
-            background-color: #48bb78;
-            transition: width 0.3s ease;
-            width: 0%;
+
+        .controls-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 5;
+            transition: opacity 0.3s ease;
+            opacity: 0;
         }
-        a {
-            color: #2b6cb0;
-            font-size: 14px;
-            word-break: break-all;
+
+        .player-card:hover .controls-bar {
+            opacity: 1;
+        }
+        
+        .center-play-pause-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: grid;
+            place-items: center;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.55);
+            border: 2px solid #fff;
+            color: #fff;
+            font-size: 28px;
+            cursor: pointer;
+            z-index: 6;
+            transition: opacity 0.3s ease;
+            opacity: 0;
+        }
+
+        .player-card:hover .center-play-pause-btn {
+            opacity: 1;
+        }
+
+        .play-pause-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .progress-bar {
+            flex-grow: 1;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+        }
+        .progress {
+            height: 100%;
+            width: 0%;
+            background: #ff0000;
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .volume-control input[type="range"] {
+            width: 60px;
+            -webkit-appearance: none;
+            background: transparent;
+        }
+        .volume-control input[type="range"]::-webkit-slider-runnable-track {
+            height: 3px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 1.5px;
+        }
+        .volume-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 12px;
+            width: 12px;
+            border-radius: 50%;
+            background: #fff;
+            margin-top: -4.5px;
+        }
+        .volume-icon {
+            font-size: 20px;
+        }
+
+        .time {
+            font-size: 12px;
+            color: #fff;
         }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2>📤 Subir Video a DECOM2</h2>
-        <input type="text" id="titulo" placeholder="Título del video" required />
-        <input type="file" id="fileInput" accept="video/*" required />
-        <button id="btnUpload">Subir</button>
-        <div id="progressBarContainer">
-            <div id="progressBar"></div>
-        </div>
-        <div id="status"></div>
+    <div class="swiper">
+        <div id="video-title-fixed" class="video-title"></div>
+        <div class="swiper-wrapper" id="slides"></div>
     </div>
 
+    <div id="loader"><span class="spinner">⏳1</span></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
     <script>
-        // URL de tu Apps Script que conecta con la hoja
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
+        const SCRIPT_URL =
+            "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
 
-        const btnUpload = document.getElementById("btnUpload");
-        const tituloInput = document.getElementById("titulo");
-        const fileInput = document.getElementById("fileInput");
-        const statusDiv = document.getElementById("status");
-        const progressBarContainer = document.getElementById("progressBarContainer");
-        const progressBar = document.getElementById("progressBar");
+        let swiper = null;
+        let players = {};
 
-        btnUpload.onclick = async () => {
-            const titulo = tituloInput.value.trim();
-            const file = fileInput.files[0];
-
-            if (!titulo) {
-                // Usamos un modal en lugar de alert()
-                mostrarMensaje("Debe escribir un título.", "error");
-                return;
-            }
-            if (!file) {
-                 // Usamos un modal en lugar de alert()
-                mostrarMensaje("Debe elegir un archivo.", "error");
-                return;
-            }
-
-            statusDiv.textContent = "⏳ Subiendo...";
-            progressBarContainer.style.display = "block";
-
-            // Se genera un identificador único para cada carpeta en archive.org
-            const identifier = "artistica_bochica_" + Date.now();
-
-            const xhr = new XMLHttpRequest();
-            xhr.open("PUT", `https://s3.us.archive.org/${identifier}/${file.name}`, true);
-            
-            // Aquí puedes agregar tus credenciales si son necesarias.
-            // Asegúrate de que sean correctas.
-            xhr.setRequestHeader("authorization", "LOW KPJmAQCm1UyNJWqv:9JkBrIGexGNOynyf");
-            xhr.setRequestHeader("x-archive-auto-make-bucket", "1");
-            xhr.setRequestHeader("x-archive-meta-title", file.name);
-            xhr.setRequestHeader("x-archive-meta-mediatype", "movies");
-            xhr.setRequestHeader("x-archive-meta-description", "Video subido desde la app DECOM");
-            xhr.setRequestHeader("x-archive-meta-collection", "opensource_movies");
-            xhr.setRequestHeader("x-archive-meta-creator", "artistica_bochica");
-            xhr.setRequestHeader("Content-Type", file.type);
-            
-            // Evento para actualizar la barra de progreso
-            xhr.upload.addEventListener("progress", (e) => {
-                if (e.lengthComputable) {
-                    const percent = (e.loaded / e.total) * 100;
-                    progressBar.style.width = `${percent}%`;
+        function getEmbedInfo(link) {
+            const url = new URL(link, location.href);
+            if (url.hostname.includes("youtube.com") || url.hostname.includes("youtu.be")) {
+                let videoId = "";
+                if (url.hostname.includes("youtube.com")) {
+                    videoId = url.searchParams.get("v") || "";
+                } else if (url.hostname.includes("youtu.be")) {
+                    videoId = url.pathname.replace("/", "");
                 }
+                if (videoId) {
+                    const embedSrc = `https://www.youtube.com/embed/${videoId}?rel=0&playsinline=1&controls=0&modestbranding=1`;
+                    const poster = "https://img.youtube.com/vi/" + videoId + "/hqdefault.jpg";
+                    return { type: "youtube", embedSrc, poster, videoId };
+                }
+            }
+            if (url.hostname.includes("archive.org")) {
+                let identifier = "";
+                const m = link.match(/archive\.org\/(?:embed|details|download)\/([^?&#/]+)/i);
+                if (m && m[1]) {
+                    identifier = m[1];
+                }
+                const poster = identifier ? `https://archive.org/services/img/${identifier}` : "";
+                return { type: "mp4", embedSrc: link, poster: poster };
+            }
+            if (url.pathname.endsWith(".mp4")) {
+                 return { type: "mp4", embedSrc: link, poster: "" };
+            }
+            return { type: "other", embedSrc: link, poster: "" };
+        }
+
+        function createSlide(titulo, link) {
+            const { embedSrc, poster } = getEmbedInfo(link);
+            const slide = document.createElement("div");
+            slide.className = "swiper-slide";
+            slide.dataset.title = titulo || "Video";
+
+            const card = document.createElement("div");
+            card.className = "player-card";
+            card.dataset.embed = embedSrc;
+
+            const posterEl = document.createElement("div");
+            posterEl.className = "poster";
+            if (poster) posterEl.style.backgroundImage = `url("${poster}")`;
+
+            const playBtn = document.createElement("div");
+            playBtn.className = "play-btn";
+            playBtn.innerHTML = '<i class="fas fa-play"></i>';
+            posterEl.appendChild(playBtn);
+
+            posterEl.addEventListener("click", () => {
+                mountIframe(card);
             });
 
-            xhr.onload = async () => {
-                if (xhr.status === 200) {
-                    const directLink = `https://archive.org/download/${identifier}/${encodeURIComponent(file.name)}`;
-                    statusDiv.innerHTML = `✅ ¡Subido!<br><a href="${directLink}" target="_blank">Ver video</a>`;
-
-                    // Aquí se guarda en tu Google Sheet
-                    try {
-                        const resp = await fetch(`${GAS_URL}?accion=guardar&tipo=video&titulo=${encodeURIComponent(titulo)}&link=${encodeURIComponent(directLink)}`);
-                        const data = await resp.json();
-                        console.log("Guardado en hoja:", data);
-                    } catch (error) {
-                        console.error("Error al guardar en Google Sheet:", error);
-                        statusDiv.innerHTML = `✅ ¡Subido!<br><a href="${directLink}" target="_blank">Ver video</a><br>⚠️ Error al guardar en la hoja de cálculo.`;
-                    }
-                } else {
-                    statusDiv.textContent = "❌ Error en subida: " + xhr.responseText;
-                }
-                progressBarContainer.style.display = "none";
-            };
-
-            xhr.onerror = () => {
-                statusDiv.textContent = "❌ Error de red durante la subida. Revisa tu conexión.";
-                progressBarContainer.style.display = "none";
-            };
-
-            xhr.send(file);
-        };
-        
-        function mostrarMensaje(mensaje, tipo) {
-             const status = document.getElementById("status");
-             status.style.color = tipo === "error" ? "#e53e3e" : "#48bb78";
-             status.textContent = mensaje;
-             // Ocultar mensaje después de 5 segundos
-             setTimeout(() => { status.textContent = ""; }, 5000);
+            card.appendChild(posterEl);
+            slide.appendChild(card);
+            return slide;
         }
+
+        function mountIframe(cardEl) {
+            if (cardEl.querySelector("iframe") || cardEl.querySelector("video")) return;
+
+            const src = cardEl.dataset.embed;
+            const info = getEmbedInfo(src);
+
+            const poster = cardEl.querySelector(".poster");
+            if (poster) poster.remove();
+            
+            const controls = createControls();
+            cardEl.appendChild(controls);
+
+            const centerPlayPauseBtn = document.createElement("div");
+            centerPlayPauseBtn.className = "center-play-pause-btn";
+            centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+            cardEl.appendChild(centerPlayPauseBtn);
+            
+            let player;
+
+            if (info.type === "youtube") {
+                const container = document.createElement("div");
+                container.className = "player-iframe";
+                cardEl.appendChild(container);
+
+                player = new YT.Player(container, {
+                    videoId: info.videoId,
+                    playerVars: { autoplay: 1, rel: 0, playsinline: 1, controls: 0, modestbranding: 1 },
+                    events: {
+                        onReady: (event) => {
+                            event.target.playVideo();
+                            setupControls(event.target, 'youtube', controls, centerPlayPauseBtn, cardEl);
+                        },
+                        onStateChange: (event) => {
+                            const state = event.data;
+                            if (state === YT.PlayerState.PLAYING) {
+                                centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                                centerPlayPauseBtn.style.opacity = 0;
+                            } else if (state === YT.PlayerState.PAUSED) {
+                                centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                                centerPlayPauseBtn.style.opacity = 1;
+                            } else {
+                                centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                            }
+                        }
+                    }
+                });
+                players[src] = player;
+            } else if (info.type === "mp4") {
+                const video = document.createElement("video");
+                video.className = "player-iframe";
+                video.setAttribute("autoplay", "true");
+                video.setAttribute("playsinline", "true");
+                video.style.width = "100%";
+                video.style.height = "100%";
+                video.style.background = "#000";
+
+                const source = document.createElement("source");
+                source.src = src;
+                source.type = "video/mp4";
+                video.appendChild(source);
+                cardEl.appendChild(video);
+
+                player = video;
+                players[src] = player;
+
+                video.addEventListener('loadedmetadata', () => {
+                    setupControls(video, 'mp4', controls, centerPlayPauseBtn, cardEl);
+                });
+                video.addEventListener('play', () => {
+                    centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    centerPlayPauseBtn.style.opacity = 0;
+                });
+                video.addEventListener('pause', () => {
+                    centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                    centerPlayPauseBtn.style.opacity = 1;
+                });
+                video.addEventListener('ended', () => {
+                    centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                    centerPlayPauseBtn.style.opacity = 1;
+                });
+            } else {
+                 const iframe = document.createElement("iframe");
+                 iframe.className = "player-iframe";
+                 iframe.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share");
+                 iframe.setAttribute("allowfullscreen", "true");
+                 iframe.src = src + (src.includes("?") ? "&" : "?") + "autoplay=1";
+                 cardEl.appendChild(iframe);
+            }
+        }
+        
+        function createControls() {
+            const controlsBar = document.createElement("div");
+            controlsBar.className = "controls-bar";
+
+            const playPauseBtn = document.createElement("button");
+            playPauseBtn.className = "play-pause-btn";
+            playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+
+            const progressBarContainer = document.createElement("div");
+            progressBarContainer.className = "progress-bar";
+            const progress = document.createElement("div");
+            progress.className = "progress";
+            progressBarContainer.appendChild(progress);
+
+            const timeDisplay = document.createElement("div");
+            timeDisplay.className = "time";
+            timeDisplay.textContent = "00:00 / 00:00";
+
+            const volumeControl = document.createElement("div");
+            volumeControl.className = "volume-control";
+            const volumeIcon = document.createElement("span");
+            volumeIcon.className = "volume-icon";
+            volumeIcon.innerHTML = '<i class="fas fa-volume-up"></i>';
+            const volumeSlider = document.createElement("input");
+            volumeSlider.type = "range";
+            volumeSlider.min = "0";
+            volumeSlider.max = "1";
+            volumeSlider.step = "0.01";
+            volumeSlider.value = "1";
+            volumeControl.appendChild(volumeIcon);
+            volumeControl.appendChild(volumeSlider);
+
+            controlsBar.appendChild(playPauseBtn);
+            controlsBar.appendChild(progressBarContainer);
+            controlsBar.appendChild(timeDisplay);
+            controlsBar.appendChild(volumeControl);
+
+            return controlsBar;
+        }
+
+        function formatTime(seconds) {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            return [h, m, s]
+                .filter(v => v > 0 || v === 0)
+                .map(v => v.toString().padStart(2, '0'))
+                .join(':')
+                .replace(/^00:/, '');
+        }
+
+        function setupControls(player, type, controls, centerPlayPauseBtn, cardEl) {
+            const playPauseBtn = controls.querySelector('.play-pause-btn');
+            const progressBarContainer = controls.querySelector('.progress-bar');
+            const progress = controls.querySelector('.progress');
+            const volumeSlider = controls.querySelector('.volume-control input');
+            const timeDisplay = controls.querySelector('.time');
+            let totalTime = 0;
+            let timeoutId;
+            
+            const hideControls = () => {
+                controls.style.opacity = 0;
+                if (type === 'youtube' && player.getPlayerState() === YT.PlayerState.PLAYING) {
+                    centerPlayPauseBtn.style.opacity = 0;
+                } else if (type === 'mp4' && !player.paused) {
+                    centerPlayPauseBtn.style.opacity = 0;
+                }
+            };
+            
+            const showControls = () => {
+                clearTimeout(timeoutId);
+                controls.style.opacity = 1;
+                centerPlayPauseBtn.style.opacity = 1;
+                timeoutId = setTimeout(hideControls, 3000);
+            };
+
+            const updateTime = () => {
+                let currentTime = 0;
+                if (type === 'youtube') {
+                    currentTime = player.getCurrentTime();
+                } else {
+                    currentTime = player.currentTime;
+                }
+                const progressPercentage = (currentTime / totalTime) * 100;
+                progress.style.width = `${progressPercentage}%`;
+                timeDisplay.textContent = `${formatTime(currentTime)} / ${formatTime(totalTime)}`;
+            };
+
+            const interval = setInterval(updateTime, 1000);
+
+            cardEl.addEventListener('mouseenter', showControls);
+            cardEl.addEventListener('mouseleave', hideControls);
+            cardEl.addEventListener('mousemove', showControls);
+            
+            if (type === 'youtube') {
+                totalTime = player.getDuration();
+                updateTime();
+                playPauseBtn.onclick = () => {
+                    const state = player.getPlayerState();
+                    if (state === YT.PlayerState.PLAYING) {
+                        player.pauseVideo();
+                    } else {
+                        player.playVideo();
+                    }
+                };
+                centerPlayPauseBtn.onclick = playPauseBtn.onclick;
+
+                progressBarContainer.onclick = (e) => {
+                    const clickX = e.offsetX;
+                    const totalWidth = progressBarContainer.clientWidth;
+                    const newTime = (clickX / totalWidth) * totalTime;
+                    player.seekTo(newTime, true);
+                };
+                volumeSlider.oninput = (e) => player.setVolume(e.target.value * 100);
+            } else if (type === 'mp4') {
+                totalTime = player.duration;
+                updateTime();
+                playPauseBtn.onclick = () => {
+                    if (player.paused) {
+                        player.play();
+                    } else {
+                        player.pause();
+                    }
+                };
+                centerPlayPauseBtn.onclick = playPauseBtn.onclick;
+                progressBarContainer.onclick = (e) => {
+                    const clickX = e.offsetX;
+                    const totalWidth = progressBarContainer.clientWidth;
+                    const newTime = (clickX / totalWidth) * totalTime;
+                    player.currentTime = newTime;
+                };
+                volumeSlider.oninput = (e) => player.volume = e.target.value;
+                player.addEventListener('timeupdate', updateTime);
+            }
+        }
+
+        function restorePoster(card) {
+            const src = card.dataset.embed;
+            const player = players[src];
+            if (player) {
+                if (typeof player.pauseVideo === 'function') {
+                    player.pauseVideo();
+                } else if (typeof player.pause === 'function') {
+                    player.pause();
+                }
+            }
+
+            const playerContainer = card.querySelector(".player-iframe");
+            if (playerContainer) playerContainer.remove();
+
+            const controlsBar = card.querySelector(".controls-bar");
+            if (controlsBar) controlsBar.remove();
+            
+            const centerBtn = card.querySelector(".center-play-pause-btn");
+            if (centerBtn) centerBtn.remove();
+
+            if (!card.querySelector(".poster")) {
+                const info = getEmbedInfo(src);
+                const posterEl = document.createElement("div");
+                posterEl.className = "poster";
+                if (info.poster) {
+                    posterEl.style.backgroundImage = `url("${info.poster}")`;
+                }
+                const playBtn = document.createElement("div");
+                playBtn.className = "play-btn";
+                playBtn.innerHTML = '<i class="fas fa-play"></i>';
+                posterEl.appendChild(playBtn);
+                posterEl.addEventListener("click", () => mountIframe(card));
+                card.appendChild(posterEl);
+            }
+        }
+
+        // --- INICIO DE LA CORRECCIÓN ---
+        function cleanupIframesExceptActive() {
+            if (!swiper) return;
+            const prevIndex = swiper.previousIndex;
+            
+            // Si hay un slide anterior, asegúrate de restaurar su póster y detener su video.
+            if (prevIndex !== undefined && swiper.slides[prevIndex]) {
+                const card = swiper.slides[prevIndex].querySelector(".player-card");
+                if (card) {
+                    restorePoster(card);
+                }
+            }
+        }
+        // --- FIN DE LA CORRECCIÓN ---
+
+        function updateFixedTitle(swiperInstance) {
+            const fixedTitleEl = document.getElementById("video-title-fixed");
+            if (!fixedTitleEl || !swiperInstance) return;
+
+            // Intentos en orden para encontrar el slide activo de forma robusta
+            let activeSlide = null;
+
+            // 1) elemento según activeIndex (es el índice real en el arreglo swiper.slides)
+            if (typeof swiperInstance.activeIndex === 'number' && swiperInstance.slides && swiperInstance.slides[swiperInstance.activeIndex]) {
+                activeSlide = swiperInstance.slides[swiperInstance.activeIndex];
+            }
+
+            // 2) fallback a la clase que Swiper marca (.swiper-slide-active)
+            if (!activeSlide) {
+                activeSlide = document.querySelector('.swiper-slide-active');
+            }
+
+            // 3) último recurso: usar realIndex (índice entre slides originales)
+            if (!activeSlide && typeof swiperInstance.realIndex === 'number' && swiperInstance.slides && swiperInstance.slides[swiperInstance.realIndex]) {
+                activeSlide = swiperInstance.slides[swiperInstance.realIndex];
+            }
+
+            const newTitle = (activeSlide && activeSlide.dataset && activeSlide.dataset.title) ? activeSlide.dataset.title : "Video";
+
+            // Si ya es el mismo título, no hacemos nada
+            if (fixedTitleEl.textContent === newTitle) return;
+
+            // Pequeña transición para evitar parpadeo/desfase visual
+            fixedTitleEl.style.opacity = 0;
+            setTimeout(() => {
+                fixedTitleEl.textContent = newTitle;
+                fixedTitleEl.style.opacity = 1;
+            }, 120);
+        }
+
+        async function cargarVideos() {
+            const loader = document.getElementById("loader");
+            loader.style.display = "flex";
+            try {
+                const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
+                const data = await res.json();
+
+                const wrapper = document.getElementById("slides");
+                wrapper.innerHTML = "";
+
+                if (Array.isArray(data.data)) {
+                    data.data.forEach((row) => {
+                        const titulo = row[0];
+                        const link = row[1];
+                        wrapper.appendChild(createSlide(titulo, link));
+                    });
+                }
+
+                if (swiper) swiper.destroy(true, true);
+                swiper = new Swiper(".swiper", {
+                    loop: true,
+                    direction: "horizontal",
+                    slidesPerView: 1,
+                    spaceBetween: 10,
+                    pagination: false,
+                    on: {
+                        init() {
+                            updateFixedTitle(this);
+                        },
+                        // actualizado en el cambio y al finalizar la transición para mayor robustez
+                        slideChange() {
+                            cleanupIframesExceptActive();
+                            updateFixedTitle(this);
+                        },
+                        slideChangeTransitionEnd() {
+                            updateFixedTitle(this);
+                        }
+                    },
+                });
+
+                cleanupIframesExceptActive();
+                // llamada extra por si algo no quedó listo al init
+                updateFixedTitle(swiper);
+            } catch (e) {
+                console.error("Error cargando videos:", e);
+            } finally {
+                loader.style.display = "none";
+            }
+        }
+
+        cargarVideos();
     </script>
 </body>
 </html>
+
