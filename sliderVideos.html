@@ -1106,9 +1106,14 @@ async function cargarVideos(checkNew = false) {
   }
 }
 
+// === AUTO REFRESCO EN SEGUNDO PLANO ===
+setInterval(() => {
+  cargarVideos(true); // revisa solo si hay nuevos videos
+}, 3000); // cada 10 segundos (ajusta según quieras)
 
 
         cargarVideos();
     </script>
 </body>
 </html>
+
