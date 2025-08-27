@@ -1,31 +1,31 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Probar subida en móvil</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Probar Carga de Video Móvil</title>
 </head>
-<body>
-  <h2>Seleccionar un video</h2>
+<body style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; margin: 0;">
 
-  <!-- Botón de seleccionar -->
-  <input type="file" id="videoInput" accept="video/*">
+    <h2>Selecciona y reproduce un video</h2>
 
-  <!-- Mostrar nombre del archivo -->
-  <p id="fileName"></p>
+    <input type="file" id="videoInput" accept="video/*" style="margin-top: 20px;">
 
-  <!-- Reproducir video -->
-  <video id="preview" width="300" controls></video>
+    <video id="videoPlayer" width="300" controls style="margin-top:20px; display:none;"></video>
 
-  <script>
-    document.getElementById("videoInput").addEventListener("change", function(event) {
-      const file = event.target.files[0];
-      if (file) {
-        document.getElementById("fileName").textContent = "Seleccionado: " + file.name;
-        const url = URL.createObjectURL(file);
-        document.getElementById("preview").src = url;
-      }
-    });
-  </script>
+    <script>
+        const videoInput = document.getElementById('videoInput');
+        const videoPlayer = document.getElementById('videoPlayer');
+
+        videoInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                // Crea una URL temporal para el archivo seleccionado
+                const videoURL = URL.createObjectURL(file);
+                videoPlayer.src = videoURL;
+                videoPlayer.style.display = 'block';
+            }
+        });
+    </script>
 </body>
 </html>
