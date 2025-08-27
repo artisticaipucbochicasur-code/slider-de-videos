@@ -442,21 +442,24 @@ deleteConfirm.onclick = async () => {
     if (!pendingDelete) return;
     const { title, link } = pendingDelete;
 
-    // Extraemos el identificador de archive.org (si existe)
-    let identifier = "";
-    let fileName = "";
-
-    let archiveMatch = link.match(/archive\.org\/download\/([^/]+)\/(.+)$/);
-    if (archiveMatch) {
-        identifier = archiveMatch[1];   
-        fileName = decodeURIComponent(archiveMatch[2]); 
-    }
-
-    // Enviamos al Apps Script
-    await fetch(`${SCRIPT_URL}?accion=eliminar&link=${encodeURIComponent(link)}&id=${encodeURIComponent(identifier)}&file=${encodeURIComponent(fileName)}`);
-
+    // Ocultar el modal y limpiar el estado inmediatamente, antes de la petición.
     deleteModal.classList.add("hidden");
     pendingDelete = null;
+
+    // Extraer el identificador de archive.org (si existe)
+    let identifier = "";
+    let fileName = "";
+    let archiveMatch = link.match(/archive\.org\/download\/([^/]+)\/(.+)$/);
+    if (archiveMatch) {
+        identifier = archiveMatch[1];
+        fileName = decodeURIComponent(archiveMatch[2]);
+    }
+
+    // Enviar la solicitud de eliminación al servidor de forma asíncrona.
+    // La función continuará su ejecución en segundo plano.
+    await fetch(`${SCRIPT_URL}?accion=eliminar&link=${encodeURIComponent(link)}&id=${encodeURIComponent(identifier)}&file=${encodeURIComponent(fileName)}`);
+
+    // Después de que la solicitud haya finalizado, recargar la lista de videos.
     cargarVideos();
 };
 
@@ -933,6 +936,7 @@ deleteConfirm.onclick = async () => {
     </script>
 </body>
 </html>
+
 
 
 
