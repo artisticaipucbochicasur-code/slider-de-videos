@@ -203,6 +203,28 @@
             opacity: 1;
         }
 
+        #video-title-fixed {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* 👈 alinea a la izquierda */
+    padding: 6px 10px;
+}
+
+#video-title-fixed .video-title {
+    font-size: 18px;
+    font-weight: 600;
+    text-align: left;
+    color: #f1f1f1;
+}
+
+#video-title-fixed .video-desc {
+    font-size: 14px;
+    opacity: 0.85;
+    text-align: left;
+    color: #ddd;
+}
+
+
         #loader {
             position: fixed;
             inset: 0;
@@ -348,10 +370,14 @@
 
   
 
-    <div class="swiper">
-        <div id="video-title-fixed" class="video-title"></div>
-        <div class="swiper-wrapper" id="slides"></div>
-    </div>
+  <div class="swiper">
+  <div id="video-title-fixed">
+    <div class="video-title"></div>
+    <div class="video-desc"></div>
+  </div>
+  <div class="swiper-wrapper" id="slides"></div>
+</div>
+
 
     <div id="loader"><span class="spinner">⏳</span></div>
 
@@ -775,40 +801,45 @@ deleteConfirm.onclick = async () => {
         }
         // --- FIN DE LA CORRECCIÓN ---
 
-        function updateFixedTitle(swiperInstance) {
-            const fixedTitleEl = document.getElementById("video-title-fixed");
-            if (!fixedTitleEl || !swiperInstance) return;
+      function updateFixedTitle(swiperInstance) {
+    const fixedBox = document.getElementById("video-title-fixed");
+    if (!fixedBox || !swiperInstance) return;
 
-            // Intentos en orden para encontrar el slide activo de forma robusta
-            let activeSlide = null;
+    let activeSlide = null;
 
-            // 1) elemento según activeIndex (es el índice real en el arreglo swiper.slides)
-            if (typeof swiperInstance.activeIndex === 'number' && swiperInstance.slides && swiperInstance.slides[swiperInstance.activeIndex]) {
-                activeSlide = swiperInstance.slides[swiperInstance.activeIndex];
-            }
+    // 1) Usar activeIndex
+    if (typeof swiperInstance.activeIndex === 'number' && swiperInstance.slides && swiperInstance.slides[swiperInstance.activeIndex]) {
+        activeSlide = swiperInstance.slides[swiperInstance.activeIndex];
+    }
 
-            // 2) fallback a la clase que Swiper marca (.swiper-slide-active)
-            if (!activeSlide) {
-                activeSlide = document.querySelector('.swiper-slide-active');
-            }
+    // 2) Fallback a clase .swiper-slide-active
+    if (!activeSlide) {
+        activeSlide = document.querySelector('.swiper-slide-active');
+    }
 
-            // 3) último recurso: usar realIndex (índice entre slides originales)
-            if (!activeSlide && typeof swiperInstance.realIndex === 'number' && swiperInstance.slides && swiperInstance.slides[swiperInstance.realIndex]) {
-                activeSlide = swiperInstance.slides[swiperInstance.realIndex];
-            }
+    // 3) Fallback a realIndex
+    if (!activeSlide && typeof swiperInstance.realIndex === 'number' && swiperInstance.slides && swiperInstance.slides[swiperInstance.realIndex]) {
+        activeSlide = swiperInstance.slides[swiperInstance.realIndex];
+    }
 
-            const newTitle = (activeSlide && activeSlide.dataset && activeSlide.dataset.title) ? activeSlide.dataset.title : "Video";
+    const newTitle = activeSlide?.dataset?.title || "Video";
+    const newDesc  = activeSlide?.dataset?.descripcion || "";
 
-            // Si ya es el mismo título, no hacemos nada
-            if (fixedTitleEl.textContent === newTitle) return;
+    const titleEl = fixedBox.querySelector(".video-title");
+    const descEl  = fixedBox.querySelector(".video-desc");
 
-            // Pequeña transición para evitar parpadeo/desfase visual
-            fixedTitleEl.style.opacity = 0;
-            setTimeout(() => {
-                fixedTitleEl.textContent = newTitle;
-                fixedTitleEl.style.opacity = 1;
-            }, 120);
-        }
+    // Evitar actualización innecesaria
+    if (titleEl.textContent === newTitle && descEl.textContent === newDesc) return;
+
+    // Transición suave
+    fixedBox.style.opacity = 0;
+    setTimeout(() => {
+        titleEl.textContent = newTitle;
+        descEl.textContent  = newDesc;
+        fixedBox.style.opacity = 1;
+    }, 120);
+}
+
 
        async function cargarVideos() {
     const loader = document.getElementById("loader");
@@ -864,6 +895,7 @@ deleteConfirm.onclick = async () => {
     </script>
 </body>
 </html>
+
 
 
 
