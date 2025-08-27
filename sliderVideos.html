@@ -33,6 +33,78 @@
             overflow: hidden;
         }
 
+    /* Botones flotantes */
+    .floating-buttons {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        z-index: 2000;
+    }
+    .fab {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        border: none;
+        background: #28a745;
+        color: #fff;
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    }
+    .fab.danger { background: #dc3545; }
+
+    /* Modal */
+    .modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 3000;
+    }
+    .modal.hidden { display: none; }
+    .modal-content {
+        background: #111;
+        padding: 20px;
+        border-radius: 10px;
+        width: 300px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        color: #fff;
+    }
+    .modal-content input { padding: 6px; }
+
+    /* Progreso flotante */
+    .progress-toast {
+        position: fixed;
+        top: 15px;
+        right: 15px;
+        background: rgba(0,0,0,0.8);
+        color: #fff;
+        padding: 10px 14px;
+        border-radius: 6px;
+        z-index: 4000;
+        width: 200px;
+    }
+    .progress-toast.hidden { display: none; }
+    .progress-toast .bar {
+        height: 4px;
+        background: #28a745;
+        width: 0%;
+        margin-bottom: 6px;
+        transition: width 0.3s ease;
+    }
+
+
+        
         .swiper {
             width: 100vw;
             height: 100vh;
@@ -244,12 +316,37 @@
     </style>
 </head>
 <body>
+        <!-- BOTONES flotantes -->
+    <div class="floating-buttons">
+        <button id="btn-upload" class="fab"><i class="fas fa-plus"></i></button>
+        <button id="btn-delete" class="fab danger"><i class="fas fa-trash"></i></button>
+    </div>
+
+    <!-- Modal de subida -->
+    <div id="upload-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Subir Video</h3>
+            <input type="text" id="video-title" placeholder="Título del video" />
+            <input type="file" id="video-file" accept="video/*" />
+            <div class="modal-actions">
+                <button id="upload-start">Subir</button>
+                <button id="upload-cancel">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progreso flotante -->
+    <div id="upload-progress" class="progress-toast hidden">
+        <div class="bar"></div>
+        <span class="msg">Subiendo...</span>
+    </div>
+
     <div class="swiper">
         <div id="video-title-fixed" class="video-title"></div>
         <div class="swiper-wrapper" id="slides"></div>
     </div>
 
-    <div id="loader"><span class="spinner">⏳1</span></div>
+    <div id="loader"><span class="spinner">⏳</span></div>
 
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script src="https://www.youtube.com/iframe_api"></script>
@@ -257,6 +354,58 @@
         const SCRIPT_URL =
             "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
 
+    // --- SUBIDA ---
+    const btnUpload = document.getElementById("btn-upload");
+    const modal = document.getElementById("upload-modal");
+    const startBtn = document.getElementById("upload-start");
+    const cancelBtn = document.getElementById("upload-cancel");
+    const progressToast = document.getElementById("upload-progress");
+    const progressBar = progressToast.querySelector(".bar");
+    const progressMsg = progressToast.querySelector(".msg");
+
+    btnUpload.onclick = () => modal.classList.remove("hidden");
+    cancelBtn.onclick = () => modal.classList.add("hidden");
+
+    startBtn.onclick = async () => {
+        const title = document.getElementById("video-title").value.trim();
+        const file = document.getElementById("video-file").files[0];
+        if (!title || !file) { alert("Completa los campos"); return; }
+        modal.classList.add("hidden");
+        progressToast.classList.remove("hidden");
+        progressBar.style.width = "0%";
+        progressMsg.textContent = "Subiendo...";
+
+        // simulación de progreso (ejemplo, aquí debes poner tu lógica de subida real a archive.org)
+        let p = 0;
+        const interval = setInterval(() => {
+            p += 15;
+            progressBar.style.width = p + "%";
+            if (p >= 100) {
+                clearInterval(interval);
+                progressMsg.textContent = "¡Exitoso!";
+                setTimeout(() => progressToast.classList.add("hidden"), 1500);
+                // refrescar lista de videos
+                cargarVideos();
+            }
+        }, 500);
+    };
+
+    // --- ELIMINAR ---
+    const btnDelete = document.getElementById("btn-delete");
+    btnDelete.onclick = async () => {
+        if (!swiper) return;
+        const activeSlide = document.querySelector(".swiper-slide-active");
+        if (!activeSlide) return;
+        const title = activeSlide.dataset.title;
+        const link = activeSlide.querySelector(".player-card")?.dataset.embed;
+        if (!confirm(`¿Eliminar "${title}"?`)) return;
+
+        // Aquí haces fetch a tu script de borrado
+        await fetch(`${SCRIPT_URL}?accion=eliminar&link=${encodeURIComponent(link)}`);
+        cargarVideos();
+    };
+
+        
         let swiper = null;
         let players = {};
 
@@ -684,3 +833,4 @@
     </script>
 </body>
 </html>
+
