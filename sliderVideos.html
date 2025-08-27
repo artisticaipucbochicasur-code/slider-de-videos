@@ -1,76 +1,193 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Subir video a DECOM2</title>
-  <style>
-    body { font-family: sans-serif; background: #f0f4f8; margin: 0; padding: 20px; }
-    .card { max-width: 400px; margin: auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-    input, button { width: 100%; padding: 10px; margin-top: 10px; border-radius: 6px; border: 1px solid #ccc; }
-    button { background: #2b6cb0; color: white; cursor: pointer; font-weight: bold; border: none; }
-    button:hover { background: #1a4f85; }
-    #status { margin-top: 15px; font-size: 14px; }
-    a { color: #2b6cb0; font-size: 14px; word-break: break-all; }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Subir Video a DECOM2</title>
+    <style>
+        /* Estilos generales */
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f0f4f8;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .card {
+            max-width: 400px;
+            width: 90%;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+        h2 {
+            color: #2b6cb0;
+            margin-bottom: 20px;
+        }
+        input, button {
+            width: calc(100% - 22px);
+            padding: 12px;
+            margin-top: 15px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        input[type="file"] {
+            border: 1px dashed #9ca3af;
+            background-color: #f9fafb;
+            cursor: pointer;
+        }
+        button {
+            background: #2b6cb0;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            border: none;
+            transition: background 0.3s ease, transform 0.1s ease;
+        }
+        button:hover {
+            background: #1a4f85;
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        #status {
+            margin-top: 20px;
+            font-size: 14px;
+            min-height: 30px;
+        }
+        #progressBarContainer {
+            width: 100%;
+            height: 8px;
+            background-color: #e5e7eb;
+            border-radius: 4px;
+            margin-top: 15px;
+            overflow: hidden;
+            display: none;
+        }
+        #progressBar {
+            height: 100%;
+            background-color: #48bb78;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        a {
+            color: #2b6cb0;
+            font-size: 14px;
+            word-break: break-all;
+        }
+    </style>
 </head>
 <body>
-  <div class="card">
-    <h2>📤 Subir Video2</h2>
-    <input type="text" id="titulo" placeholder="Título del video" required />
-    <input type="file" id="fileInput" accept="video/*" required />
-    <button id="btnUpload">Subir</button>
-    <div id="status"></div>
-  </div>
+    <div class="card">
+        <h2>📤 Subir Video a DECOM2</h2>
+        <input type="text" id="titulo" placeholder="Título del video" required />
+        <input type="file" id="fileInput" accept="video/*" required />
+        <button id="btnUpload">Subir</button>
+        <div id="progressBarContainer">
+            <div id="progressBar"></div>
+        </div>
+        <div id="status"></div>
+    </div>
 
-  <script>
-    // URL de tu Apps Script que conecta con la hoja
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
+    <script>
+        // URL de tu Apps Script que conecta con la hoja
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
 
-    document.getElementById("btnUpload").onclick = async () => {
-      const titulo = document.getElementById("titulo").value.trim();
-      const file = document.getElementById("fileInput").files[0];
-      const status = document.getElementById("status");
+        const btnUpload = document.getElementById("btnUpload");
+        const tituloInput = document.getElementById("titulo");
+        const fileInput = document.getElementById("fileInput");
+        const statusDiv = document.getElementById("status");
+        const progressBarContainer = document.getElementById("progressBarContainer");
+        const progressBar = document.getElementById("progressBar");
 
-      if (!titulo || !file) {
-        alert("Debe escribir un título y elegir un archivo");
-        return;
-      }
+        btnUpload.onclick = async () => {
+            const titulo = tituloInput.value.trim();
+            const file = fileInput.files[0];
 
-      status.textContent = "⏳ Subiendo...";
+            if (!titulo) {
+                // Usamos un modal en lugar de alert()
+                mostrarMensaje("Debe escribir un título.", "error");
+                return;
+            }
+            if (!file) {
+                 // Usamos un modal en lugar de alert()
+                mostrarMensaje("Debe elegir un archivo.", "error");
+                return;
+            }
 
-      // Se genera un identificador único para cada carpeta en archive.org
-      const identifier = "artistica_bochica_" + Date.now();
+            statusDiv.textContent = "⏳ Subiendo...";
+            progressBarContainer.style.display = "block";
 
-      const xhr = new XMLHttpRequest();
-      xhr.open("PUT", `https://s3.us.archive.org/${identifier}/${file.name}`, true);
-      xhr.setRequestHeader("authorization", "LOW KPJmAQCm1UyNJWqv:9JkBrIGexGNOynyf");
-      xhr.setRequestHeader("x-archive-auto-make-bucket", "1");
-      xhr.setRequestHeader("x-archive-meta-title", file.name);
-      xhr.setRequestHeader("x-archive-meta-mediatype", "movies");
-      xhr.setRequestHeader("x-archive-meta-description", "Video subido desde la app DECOM");
-      xhr.setRequestHeader("x-archive-meta-collection", "opensource_movies");
-      xhr.setRequestHeader("x-archive-meta-creator", "artistica_bochica");
-      xhr.setRequestHeader("Content-Type", file.type);
+            // Se genera un identificador único para cada carpeta en archive.org
+            const identifier = "artistica_bochica_" + Date.now();
 
-      xhr.onload = async () => {
-        if (xhr.status === 200) {
-          const directLink = `https://archive.org/download/${identifier}/${encodeURIComponent(file.name)}`;
-          status.innerHTML = `✅ ¡Subido!<br><a href="${directLink}" target="_blank">Ver video</a>`;
+            const xhr = new XMLHttpRequest();
+            xhr.open("PUT", `https://s3.us.archive.org/${identifier}/${file.name}`, true);
+            
+            // Aquí puedes agregar tus credenciales si son necesarias.
+            // Asegúrate de que sean correctas.
+            xhr.setRequestHeader("authorization", "LOW KPJmAQCm1UyNJWqv:9JkBrIGexGNOynyf");
+            xhr.setRequestHeader("x-archive-auto-make-bucket", "1");
+            xhr.setRequestHeader("x-archive-meta-title", file.name);
+            xhr.setRequestHeader("x-archive-meta-mediatype", "movies");
+            xhr.setRequestHeader("x-archive-meta-description", "Video subido desde la app DECOM");
+            xhr.setRequestHeader("x-archive-meta-collection", "opensource_movies");
+            xhr.setRequestHeader("x-archive-meta-creator", "artistica_bochica");
+            xhr.setRequestHeader("Content-Type", file.type);
+            
+            // Evento para actualizar la barra de progreso
+            xhr.upload.addEventListener("progress", (e) => {
+                if (e.lengthComputable) {
+                    const percent = (e.loaded / e.total) * 100;
+                    progressBar.style.width = `${percent}%`;
+                }
+            });
 
-          // Aquí se guarda en tu Google Sheet
-          const resp = await fetch(`${GAS_URL}?accion=guardar&tipo=video&titulo=${encodeURIComponent(titulo)}&link=${encodeURIComponent(directLink)}`);
-          const data = await resp.json();
-          console.log("Guardado en hoja:", data);
-        } else {
-          status.textContent = "❌ Error en subida: " + xhr.responseText;
+            xhr.onload = async () => {
+                if (xhr.status === 200) {
+                    const directLink = `https://archive.org/download/${identifier}/${encodeURIComponent(file.name)}`;
+                    statusDiv.innerHTML = `✅ ¡Subido!<br><a href="${directLink}" target="_blank">Ver video</a>`;
+
+                    // Aquí se guarda en tu Google Sheet
+                    try {
+                        const resp = await fetch(`${GAS_URL}?accion=guardar&tipo=video&titulo=${encodeURIComponent(titulo)}&link=${encodeURIComponent(directLink)}`);
+                        const data = await resp.json();
+                        console.log("Guardado en hoja:", data);
+                    } catch (error) {
+                        console.error("Error al guardar en Google Sheet:", error);
+                        statusDiv.innerHTML = `✅ ¡Subido!<br><a href="${directLink}" target="_blank">Ver video</a><br>⚠️ Error al guardar en la hoja de cálculo.`;
+                    }
+                } else {
+                    statusDiv.textContent = "❌ Error en subida: " + xhr.responseText;
+                }
+                progressBarContainer.style.display = "none";
+            };
+
+            xhr.onerror = () => {
+                statusDiv.textContent = "❌ Error de red durante la subida. Revisa tu conexión.";
+                progressBarContainer.style.display = "none";
+            };
+
+            xhr.send(file);
+        };
+        
+        function mostrarMensaje(mensaje, tipo) {
+             const status = document.getElementById("status");
+             status.style.color = tipo === "error" ? "#e53e3e" : "#48bb78";
+             status.textContent = mensaje;
+             // Ocultar mensaje después de 5 segundos
+             setTimeout(() => { status.textContent = ""; }, 5000);
         }
-      };
-
-      xhr.onerror = () => status.textContent = "❌ Error de red durante la subida";
-
-      xhr.send(file);
-    };
-  </script>
+    </script>
 </body>
 </html>
