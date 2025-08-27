@@ -485,14 +485,15 @@
 let notifications = [];
 let lastVideos = [];
 
+// Actualiza el listado de notificaciones
 function renderNotifications() {
   const list = document.getElementById("notification-list");
   const count = document.getElementById("notification-count");
-
-  list.innerHTML = ""; // siempre limpio
-
+  
+  list.innerHTML = "";
   if (notifications.length === 0) {
-    count.textContent = "";
+    list.innerHTML = "<div>Sin notificaciones</div>";
+    count.textContent = "0";
     count.style.display = "none";
     return;
   }
@@ -509,13 +510,18 @@ function renderNotifications() {
       if (index !== -1) {
         swiper.slideToLoop(index);
       }
-      // Eliminar de notificaciones
+      // Marcar como leída
       notifications.splice(i, 1);
       renderNotifications();
     };
     list.appendChild(item);
   });
 }
+
+// Botón toggle
+document.getElementById("notification-btn").onclick = () => {
+  document.getElementById("notification-list").classList.toggle("hidden");
+};
 
 // --- MANEJO DE ELIMINACIÓN ---
 
@@ -1030,7 +1036,7 @@ deleteConfirm.onclick = async () => {
     }, 120);
 }
 
-     async function cargarVideos(checkNew = false) {
+   async function cargarVideos(checkNew = false) {
   const loader = document.getElementById("loader");
   if (!checkNew) loader.style.display = "flex";
 
@@ -1040,7 +1046,7 @@ deleteConfirm.onclick = async () => {
 
     const wrapper = document.getElementById("slides");
 
-    // Guardar índice actual
+    // Guardar índice actual (posición en la que está el usuario)
     let currentIndex = swiper ? swiper.realIndex : 0;
 
     wrapper.innerHTML = "";
@@ -1056,19 +1062,19 @@ deleteConfirm.onclick = async () => {
       });
     }
 
-    // Comparar con los anteriores solo si es refresco en segundo plano
+    // Detectar nuevos videos para notificaciones
     if (checkNew && lastVideos.length > 0) {
       newVideos.forEach(v => {
         if (!lastVideos.find(old => old.link === v.link)) {
-          notifications.unshift(v); // nuevo video arriba
+          notifications.unshift(v);
         }
       });
       renderNotifications();
     }
-
     lastVideos = newVideos;
 
     if (swiper) swiper.destroy(true, true);
+
     swiper = new Swiper(".swiper", {
       loop: true,
       direction: "horizontal",
@@ -1076,28 +1082,34 @@ deleteConfirm.onclick = async () => {
       spaceBetween: 10,
       pagination: false,
       on: {
-        init() { updateFixedTitle(this); },
+        // 👇 importante: no forzamos título en init si es refresco
+        init() {
+          if (!checkNew) updateFixedTitle(this);
+        },
         slideChange() {
           cleanupIframesExceptActive();
           updateFixedTitle(this);
         },
-        slideChangeTransitionEnd() { updateFixedTitle(this); }
+        slideChangeTransitionEnd() {
+          updateFixedTitle(this);
+        }
       },
     });
 
-    // Volver a la posición en la que estaba antes
+    // Restaurar la posición y actualizar título inmediatamente
     if (checkNew) {
       swiper.slideToLoop(currentIndex, 0); // sin animación
+      updateFixedTitle(swiper);
     }
 
     cleanupIframesExceptActive();
-    updateFixedTitle(swiper);
   } catch (e) {
     console.error("Error cargando videos:", e);
   } finally {
     loader.style.display = "none";
   }
 }
+
 
 // Recarga videos cada 30s en segundo plano
 setInterval(() => cargarVideos(true), 30000);
@@ -1107,5 +1119,6 @@ setInterval(() => cargarVideos(true), 30000);
     </script>
 </body>
 </html>
+
 
 
