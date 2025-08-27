@@ -318,28 +318,10 @@
 <body>
         <!-- BOTONES flotantes -->
     <div class="floating-buttons">
-        <button id="btn-upload" class="fab"><i class="fas fa-plus"></i></button>
         <button id="btn-delete" class="fab danger"><i class="fas fa-trash"></i></button>
     </div>
 
-    <!-- Modal de subida -->
-    <div id="upload-modal" class="modal hidden">
-        <div class="modal-content">
-            <h3>Subir Video</h3>
-            <input type="text" id="video-title" placeholder="Título del video" />
-            <input type="file" id="video-file" accept="video/*" />
-            <div class="modal-actions">
-                <button id="upload-start">Subir</button>
-                <button id="upload-cancel">Cancelar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Progreso flotante -->
-    <div id="upload-progress" class="progress-toast hidden">
-        <div class="bar"></div>
-        <span class="msg">Subiendo...</span>
-    </div>
+  
 
     <div class="swiper">
         <div id="video-title-fixed" class="video-title"></div>
@@ -354,41 +336,7 @@
         const SCRIPT_URL =
             "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
 
-    // --- SUBIDA ---
-    const btnUpload = document.getElementById("btn-upload");
-    const modal = document.getElementById("upload-modal");
-    const startBtn = document.getElementById("upload-start");
-    const cancelBtn = document.getElementById("upload-cancel");
-    const progressToast = document.getElementById("upload-progress");
-    const progressBar = progressToast.querySelector(".bar");
-    const progressMsg = progressToast.querySelector(".msg");
-
-    btnUpload.onclick = () => modal.classList.remove("hidden");
-    cancelBtn.onclick = () => modal.classList.add("hidden");
-
-    startBtn.onclick = async () => {
-        const title = document.getElementById("video-title").value.trim();
-        const file = document.getElementById("video-file").files[0];
-        if (!title || !file) { alert("Completa los campos"); return; }
-        modal.classList.add("hidden");
-        progressToast.classList.remove("hidden");
-        progressBar.style.width = "0%";
-        progressMsg.textContent = "Subiendo...";
-
-        // simulación de progreso (ejemplo, aquí debes poner tu lógica de subida real a archive.org)
-        let p = 0;
-        const interval = setInterval(() => {
-            p += 15;
-            progressBar.style.width = p + "%";
-            if (p >= 100) {
-                clearInterval(interval);
-                progressMsg.textContent = "¡Exitoso!";
-                setTimeout(() => progressToast.classList.add("hidden"), 1500);
-                // refrescar lista de videos
-                cargarVideos();
-            }
-        }, 500);
-    };
+  
 
    // --- ELIMINAR ---
 const btnDelete = document.getElementById("btn-delete");
@@ -846,5 +794,6 @@ btnDelete.onclick = async () => {
     </script>
 </body>
 </html>
+
 
 
