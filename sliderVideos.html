@@ -1045,25 +1045,17 @@ async function cargarVideos(checkNew = false) {
     const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
     const data = await res.json();
 
-    const wrapper = document.getElementById("slides");
-
-    // Guardar índice actual
-    let currentIndex = swiper ? swiper.realIndex : 0;
-
-    wrapper.innerHTML = "";
-
     let newVideos = [];
     if (Array.isArray(data.data)) {
       data.data.forEach((row) => {
         const titulo = row[0];
         const link = row[1];
         const descripcion = row[4] || "";
-        wrapper.appendChild(createSlide(titulo, link, descripcion));
         newVideos.push({ title: titulo, link, desc: descripcion });
       });
     }
 
-    // Comparar con los anteriores solo si es refresco en segundo plano
+    // Comparar con lastVideos
     if (checkNew && lastVideos.length > 0) {
       newVideos.forEach(v => {
         if (!lastVideos.find(old => old.link === v.link)) {
@@ -1073,38 +1065,47 @@ async function cargarVideos(checkNew = false) {
       renderNotifications();
     }
 
-    lastVideos = newVideos;
+    // === 👇 En vez de destruir swiper, actualiza slides ===
+    if (!swiper) {
+      // primera vez
+      const wrapper = document.getElementById("slides");
+      wrapper.innerHTML = "";
+      newVideos.forEach(v => wrapper.appendChild(createSlide(v.title, v.link, v.desc)));
 
-    if (swiper) swiper.destroy(true, true);
-    swiper = new Swiper(".swiper", {
-      loop: true,
-      direction: "horizontal",
-      slidesPerView: 1,
-      spaceBetween: 10,
-      pagination: false,
-      on: {
-        init() { updateFixedTitle(this); },
-        slideChange() {
-          cleanupIframesExceptActive();
-          updateFixedTitle(this);
+      swiper = new Swiper(".swiper", {
+        loop: true,
+        direction: "horizontal",
+        slidesPerView: 1,
+        spaceBetween: 10,
+        pagination: false,
+        on: {
+          init() { updateFixedTitle(this); },
+          slideChange() {
+            cleanupIframesExceptActive();
+            updateFixedTitle(this);
+          }
         },
-        slideChangeTransitionEnd() { updateFixedTitle(this); }
-      },
-    });
-
-    // Volver a la posición en la que estaba antes
-    if (checkNew) {
-      swiper.slideToLoop(currentIndex, 0); // sin animación
+      });
+    } else {
+      // 👇 refrescar solo si cambia el listado
+      if (JSON.stringify(lastVideos) !== JSON.stringify(newVideos)) {
+        const wrapper = document.getElementById("slides");
+        wrapper.innerHTML = "";
+        newVideos.forEach(v => wrapper.appendChild(createSlide(v.title, v.link, v.desc)));
+        swiper.update(); // refresca sin resetear índice
+      }
     }
 
-    cleanupIframesExceptActive();
+    lastVideos = newVideos;
     updateFixedTitle(swiper);
+
   } catch (e) {
     console.error("Error cargando videos:", e);
   } finally {
     loader.style.display = "none";
   }
 }
+
 
 // === AUTO REFRESCO EN SEGUNDO PLANO ===
 setInterval(() => {
@@ -1116,4 +1117,5 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
