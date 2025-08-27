@@ -15,7 +15,174 @@
     <style>
         :root {
             --bg1: #000;
-            --bg2: #000;
+            --bg2: #000;<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Galería de Videos</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f4f9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .video-container {
+      width: 100%;
+      max-width: 600px;
+      margin-top: 20px;
+      background: #000;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    video {
+      width: 100%;
+      height: auto;
+    }
+
+    #progressWrapper {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.7);
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    #successMsg {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #4caf50;
+      color: #fff;
+      padding: 5px 10px;
+      border-radius: 8px;
+      display: none;
+      font-size: 14px;
+    }
+
+    .fab-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .fab {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: #007bff;
+      color: white;
+      border: none;
+      font-size: 22px;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+
+    .fab.delete {
+      background: #e74c3c;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="video-container">
+    <video id="videoPlayer" controls>
+      <source id="videoSource" src="" type="video/mp4">
+      Tu navegador no soporta el video.
+    </video>
+    <div id="progressWrapper">0%</div>
+    <div id="successMsg">✅ Exitoso</div>
+  </div>
+
+  <input type="file" id="fileInput" accept="video/*">
+
+  <div class="fab-container">
+    <button class="fab" id="uploadBtn">⬆</button>
+    <button class="fab delete" id="deleteBtn">🗑️</button>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById("fileInput");
+    const uploadBtn = document.getElementById("uploadBtn");
+    const deleteBtn = document.getElementById("deleteBtn");
+    const videoSource = document.getElementById("videoSource");
+    const videoPlayer = document.getElementById("videoPlayer");
+    const progressWrapper = document.getElementById("progressWrapper");
+    const successMsg = document.getElementById("successMsg");
+
+    // Al presionar el botón subir -> abre selector
+    uploadBtn.addEventListener("click", () => {
+      fileInput.click();
+    });
+
+    // Cuando se selecciona un archivo
+    fileInput.addEventListener("change", (event) => {
+      const file = event.target.files[0];
+      if (file) {
+        simulateUpload(file);
+      }
+    });
+
+    // Simulación de subida
+    function simulateUpload(file) {
+      let progress = 0;
+      progressWrapper.style.display = "flex";
+      const interval = setInterval(() => {
+        progress += 10;
+        progressWrapper.textContent = progress + "%";
+        if (progress >= 100) {
+          clearInterval(interval);
+          progressWrapper.style.display = "none";
+          showSuccess();
+
+          // Reemplazar video
+          const url = URL.createObjectURL(file);
+          videoSource.src = url;
+          videoPlayer.load();
+        }
+      }, 300);
+    }
+
+    // Mensaje de éxito
+    function showSuccess() {
+      successMsg.style.display = "block";
+      setTimeout(() => {
+        successMsg.style.display = "none";
+      }, 1500);
+    }
+
+    // Eliminar publicación
+    deleteBtn.addEventListener("click", () => {
+      videoSource.src = "";
+      videoPlayer.load();
+    });
+  </script>
+</body>
+</html>
+
             --text: #fff;
             --card-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
         }
@@ -833,4 +1000,5 @@
     </script>
 </body>
 </html>
+
 
