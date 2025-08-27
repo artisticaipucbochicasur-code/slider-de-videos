@@ -195,7 +195,7 @@
     -webkit-line-clamp: unset;
     cursor: pointer;
     overflow-y: auto; /* Hacer que el contenedor sea scrollable si el contenido es muy largo */
-    max-height: 50vh; /* <<-- Ajuste: Altura máxima al expandir (50% de la altura de la ventana) */
+    max-height: 60vh; /* <<-- Ajuste: Altura máxima al expandir (50% de la altura de la ventana) */
     padding-right: 15px; /* Espacio para la barra de desplazamiento */
 }
 
@@ -208,7 +208,7 @@
     display: inline-block;
     position: absolute; /* Colocar en la esquina para que siempre esté visible */
     bottom: 0;
-    right: 10px; /* <<-- Ajuste: Separación del borde derecho */
+    right: 20px; /* <<-- Ajuste: Separación del borde derecho */
     background: rgba(0, 0, 0, 0.5); /* Fondo semitransparente para que sea legible */
     padding: 2px 5px;
     border-radius: 3px;
@@ -229,7 +229,7 @@
     flex-direction: column;
     align-items: flex-start;
     padding: 6px 10px;
-    max-width: 90%; /* <<-- Ajuste: Ancho máximo del contenedor fijo (ej. 90%) */
+    max-width: 80%; /* <<-- Ajuste: Ancho máximo del contenedor fijo (ej. 90%) */
     margin: 0 auto; /* Centrar el contenedor si se reduce el ancho */
     left: 5%; /* Mover a la derecha para que quede centrado con el max-width */
     right: 5%;
@@ -935,6 +935,7 @@ deleteConfirm.onclick = async () => {
     </script>
 </body>
 </html>
+
 
 
 
