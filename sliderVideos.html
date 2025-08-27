@@ -371,7 +371,15 @@
     </style>
 </head>
 <body>
-
+<div id="custom-alert-modal" class="modal hidden">
+  <div class="modal-content">
+    <h3>¡Atención!</h3>
+    <p id="custom-alert-message"></p>
+    <div class="modal-actions">
+      <button id="custom-alert-ok" style="background:#007bff; color:white; padding:8px; border:none; border-radius:6px; cursor:pointer;">Aceptar</button>
+    </div>
+  </div>
+</div>
 <!-- Modal de eliminación -->
 <div id="delete-modal" class="modal hidden">
   <div class="modal-content">
@@ -411,7 +419,7 @@
 
   
 
- // --- MANEJO DE ELIMINACIÓN ---
+// --- MANEJO DE ELIMINACIÓN ---
 
 // Variables para almacenar los datos del usuario, obtenidos de la URL
 let usuarioAutor = "";
@@ -426,6 +434,23 @@ function getUsuarioDataFromUrl() {
 
 // Llamar a la función al cargar la página para obtener los datos
 document.addEventListener("DOMContentLoaded", getUsuarioDataFromUrl);
+
+// NUEVO: Variables para el modal de alerta personalizada
+const customAlertModal = document.getElementById("custom-alert-modal");
+const customAlertMessage = document.getElementById("custom-alert-message");
+const customAlertOk = document.getElementById("custom-alert-ok");
+
+// NUEVO: Función para mostrar el modal de alerta personalizado
+function showAlert(message, title = "¡Atención!") {
+    customAlertMessage.textContent = message;
+    customAlertModal.querySelector('h3').textContent = title;
+    customAlertModal.classList.remove("hidden");
+}
+
+// NUEVO: Ocultar el modal de alerta cuando se hace clic en "Aceptar"
+customAlertOk.onclick = () => {
+    customAlertModal.classList.add("hidden");
+};
 
 const btnDelete = document.getElementById("btn-delete");
 const deleteModal = document.getElementById("delete-modal");
@@ -445,7 +470,7 @@ btnDelete.onclick = () => {
 
     // Si no hay datos de usuario, notificar y salir
     if (!usuarioAutor || !usuarioCorreo) {
-        alert("No se pudo obtener la información de tu cuenta. Intenta recargar la página.");
+        showAlert("No se pudo obtener la información de tu cuenta. Intenta recargar la página.");
         return;
     }
 
@@ -481,14 +506,13 @@ deleteConfirm.onclick = async () => {
     const data = await response.json();
 
     if (data.status === "success") {
-        alert("✅ Video eliminado con éxito.");
+        showAlert("✅ Video eliminado con éxito.", "¡Listo!");
     } else {
-        alert("❌ Error al eliminar: " + data.message);
+        showAlert("❌ Error al eliminar: " + data.message, "Error");
     }
     
     cargarVideos();
 };
-
 
 
 
@@ -962,6 +986,7 @@ deleteConfirm.onclick = async () => {
     </script>
 </body>
 </html>
+
 
 
 
