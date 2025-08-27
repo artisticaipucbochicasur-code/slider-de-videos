@@ -108,7 +108,7 @@
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
         }
 
-        /* título fijo */
+        /* título fijo con transición para evitar parpadeos */
         #video-title-fixed {
             position: absolute;
             top: 0;
@@ -116,6 +116,8 @@
             width: 100%;
             z-index: 1000;
             background: rgba(0,0,0,0.3);
+            transition: opacity 0.18s ease;
+            opacity: 1;
         }
 
         #loader {
@@ -247,7 +249,7 @@
         <div class="swiper-wrapper" id="slides"></div>
     </div>
 
-    <div id="loader"><span class="spinner">⏳</span></div>
+    <div id="loader"><span class="spinner">⏳1</span></div>
 
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script src="https://www.youtube.com/iframe_api"></script>
@@ -593,13 +595,39 @@
         }
         // --- FIN DE LA CORRECCIÓN ---
 
-       function updateFixedTitle(swiperInstance) {
-            const index = swiperInstance.realIndex;
-            const activeSlide = swiperInstance.slides[index];
+        function updateFixedTitle(swiperInstance) {
             const fixedTitleEl = document.getElementById("video-title-fixed");
-            if (activeSlide) {
-                fixedTitleEl.textContent = activeSlide.dataset.title || "Video";
+            if (!fixedTitleEl || !swiperInstance) return;
+
+            // Intentos en orden para encontrar el slide activo de forma robusta
+            let activeSlide = null;
+
+            // 1) elemento según activeIndex (es el índice real en el arreglo swiper.slides)
+            if (typeof swiperInstance.activeIndex === 'number' && swiperInstance.slides && swiperInstance.slides[swiperInstance.activeIndex]) {
+                activeSlide = swiperInstance.slides[swiperInstance.activeIndex];
             }
+
+            // 2) fallback a la clase que Swiper marca (.swiper-slide-active)
+            if (!activeSlide) {
+                activeSlide = document.querySelector('.swiper-slide-active');
+            }
+
+            // 3) último recurso: usar realIndex (índice entre slides originales)
+            if (!activeSlide && typeof swiperInstance.realIndex === 'number' && swiperInstance.slides && swiperInstance.slides[swiperInstance.realIndex]) {
+                activeSlide = swiperInstance.slides[swiperInstance.realIndex];
+            }
+
+            const newTitle = (activeSlide && activeSlide.dataset && activeSlide.dataset.title) ? activeSlide.dataset.title : "Video";
+
+            // Si ya es el mismo título, no hacemos nada
+            if (fixedTitleEl.textContent === newTitle) return;
+
+            // Pequeña transición para evitar parpadeo/desfase visual
+            fixedTitleEl.style.opacity = 0;
+            setTimeout(() => {
+                fixedTitleEl.textContent = newTitle;
+                fixedTitleEl.style.opacity = 1;
+            }, 120);
         }
 
         async function cargarVideos() {
@@ -631,14 +659,19 @@
                         init() {
                             updateFixedTitle(this);
                         },
+                        // actualizado en el cambio y al finalizar la transición para mayor robustez
                         slideChange() {
                             cleanupIframesExceptActive();
+                            updateFixedTitle(this);
+                        },
+                        slideChangeTransitionEnd() {
                             updateFixedTitle(this);
                         }
                     },
                 });
 
                 cleanupIframesExceptActive();
+                // llamada extra por si algo no quedó listo al init
                 updateFixedTitle(swiper);
             } catch (e) {
                 console.error("Error cargando videos:", e);
