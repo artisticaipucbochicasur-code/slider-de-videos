@@ -411,7 +411,22 @@
 
   
 
- // --- ELIMINAR ---
+ // --- MANEJO DE ELIMINACIÓN ---
+
+// Variables para almacenar los datos del usuario, obtenidos de la URL
+let usuarioAutor = "";
+let usuarioCorreo = "";
+
+// Función para obtener los parámetros 'name' y 'email' de la URL
+function getUsuarioDataFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    usuarioAutor = params.get("name") || "";
+    usuarioCorreo = params.get("email") || "";
+}
+
+// Llamar a la función al cargar la página para obtener los datos
+document.addEventListener("DOMContentLoaded", getUsuarioDataFromUrl);
+
 const btnDelete = document.getElementById("btn-delete");
 const deleteModal = document.getElementById("delete-modal");
 const deleteTitle = document.getElementById("delete-video-title");
@@ -428,6 +443,12 @@ btnDelete.onclick = () => {
     const title = activeSlide.dataset.title;
     const link = activeSlide.querySelector(".player-card")?.dataset.embed;
 
+    // Si no hay datos de usuario, notificar y salir
+    if (!usuarioAutor || !usuarioCorreo) {
+        alert("No se pudo obtener la información de tu cuenta. Intenta recargar la página.");
+        return;
+    }
+
     pendingDelete = { title, link };
     deleteTitle.textContent = `¿Eliminar "${title}"?`;
     deleteModal.classList.remove("hidden");
@@ -442,11 +463,9 @@ deleteConfirm.onclick = async () => {
     if (!pendingDelete) return;
     const { title, link } = pendingDelete;
 
-    // Ocultar el modal y limpiar el estado inmediatamente, antes de la petición.
     deleteModal.classList.add("hidden");
     pendingDelete = null;
 
-    // Extraer el identificador de archive.org (si existe)
     let identifier = "";
     let fileName = "";
     let archiveMatch = link.match(/archive\.org\/download\/([^/]+)\/(.+)$/);
@@ -454,12 +473,19 @@ deleteConfirm.onclick = async () => {
         identifier = archiveMatch[1];
         fileName = decodeURIComponent(archiveMatch[2]);
     }
+    
+    // Aquí usamos las variables 'usuarioAutor' y 'usuarioCorreo'
+    const deleteUrl = `${SCRIPT_URL}?accion=eliminar&link=${encodeURIComponent(link)}&id=${encodeURIComponent(identifier)}&file=${encodeURIComponent(fileName)}&autor=${encodeURIComponent(usuarioAutor)}&correo=${encodeURIComponent(usuarioCorreo)}`;
 
-    // Enviar la solicitud de eliminación al servidor de forma asíncrona.
-    // La función continuará su ejecución en segundo plano.
-    await fetch(`${SCRIPT_URL}?accion=eliminar&link=${encodeURIComponent(link)}&id=${encodeURIComponent(identifier)}&file=${encodeURIComponent(fileName)}`);
+    const response = await fetch(deleteUrl);
+    const data = await response.json();
 
-    // Después de que la solicitud haya finalizado, recargar la lista de videos.
+    if (data.status === "success") {
+        alert("✅ Video eliminado con éxito.");
+    } else {
+        alert("❌ Error al eliminar: " + data.message);
+    }
+    
     cargarVideos();
 };
 
@@ -936,6 +962,7 @@ deleteConfirm.onclick = async () => {
     </script>
 </body>
 </html>
+
 
 
 
