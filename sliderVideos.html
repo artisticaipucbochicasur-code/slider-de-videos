@@ -501,25 +501,8 @@ deleteConfirm.onclick = async () => {
 
     card.appendChild(posterEl);
 
-    // contenedor de título + descripción
-    const infoBox = document.createElement("div");
-    infoBox.style.padding = "8px";
-    infoBox.style.textAlign = "center";
-
-    const titleEl = document.createElement("div");
-    titleEl.className = "video-title";
-    titleEl.textContent = titulo || "Video";
-
-    const descEl = document.createElement("div");
-    descEl.className = "video-title"; // 👈 mismo estilo que título
-    descEl.textContent = descripcion || "";
-
-    infoBox.appendChild(titleEl);
-    infoBox.appendChild(descEl);
-
     slide.appendChild(card);
-    slide.appendChild(infoBox);
-
+   
     return slide;
 }
 
@@ -895,6 +878,7 @@ deleteConfirm.onclick = async () => {
     </script>
 </body>
 </html>
+
 
 
 
