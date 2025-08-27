@@ -346,7 +346,7 @@
         <div class="swiper-wrapper" id="slides"></div>
     </div>
 
-    <div id="loader"><span class="spinner">⏳ed</span></div>
+    <div id="loader"><span class="spinner">⏳</span></div>
 
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script src="https://www.youtube.com/iframe_api"></script>
@@ -375,8 +375,22 @@
         progressBar.style.width = "0%";
         progressMsg.textContent = "Subiendo...";
 
+        // simulación de progreso (ejemplo, aquí debes poner tu lógica de subida real a archive.org)
+        let p = 0;
+        const interval = setInterval(() => {
+            p += 15;
+            progressBar.style.width = p + "%";
+            if (p >= 100) {
+                clearInterval(interval);
+                progressMsg.textContent = "¡Exitoso!";
+                setTimeout(() => progressToast.classList.add("hidden"), 1500);
+                // refrescar lista de videos
+                cargarVideos();
+            }
+        }, 500);
+    };
 
-    // --- ELIMINAR ---
+   // --- ELIMINAR ---
 const btnDelete = document.getElementById("btn-delete");
 btnDelete.onclick = async () => {
     if (!swiper) return;
@@ -402,6 +416,7 @@ btnDelete.onclick = async () => {
 
     cargarVideos();
 };
+
 
         
         let swiper = null;
