@@ -178,6 +178,31 @@
             background: #000;
         }
 
+/* Truncamiento para título y descripción */
+#video-title-fixed .text-container {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2; /* Truncar a 2 líneas */
+    transition: -webkit-line-clamp 0.3s ease;
+}
+
+#video-title-fixed .text-container.expanded {
+    -webkit-line-clamp: unset;
+}
+
+/* Estilo para el botón de 'más' o 'menos' */
+#video-title-fixed .toggle-text {
+    color: #ccc;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    text-shadow: none;
+    user-select: none;
+    display: inline-block;
+    margin-left: 5px;
+}
+        
         .video-title {
             height: 48px;
             display: flex;
@@ -784,7 +809,7 @@ deleteConfirm.onclick = async () => {
         }
         // --- FIN DE LA CORRECCIÓN ---
 
-      function updateFixedTitle(swiperInstance) {
+     function updateFixedTitle(swiperInstance) {
     const fixedBox = document.getElementById("video-title-fixed");
     if (!fixedBox || !swiperInstance) return;
 
@@ -806,10 +831,10 @@ deleteConfirm.onclick = async () => {
     }
 
     const newTitle = activeSlide?.dataset?.title || "Video";
-    const newDesc  = activeSlide?.dataset?.descripcion || "";
+    const newDesc = activeSlide?.dataset?.descripcion || "";
 
     const titleEl = fixedBox.querySelector(".video-title");
-    const descEl  = fixedBox.querySelector(".video-desc");
+    const descEl = fixedBox.querySelector(".video-desc");
 
     // Evitar actualización innecesaria
     if (titleEl.textContent === newTitle && descEl.textContent === newDesc) return;
@@ -817,8 +842,42 @@ deleteConfirm.onclick = async () => {
     // Transición suave
     fixedBox.style.opacity = 0;
     setTimeout(() => {
-        titleEl.textContent = newTitle;
-        descEl.textContent  = newDesc;
+        // Reemplazar la estructura interna para poder usar el truncado
+        titleEl.innerHTML = `<span class="text-container">${newTitle}</span>`;
+        descEl.innerHTML = `<span class="text-container">${newDesc}</span>`;
+
+        const titleContainer = titleEl.querySelector('.text-container');
+        const descContainer = descEl.querySelector('.text-container');
+
+        // Manejar el truncamiento de la descripción
+        const toggleDescription = () => {
+            const isExpanded = descContainer.classList.contains('expanded');
+            if (isExpanded) {
+                descContainer.classList.remove('expanded');
+                toggleButton.textContent = '...más';
+            } else {
+                descContainer.classList.add('expanded');
+                toggleButton.textContent = 'mostrar menos';
+            }
+        };
+
+        const toggleButton = document.createElement('span');
+        toggleButton.className = 'toggle-text';
+        toggleButton.textContent = '...más';
+        toggleButton.onclick = toggleDescription;
+
+        // Un pequeño retraso para asegurar que la renderización inicial del texto esté completa.
+        setTimeout(() => {
+            // Si el texto de la descripción es demasiado largo, agregamos el botón de alternar
+            if (descContainer.scrollHeight > descContainer.clientHeight) {
+                descEl.appendChild(toggleButton);
+            } else {
+                if (descEl.contains(toggleButton)) {
+                    descEl.removeChild(toggleButton);
+                }
+            }
+        }, 100);
+
         fixedBox.style.opacity = 1;
     }, 120);
 }
@@ -878,6 +937,7 @@ deleteConfirm.onclick = async () => {
     </script>
 </body>
 </html>
+
 
 
 
