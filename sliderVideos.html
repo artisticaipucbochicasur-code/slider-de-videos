@@ -485,15 +485,14 @@
 let notifications = [];
 let lastVideos = [];
 
-// Actualiza el listado de notificaciones
 function renderNotifications() {
   const list = document.getElementById("notification-list");
   const count = document.getElementById("notification-count");
-  
+
   list.innerHTML = "";
+
   if (notifications.length === 0) {
-    list.innerHTML = "<div>Sin notificaciones</div>";
-    count.textContent = "0";
+    count.textContent = "";
     count.style.display = "none";
     return;
   }
@@ -518,10 +517,6 @@ function renderNotifications() {
   });
 }
 
-// Botón toggle
-document.getElementById("notification-btn").onclick = () => {
-  document.getElementById("notification-list").classList.toggle("hidden");
-};
 
 // --- MANEJO DE ELIMINACIÓN ---
 
@@ -1036,14 +1031,19 @@ deleteConfirm.onclick = async () => {
     }, 120);
 }
 
-      async function cargarVideos(checkNew = false) {
+     async function cargarVideos(checkNew = false) {
   const loader = document.getElementById("loader");
   if (!checkNew) loader.style.display = "flex";
+
   try {
     const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
     const data = await res.json();
 
     const wrapper = document.getElementById("slides");
+
+    // Guardar índice actual
+    let currentIndex = swiper ? swiper.realIndex : 0;
+
     wrapper.innerHTML = "";
 
     let newVideos = [];
@@ -1086,6 +1086,11 @@ deleteConfirm.onclick = async () => {
       },
     });
 
+    // Volver a la posición en la que estaba antes
+    if (checkNew) {
+      swiper.slideToLoop(currentIndex, 0); // sin animación
+    }
+
     cleanupIframesExceptActive();
     updateFixedTitle(swiper);
   } catch (e) {
@@ -1103,3 +1108,4 @@ setInterval(() => cargarVideos(true), 30000);
     </script>
 </body>
 </html>
+
