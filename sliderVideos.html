@@ -726,94 +726,98 @@ deleteConfirm.onclick = async () => {
 
 
         function mountIframe(cardEl) {
-            if (cardEl.querySelector("iframe") || cardEl.querySelector("video")) return;
+  // 🔥 Antes de montar, desmonta todo lo demás
+  cleanupIframesExceptActive();
 
-            const src = cardEl.dataset.embed;
-            const info = getEmbedInfo(src);
+  if (cardEl.querySelector("iframe") || cardEl.querySelector("video")) return;
 
-            const poster = cardEl.querySelector(".poster");
-            if (poster) poster.remove();
-            
-            const controls = createControls();
-            cardEl.appendChild(controls);
+  const src = cardEl.dataset.embed;
+  const info = getEmbedInfo(src);
 
-            const centerPlayPauseBtn = document.createElement("div");
-            centerPlayPauseBtn.className = "center-play-pause-btn";
+  const poster = cardEl.querySelector(".poster");
+  if (poster) poster.remove();
+  
+  const controls = createControls();
+  cardEl.appendChild(controls);
+
+  const centerPlayPauseBtn = document.createElement("div");
+  centerPlayPauseBtn.className = "center-play-pause-btn";
+  centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+  cardEl.appendChild(centerPlayPauseBtn);
+  
+  let player;
+
+  if (info.type === "youtube") {
+    const container = document.createElement("div");
+    container.className = "player-iframe";
+    cardEl.appendChild(container);
+
+    player = new YT.Player(container, {
+      videoId: info.videoId,
+      playerVars: { autoplay: 1, rel: 0, playsinline: 1, controls: 0, modestbranding: 1 },
+      events: {
+        onReady: (event) => {
+          event.target.playVideo();
+          setupControls(event.target, 'youtube', controls, centerPlayPauseBtn, cardEl);
+        },
+        onStateChange: (event) => {
+          const state = event.data;
+          if (state === YT.PlayerState.PLAYING) {
             centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-            cardEl.appendChild(centerPlayPauseBtn);
-            
-            let player;
-
-            if (info.type === "youtube") {
-                const container = document.createElement("div");
-                container.className = "player-iframe";
-                cardEl.appendChild(container);
-
-                player = new YT.Player(container, {
-                    videoId: info.videoId,
-                    playerVars: { autoplay: 1, rel: 0, playsinline: 1, controls: 0, modestbranding: 1 },
-                    events: {
-                        onReady: (event) => {
-                            event.target.playVideo();
-                            setupControls(event.target, 'youtube', controls, centerPlayPauseBtn, cardEl);
-                        },
-                        onStateChange: (event) => {
-                            const state = event.data;
-                            if (state === YT.PlayerState.PLAYING) {
-                                centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                                centerPlayPauseBtn.style.opacity = 0;
-                            } else if (state === YT.PlayerState.PAUSED) {
-                                centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                                centerPlayPauseBtn.style.opacity = 1;
-                            } else {
-                                centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                            }
-                        }
-                    }
-                });
-                players[src] = player;
-            } else if (info.type === "mp4") {
-                const video = document.createElement("video");
-                video.className = "player-iframe";
-                video.setAttribute("autoplay", "true");
-                video.setAttribute("playsinline", "true");
-                video.style.width = "100%";
-                video.style.height = "100%";
-                video.style.background = "#000";
-
-                const source = document.createElement("source");
-                source.src = src;
-                source.type = "video/mp4";
-                video.appendChild(source);
-                cardEl.appendChild(video);
-
-                player = video;
-                players[src] = player;
-
-                video.addEventListener('loadedmetadata', () => {
-                    setupControls(video, 'mp4', controls, centerPlayPauseBtn, cardEl);
-                });
-                video.addEventListener('play', () => {
-                    centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                    centerPlayPauseBtn.style.opacity = 0;
-                });
-                video.addEventListener('pause', () => {
-                    centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                    centerPlayPauseBtn.style.opacity = 1;
-                });
-                video.addEventListener('ended', () => {
-                    centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                    centerPlayPauseBtn.style.opacity = 1;
-                });
-            } else {
-                 const iframe = document.createElement("iframe");
-                 iframe.className = "player-iframe";
-                 iframe.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share");
-                 iframe.setAttribute("allowfullscreen", "true");
-                 iframe.src = src + (src.includes("?") ? "&" : "?") + "autoplay=1";
-                 cardEl.appendChild(iframe);
-            }
+            centerPlayPauseBtn.style.opacity = 0;
+          } else if (state === YT.PlayerState.PAUSED) {
+            centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+            centerPlayPauseBtn.style.opacity = 1;
+          } else {
+            centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+          }
         }
+      }
+    });
+    players[src] = player;
+  } else if (info.type === "mp4") {
+    const video = document.createElement("video");
+    video.className = "player-iframe";
+    video.setAttribute("autoplay", "true");
+    video.setAttribute("playsinline", "true");
+    video.style.width = "100%";
+    video.style.height = "100%";
+    video.style.background = "#000";
+
+    const source = document.createElement("source");
+    source.src = src;
+    source.type = "video/mp4";
+    video.appendChild(source);
+    cardEl.appendChild(video);
+
+    player = video;
+    players[src] = player;
+
+    video.addEventListener('loadedmetadata', () => {
+      setupControls(video, 'mp4', controls, centerPlayPauseBtn, cardEl);
+    });
+    video.addEventListener('play', () => {
+      centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+      centerPlayPauseBtn.style.opacity = 0;
+    });
+    video.addEventListener('pause', () => {
+      centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+      centerPlayPauseBtn.style.opacity = 1;
+    });
+    video.addEventListener('ended', () => {
+      centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+      centerPlayPauseBtn.style.opacity = 1;
+    });
+  } else {
+    const iframe = document.createElement("iframe");
+    iframe.className = "player-iframe";
+    iframe.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share");
+    iframe.setAttribute("allowfullscreen", "true");
+    iframe.src = src + (src.includes("?") ? "&" : "?") + "autoplay=1";
+    cardEl.appendChild(iframe);
+  }
+}
+
         
         function createControls() {
             const controlsBar = document.createElement("div");
@@ -1074,6 +1078,8 @@ function cleanupIframesExceptActive() {
     }, 120);
 }
 
+        
+
 async function cargarVideos(checkNew = false) {
   const loader = document.getElementById("loader");
   if (!checkNew) loader.style.display = "flex";
@@ -1120,12 +1126,18 @@ async function cargarVideos(checkNew = false) {
         spaceBetween: 10,
         pagination: false,
         on: {
-          init() { updateFixedTitle(this); },
+          init() { 
+            cleanupIframesExceptActive(); 
+            updateFixedTitle(this); 
+          },
           slideChange() {
+            // 🔥 desmontar inmediatamente el video anterior
             cleanupIframesExceptActive();
             updateFixedTitle(this);
           },
-          slideChangeTransitionEnd() { updateFixedTitle(this); }
+          slideChangeTransitionEnd() { 
+            updateFixedTitle(this); 
+          }
         },
       });
 
@@ -1141,6 +1153,7 @@ async function cargarVideos(checkNew = false) {
 
 
 
+
 // === AUTO REFRESCO EN SEGUNDO PLANO ===
 setInterval(() => {
   cargarVideos(true); // solo refresca notificaciones, no toca el slider
@@ -1150,6 +1163,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
