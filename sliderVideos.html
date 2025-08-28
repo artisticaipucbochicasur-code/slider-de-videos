@@ -509,606 +509,631 @@ function renderNotifications() {
       // Ir al video correspondiente
       const index = lastVideos.findIndex(v => v.link === notif.link);
       if (index !== -1) {
-        // 👇 ESTA ES LA FUNCIÓN QUE LLEVA AL VIDEO AL HACER CLIC
-        // swiper.realIndex es el índice del video original, sin los duplicados de "loop"
         swiper.slideToLoop(index);
       }
       // Marcar como leída
       notifications.splice(i, 1);
       renderNotifications();
-      // Ocultar la lista de notificaciones después de seleccionar
-      document.getElementById("notification-list").classList.add("hidden");
     };
     list.appendChild(item);
   });
 }
 
-// Botón toggle 
-document.getElementById("notification-btn").onclick = () => { 
-  document.getElementById("notification-list").classList.toggle("hidden"); 
-}; 
-
-// --- MANEJO DE ELIMINACIÓN --- 
-
-// Variables para almacenar los datos del usuario, obtenidos de la URL 
-let usuarioAutor = ""; 
-let usuarioCorreo = ""; 
-
-// Función para obtener los parámetros 'name' y 'email' de la URL 
-function getUsuarioDataFromUrl() { 
-    const params = new URLSearchParams(window.location.search); 
-    usuarioAutor = params.get("name") || ""; 
-    usuarioCorreo = params.get("email") || ""; 
-} 
-
-// Llamar a la función al cargar la página para obtener los datos 
-document.addEventListener("DOMContentLoaded", getUsuarioDataFromUrl); 
-
-// NUEVO: Variables para el modal de alerta personalizada 
-const customAlertModal = document.getElementById("custom-alert-modal"); 
-const customAlertMessage = document.getElementById("custom-alert-message"); 
-const customAlertOk = document.getElementById("custom-alert-ok"); 
-
-// NUEVO: Función para mostrar el modal de alerta personalizado 
-function showAlert(message, title = "¡Atención!") { 
-    customAlertMessage.textContent = message; 
-    customAlertModal.querySelector('h3').textContent = title; 
-    customAlertModal.classList.remove("hidden"); 
-} 
-
-// NUEVO: Ocultar el modal de alerta cuando se hace clic en "Aceptar" 
-customAlertOk.onclick = () => { 
-    customAlertModal.classList.add("hidden"); 
-}; 
-
-const btnDelete = document.getElementById("btn-delete"); 
-const deleteModal = document.getElementById("delete-modal"); 
-const deleteTitle = document.getElementById("delete-video-title"); 
-const deleteConfirm = document.getElementById("delete-confirm"); 
-const deleteCancel = document.getElementById("delete-cancel"); 
-
-let pendingDelete = null; 
-
-btnDelete.onclick = () => { 
-    if (!swiper) return; 
-    const activeSlide = document.querySelector(".swiper-slide-active"); 
-    if (!activeSlide) return; 
-
-    const title = activeSlide.dataset.title; 
-    const link = activeSlide.querySelector(".player-card")?.dataset.embed; 
-
-    // Si no hay datos de usuario, notificar y salir 
-    if (!usuarioAutor || !usuarioCorreo) { 
-        showAlert("No se pudo obtener la información de tu cuenta. Intenta recargar la página."); 
-        return; 
-    } 
-
-    pendingDelete = { title, link }; 
-    deleteTitle.textContent = `¿Eliminar "${title}"?`; 
-    deleteModal.classList.remove("hidden"); 
-}; 
-
-deleteCancel.onclick = () => { 
-    deleteModal.classList.add("hidden"); 
-    pendingDelete = null; 
-}; 
-
-deleteConfirm.onclick = async () => { 
-    if (!pendingDelete) return; 
-    const { title, link } = pendingDelete; 
-
-    deleteModal.classList.add("hidden"); 
-    pendingDelete = null; 
-
-    let identifier = ""; 
-    let fileName = ""; 
-    let archiveMatch = link.match(/archive\.org\/download\/([^/]+)\/(.+)$/); 
-    if (archiveMatch) { 
-        identifier = archiveMatch[1]; 
-        fileName = decodeURIComponent(archiveMatch[2]); 
-    } 
-    
-    // Aquí usamos las variables 'usuarioAutor' y 'usuarioCorreo' 
-    const deleteUrl = `${SCRIPT_URL}?accion=eliminar&link=${encodeURIComponent(link)}&id=${encodeURIComponent(identifier)}&file=${encodeURIComponent(fileName)}&autor=${encodeURIComponent(usuarioAutor)}&correo=${encodeURIComponent(usuarioCorreo)}`; 
-
-    const response = await fetch(deleteUrl); 
-    const data = await response.json(); 
-
-    if (data.status === "success") { 
-        showAlert("✅ Video eliminado con éxito.", "¡Listo!"); 
-    } else { 
-        showAlert("❌ Error al eliminar: " + data.message, "Error"); 
-    } 
-    
-    cargarVideos(); 
-}; 
-
-
-
-    
-    let swiper = null; 
-    let players = {}; 
-
-    function getEmbedInfo(link) { 
-        const url = new URL(link, location.href); 
-        if (url.hostname.includes("youtube.com") || url.hostname.includes("youtu.be")) { 
-            let videoId = ""; 
-            if (url.hostname.includes("youtube.com")) { 
-                videoId = url.searchParams.get("v") || ""; 
-            } else if (url.hostname.includes("youtu.be")) { 
-                videoId = url.pathname.replace("/", ""); 
-            } 
-            if (videoId) { 
-                const embedSrc = `https://www.youtube.com/embed/${videoId}?rel=0&playsinline=1&controls=0&modestbranding=1`; 
-                const poster = "https://img.youtube.com/vi/" + videoId + "/hqdefault.jpg"; 
-                return { type: "youtube", embedSrc, poster, videoId }; 
-            } 
-        } 
-        if (url.hostname.includes("archive.org")) { 
-            let identifier = ""; 
-            const m = link.match(/archive\.org\/(?:embed|details|download)\/([^?&#/]+)/i); 
-            if (m && m[1]) { 
-                identifier = m[1]; 
-            } 
-            const poster = identifier ? `https://archive.org/services/img/${identifier}` : ""; 
-            return { type: "mp4", embedSrc: link, poster: poster }; 
-        } 
-        if (url.pathname.endsWith(".mp4")) { 
-             return { type: "mp4", embedSrc: link, poster: "" }; 
-        } 
-        return { type: "other", embedSrc: link, poster: "" }; 
-    } 
-
-   function createSlide(titulo, link, descripcion) { 
-    const { embedSrc, poster } = getEmbedInfo(link); 
-    const slide = document.createElement("div"); 
-    slide.className = "swiper-slide"; 
-    slide.dataset.title = titulo || "Video"; 
-    slide.dataset.descripcion = descripcion || ""; 
-
-    const card = document.createElement("div"); 
-    card.className = "player-card"; 
-    card.dataset.embed = embedSrc; 
-
-    const posterEl = document.createElement("div"); 
-    posterEl.className = "poster"; 
-    if (poster) posterEl.style.backgroundImage = `url("${poster}")`; 
-
-    const playBtn = document.createElement("div"); 
-    playBtn.className = "play-btn"; 
-    playBtn.innerHTML = '<i class="fas fa-play"></i>'; 
-    posterEl.appendChild(playBtn); 
-
-    posterEl.addEventListener("click", () => { 
-        mountIframe(card); 
-    }); 
-
-    card.appendChild(posterEl); 
-    
-    // 👇 Añade el título y descripción a la tarjeta para que `updateFixedTitle` los encuentre
-    const textContainer = document.createElement("div");
-    textContainer.className = "slide-text-content";
-    textContainer.style.display = "none"; // Ocultar para que no se duplique
-    textContainer.innerHTML = `<span class="video-title-hidden">${titulo}</span><span class="video-desc-hidden">${descripcion}</span>`;
-    card.appendChild(textContainer);
-
-    slide.appendChild(card); 
-    
-    return slide; 
-} 
-
-
-    function mountIframe(cardEl) { 
-        if (cardEl.querySelector("iframe") || cardEl.querySelector("video")) return; 
-
-        const src = cardEl.dataset.embed; 
-        const info = getEmbedInfo(src); 
-
-        const poster = cardEl.querySelector(".poster"); 
-        if (poster) poster.remove(); 
-        
-        const controls = createControls(); 
-        cardEl.appendChild(controls); 
-
-        const centerPlayPauseBtn = document.createElement("div"); 
-        centerPlayPauseBtn.className = "center-play-pause-btn"; 
-        centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>'; 
-        cardEl.appendChild(centerPlayPauseBtn); 
-        
-        let player; 
-
-        if (info.type === "youtube") { 
-            const container = document.createElement("div"); 
-            container.className = "player-iframe"; 
-            cardEl.appendChild(container); 
-
-            player = new YT.Player(container, { 
-                videoId: info.videoId, 
-                playerVars: { autoplay: 1, rel: 0, playsinline: 1, controls: 0, modestbranding: 1 }, 
-                events: { 
-                    onReady: (event) => { 
-                        event.target.playVideo(); 
-                        setupControls(event.target, 'youtube', controls, centerPlayPauseBtn, cardEl); 
-                    }, 
-                    onStateChange: (event) => { 
-                        const state = event.data; 
-                        if (state === YT.PlayerState.PLAYING) { 
-                            centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>'; 
-                            centerPlayPauseBtn.style.opacity = 0; 
-                        } else if (state === YT.PlayerState.PAUSED) { 
-                            centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>'; 
-                            centerPlayPauseBtn.style.opacity = 1; 
-                        } else { 
-                            centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>'; 
-                        } 
-                    } 
-                } 
-            }); 
-            players[src] = player; 
-        } else if (info.type === "mp4") { 
-            const video = document.createElement("video"); 
-            video.className = "player-iframe"; 
-            video.setAttribute("autoplay", "true"); 
-            video.setAttribute("playsinline", "true"); 
-            video.style.width = "100%"; 
-            video.style.height = "100%"; 
-            video.style.background = "#000"; 
-
-            const source = document.createElement("source"); 
-            source.src = src; 
-            source.type = "video/mp4"; 
-            video.appendChild(source); 
-            cardEl.appendChild(video); 
-
-            player = video; 
-            players[src] = player; 
-
-            video.addEventListener('loadedmetadata', () => { 
-                setupControls(video, 'mp4', controls, centerPlayPauseBtn, cardEl); 
-            }); 
-            video.addEventListener('play', () => { 
-                centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>'; 
-                centerPlayPauseBtn.style.opacity = 0; 
-            }); 
-            video.addEventListener('pause', () => { 
-                centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>'; 
-                centerPlayPauseBtn.style.opacity = 1; 
-            }); 
-            video.addEventListener('ended', () => { 
-                centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>'; 
-                centerPlayPauseBtn.style.opacity = 1; 
-            }); 
-        } else { 
-            const iframe = document.createElement("iframe"); 
-            iframe.className = "player-iframe"; 
-            iframe.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"); 
-            iframe.setAttribute("allowfullscreen", "true"); 
-            iframe.src = src + (src.includes("?") ? "&" : "?") + "autoplay=1"; 
-            cardEl.appendChild(iframe); 
-        } 
-    } 
-    
-    function createControls() { 
-        const controlsBar = document.createElement("div"); 
-        controlsBar.className = "controls-bar"; 
-
-        const playPauseBtn = document.createElement("button"); 
-        playPauseBtn.className = "play-pause-btn"; 
-        playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>'; 
-
-        const progressBarContainer = document.createElement("div"); 
-        progressBarContainer.className = "progress-bar"; 
-        const progress = document.createElement("div"); 
-        progress.className = "progress"; 
-        progressBarContainer.appendChild(progress); 
-
-        const timeDisplay = document.createElement("div"); 
-        timeDisplay.className = "time"; 
-        timeDisplay.textContent = "00:00 / 00:00"; 
-
-        const volumeControl = document.createElement("div"); 
-        volumeControl.className = "volume-control"; 
-        const volumeIcon = document.createElement("span"); 
-        volumeIcon.className = "volume-icon"; 
-        volumeIcon.innerHTML = '<i class="fas fa-volume-up"></i>'; 
-        const volumeSlider = document.createElement("input"); 
-        volumeSlider.type = "range"; 
-        volumeSlider.min = "0"; 
-        volumeSlider.max = "1"; 
-        volumeSlider.step = "0.01"; 
-        volumeSlider.value = "1"; 
-        volumeControl.appendChild(volumeIcon); 
-        volumeControl.appendChild(volumeSlider); 
-
-        controlsBar.appendChild(playPauseBtn); 
-        controlsBar.appendChild(progressBarContainer); 
-        controlsBar.appendChild(timeDisplay); 
-        controlsBar.appendChild(volumeControl); 
-
-        return controlsBar; 
-    } 
-
-    function formatTime(seconds) { 
-        const h = Math.floor(seconds / 3600); 
-        const m = Math.floor((seconds % 3600) / 60); 
-        const s = Math.floor(seconds % 60); 
-        return [h, m, s] 
-            .filter(v => v > 0 || v === 0) 
-            .map(v => v.toString().padStart(2, '0')) 
-            .join(':') 
-            .replace(/^00:/, ''); 
-    } 
-
-    function setupControls(player, type, controls, centerPlayPauseBtn, cardEl) { 
-        const playPauseBtn = controls.querySelector('.play-pause-btn'); 
-        const progressBarContainer = controls.querySelector('.progress-bar'); 
-        const progress = controls.querySelector('.progress'); 
-        const volumeSlider = controls.querySelector('.volume-control input'); 
-        const timeDisplay = controls.querySelector('.time'); 
-        let totalTime = 0; 
-        let timeoutId; 
-        
-        const hideControls = () => { 
-            controls.style.opacity = 0; 
-            if (type === 'youtube' && player.getPlayerState() === YT.PlayerState.PLAYING) { 
-                centerPlayPauseBtn.style.opacity = 0; 
-            } else if (type === 'mp4' && !player.paused) { 
-                centerPlayPauseBtn.style.opacity = 0; 
-            } 
-        }; 
-        
-        const showControls = () => { 
-            clearTimeout(timeoutId); 
-            controls.style.opacity = 1; 
-            centerPlayPauseBtn.style.opacity = 1; 
-            timeoutId = setTimeout(hideControls, 3000); 
-        }; 
-
-        const updateTime = () => { 
-            let currentTime = 0; 
-            if (type === 'youtube') { 
-                currentTime = player.getCurrentTime(); 
-            } else { 
-                currentTime = player.currentTime; 
-            } 
-            const progressPercentage = (currentTime / totalTime) * 100; 
-            progress.style.width = `${progressPercentage}%`; 
-            timeDisplay.textContent = `${formatTime(currentTime)} / ${formatTime(totalTime)}`; 
-        }; 
-
-        const interval = setInterval(updateTime, 1000); 
-
-        cardEl.addEventListener('mouseenter', showControls); 
-        cardEl.addEventListener('mouseleave', hideControls); 
-        cardEl.addEventListener('mousemove', showControls); 
-        
-        if (type === 'youtube') { 
-            totalTime = player.getDuration(); 
-            updateTime(); 
-            playPauseBtn.onclick = () => { 
-                const state = player.getPlayerState(); 
-                if (state === YT.PlayerState.PLAYING) { 
-                    player.pauseVideo(); 
-                } else { 
-                    player.playVideo(); 
-                } 
-            }; 
-            centerPlayPauseBtn.onclick = playPauseBtn.onclick; 
-
-            progressBarContainer.onclick = (e) => { 
-                const clickX = e.offsetX; 
-                const totalWidth = progressBarContainer.clientWidth; 
-                const newTime = (clickX / totalWidth) * totalTime; 
-                player.seekTo(newTime, true); 
-            }; 
-            volumeSlider.oninput = (e) => player.setVolume(e.target.value * 100); 
-        } else if (type === 'mp4') { 
-            totalTime = player.duration; 
-            updateTime(); 
-            playPauseBtn.onclick = () => { 
-                if (player.paused) { 
-                    player.play(); 
-                } else { 
-                    player.pause(); 
-                } 
-            }; 
-            centerPlayPauseBtn.onclick = playPauseBtn.onclick; 
-            progressBarContainer.onclick = (e) => { 
-                const clickX = e.offsetX; 
-                const totalWidth = progressBarContainer.clientWidth; 
-                const newTime = (clickX / totalWidth) * totalTime; 
-                player.currentTime = newTime; 
-            }; 
-            volumeSlider.oninput = (e) => player.volume = e.target.value; 
-            player.addEventListener('timeupdate', updateTime); 
-        } 
-    } 
-
-    function restorePoster(card) { 
-        const src = card.dataset.embed; 
-        const player = players[src]; 
-        if (player) { 
-            if (typeof player.pauseVideo === 'function') { 
-                player.pauseVideo(); 
-            } else if (typeof player.pause === 'function') { 
-                player.pause(); 
-            } 
-        } 
-
-        const playerContainer = card.querySelector(".player-iframe"); 
-        if (playerContainer) playerContainer.remove(); 
-
-        const controlsBar = card.querySelector(".controls-bar"); 
-        if (controlsBar) controlsBar.remove(); 
-        
-        const centerBtn = card.querySelector(".center-play-pause-btn"); 
-        if (centerBtn) centerBtn.remove(); 
-
-        if (!card.querySelector(".poster")) { 
-            const info = getEmbedInfo(src); 
-            const posterEl = document.createElement("div"); 
-            posterEl.className = "poster"; 
-            if (info.poster) { 
-                posterEl.style.backgroundImage = `url("${info.poster}")`; 
-            } 
-            const playBtn = document.createElement("div"); 
-            playBtn.className = "play-btn"; 
-            playBtn.innerHTML = '<i class="fas fa-play"></i>'; 
-            posterEl.appendChild(playBtn); 
-            posterEl.addEventListener("click", () => mountIframe(card)); 
-            card.appendChild(posterEl); 
-        } 
-    } 
-
-    function cleanupIframesExceptActive() { 
-        if (!swiper) return; 
-        const prevIndex = swiper.previousIndex; 
-        
-        if (prevIndex !== undefined && swiper.slides[prevIndex]) { 
-            const card = swiper.slides[prevIndex].querySelector(".player-card"); 
-            if (card) { 
-                restorePoster(card); 
-            } 
-        } 
-    } 
-
-   function updateFixedTitle(swiperInstance) { 
-    const fixedBox = document.getElementById("video-title-fixed"); 
-    if (!fixedBox || !swiperInstance) return; 
-
-    const activeSlide = swiperInstance.slides[swiperInstance.activeIndex] || document.querySelector('.swiper-slide-active'); 
-
-    if (!activeSlide) return; 
-
-    // Asegurarse de que el título se obtiene del elemento correcto
-    const newTitle = activeSlide.dataset.title || "Video"; 
-    const newDesc = activeSlide.dataset.descripcion || ""; 
-
-    const titleEl = fixedBox.querySelector(".video-title"); 
-    const descEl = fixedBox.querySelector(".video-desc"); 
-
-    const currentTitle = titleEl.querySelector('.text-container')?.textContent; 
-    const currentDesc = descEl.querySelector('.text-container')?.textContent; 
-    
-    if (currentTitle === newTitle && currentDesc === newDesc) { 
-        return; 
-    } 
-
-    fixedBox.style.opacity = 0; 
-
-    setTimeout(() => { 
-        const setupExpandableText = (element, text) => { 
-            element.innerHTML = `<span class="text-container">${text}</span>`; 
-            const container = element.querySelector('.text-container'); 
-            
-            setTimeout(() => { 
-                if (container.scrollHeight > container.clientHeight) { 
-                    const toggleButton = document.createElement('span'); 
-                    toggleButton.className = 'toggle-text'; 
-                    toggleButton.textContent = '...más'; 
-                    element.appendChild(toggleButton); 
-                    element.addEventListener('click', () => { 
-                        const isExpanded = container.classList.contains('expanded'); 
-                        if (isExpanded) { 
-                            container.classList.remove('expanded'); 
-                            toggleButton.textContent = '...más'; 
-                        } else { 
-                            container.classList.add('expanded'); 
-                            toggleButton.textContent = 'mostrar menos'; 
-                        } 
-                    }); 
-                } else { 
-                    const existingButton = element.querySelector('.toggle-text'); 
-                    if (existingButton) existingButton.remove(); 
-                    const clonedElement = element.cloneNode(true); 
-                    element.parentNode.replaceChild(clonedElement, element); 
-                } 
-            }, 50); 
-        }; 
-
-        setupExpandableText(titleEl, newTitle); 
-        setupExpandableText(descEl, newDesc); 
-
-        fixedBox.style.opacity = 1; 
-    }, 120); 
-} 
-
-async function cargarVideos(checkNew = false) { 
-  const loader = document.getElementById("loader"); 
-  if (!checkNew) loader.style.display = "flex"; 
-
-  try { 
-    const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`); 
-    const data = await res.json(); 
-
-    let newVideos = []; 
-    if (Array.isArray(data.data)) { 
-      data.data.forEach((row) => { 
-        const titulo = row[0]; 
-        const link = row[1]; 
-        const descripcion = row[4] || ""; 
-        newVideos.push({ title: titulo, link, desc: descripcion }); 
-      }); 
-    } 
-
-    // Comparar con lastVideos y añadir a notificaciones si es un video nuevo
-    if (checkNew && lastVideos.length > 0) { 
-      newVideos.forEach(v => { 
-        if (!lastVideos.find(old => old.link === v.link)) { 
-          notifications.unshift(v); // nuevo video arriba 
-        } 
-      }); 
-      renderNotifications(); 
-    } 
-
-    // 👇 SOLUCIÓN: Si la lista de videos cambia, actualiza el slider manteniendo la posición
-    if (JSON.stringify(lastVideos) !== JSON.stringify(newVideos)) {
-      const activeIndex = swiper ? swiper.realIndex : 0; // Guarda el índice actual
-      
-      const wrapper = document.getElementById("slides"); 
-      wrapper.innerHTML = ""; 
-      newVideos.forEach(v => wrapper.appendChild(createSlide(v.title, v.link, v.desc))); 
-
-      if (!swiper) { 
-        swiper = new Swiper(".swiper", { 
-          loop: true, 
-          direction: "horizontal", 
-          slidesPerView: 1, 
-          spaceBetween: 10, 
-          pagination: false, 
-          on: { 
-            init() { updateFixedTitle(this); }, 
-            slideChange() { 
-              cleanupIframesExceptActive(); 
-              updateFixedTitle(this); 
-            } 
-          }, 
-        }); 
-      } else { 
-        swiper.update(); // Actualiza el slider con los nuevos slides
-        swiper.slideToLoop(activeIndex, 0); // Vuelve a la posición que guardaste
-      } 
-      lastVideos = newVideos; 
+// Botón toggle
+document.getElementById("notification-btn").onclick = () => {
+  document.getElementById("notification-list").classList.toggle("hidden");
+};
+
+// --- MANEJO DE ELIMINACIÓN ---
+
+// Variables para almacenar los datos del usuario, obtenidos de la URL
+let usuarioAutor = "";
+let usuarioCorreo = "";
+
+// Función para obtener los parámetros 'name' y 'email' de la URL
+function getUsuarioDataFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    usuarioAutor = params.get("name") || "";
+    usuarioCorreo = params.get("email") || "";
+}
+
+// Llamar a la función al cargar la página para obtener los datos
+document.addEventListener("DOMContentLoaded", getUsuarioDataFromUrl);
+
+// NUEVO: Variables para el modal de alerta personalizada
+const customAlertModal = document.getElementById("custom-alert-modal");
+const customAlertMessage = document.getElementById("custom-alert-message");
+const customAlertOk = document.getElementById("custom-alert-ok");
+
+// NUEVO: Función para mostrar el modal de alerta personalizado
+function showAlert(message, title = "¡Atención!") {
+    customAlertMessage.textContent = message;
+    customAlertModal.querySelector('h3').textContent = title;
+    customAlertModal.classList.remove("hidden");
+}
+
+// NUEVO: Ocultar el modal de alerta cuando se hace clic en "Aceptar"
+customAlertOk.onclick = () => {
+    customAlertModal.classList.add("hidden");
+};
+
+const btnDelete = document.getElementById("btn-delete");
+const deleteModal = document.getElementById("delete-modal");
+const deleteTitle = document.getElementById("delete-video-title");
+const deleteConfirm = document.getElementById("delete-confirm");
+const deleteCancel = document.getElementById("delete-cancel");
+
+let pendingDelete = null;
+
+btnDelete.onclick = () => {
+    if (!swiper) return;
+    const activeSlide = document.querySelector(".swiper-slide-active");
+    if (!activeSlide) return;
+
+    const title = activeSlide.dataset.title;
+    const link = activeSlide.querySelector(".player-card")?.dataset.embed;
+
+    // Si no hay datos de usuario, notificar y salir
+    if (!usuarioAutor || !usuarioCorreo) {
+        showAlert("No se pudo obtener la información de tu cuenta. Intenta recargar la página.");
+        return;
     }
 
-    updateFixedTitle(swiper); 
+    pendingDelete = { title, link };
+    deleteTitle.textContent = `¿Eliminar "${title}"?`;
+    deleteModal.classList.remove("hidden");
+};
 
-  } catch (e) { 
-    console.error("Error cargando videos:", e); 
-  } finally { 
-    loader.style.display = "none"; 
-  } 
-} 
+deleteCancel.onclick = () => {
+    deleteModal.classList.add("hidden");
+    pendingDelete = null;
+};
 
-// === AUTO REFRESCO EN SEGUNDO PLANO === 
-setInterval(() => { 
-  cargarVideos(true); // revisa solo si hay nuevos videos 
-}, 3000); // cada 3 segundos (ajusta según quieras) 
+deleteConfirm.onclick = async () => {
+    if (!pendingDelete) return;
+    const { title, link } = pendingDelete;
 
-cargarVideos(); 
+    deleteModal.classList.add("hidden");
+    pendingDelete = null;
+
+    let identifier = "";
+    let fileName = "";
+    let archiveMatch = link.match(/archive\.org\/download\/([^/]+)\/(.+)$/);
+    if (archiveMatch) {
+        identifier = archiveMatch[1];
+        fileName = decodeURIComponent(archiveMatch[2]);
+    }
+    
+    // Aquí usamos las variables 'usuarioAutor' y 'usuarioCorreo'
+    const deleteUrl = `${SCRIPT_URL}?accion=eliminar&link=${encodeURIComponent(link)}&id=${encodeURIComponent(identifier)}&file=${encodeURIComponent(fileName)}&autor=${encodeURIComponent(usuarioAutor)}&correo=${encodeURIComponent(usuarioCorreo)}`;
+
+    const response = await fetch(deleteUrl);
+    const data = await response.json();
+
+    if (data.status === "success") {
+        showAlert("✅ Video eliminado con éxito.", "¡Listo!");
+    } else {
+        showAlert("❌ Error al eliminar: " + data.message, "Error");
+    }
+    
+    cargarVideos();
+};
+
+
+
+        
+        let swiper = null;
+        let players = {};
+
+        function getEmbedInfo(link) {
+            const url = new URL(link, location.href);
+            if (url.hostname.includes("youtube.com") || url.hostname.includes("youtu.be")) {
+                let videoId = "";
+                if (url.hostname.includes("youtube.com")) {
+                    videoId = url.searchParams.get("v") || "";
+                } else if (url.hostname.includes("youtu.be")) {
+                    videoId = url.pathname.replace("/", "");
+                }
+                if (videoId) {
+                    const embedSrc = `https://www.youtube.com/embed/${videoId}?rel=0&playsinline=1&controls=0&modestbranding=1`;
+                    const poster = "https://img.youtube.com/vi/" + videoId + "/hqdefault.jpg";
+                    return { type: "youtube", embedSrc, poster, videoId };
+                }
+            }
+            if (url.hostname.includes("archive.org")) {
+                let identifier = "";
+                const m = link.match(/archive\.org\/(?:embed|details|download)\/([^?&#/]+)/i);
+                if (m && m[1]) {
+                    identifier = m[1];
+                }
+                const poster = identifier ? `https://archive.org/services/img/${identifier}` : "";
+                return { type: "mp4", embedSrc: link, poster: poster };
+            }
+            if (url.pathname.endsWith(".mp4")) {
+                 return { type: "mp4", embedSrc: link, poster: "" };
+            }
+            return { type: "other", embedSrc: link, poster: "" };
+        }
+
+       function createSlide(titulo, link, descripcion) {
+    const { embedSrc, poster } = getEmbedInfo(link);
+    const slide = document.createElement("div");
+    slide.className = "swiper-slide";
+    slide.dataset.title = titulo || "Video";
+    slide.dataset.descripcion = descripcion || "";
+
+    const card = document.createElement("div");
+    card.className = "player-card";
+    card.dataset.embed = embedSrc;
+
+    const posterEl = document.createElement("div");
+    posterEl.className = "poster";
+    if (poster) posterEl.style.backgroundImage = `url("${poster}")`;
+
+    const playBtn = document.createElement("div");
+    playBtn.className = "play-btn";
+    playBtn.innerHTML = '<i class="fas fa-play"></i>';
+    posterEl.appendChild(playBtn);
+
+    posterEl.addEventListener("click", () => {
+        mountIframe(card);
+    });
+
+    card.appendChild(posterEl);
+
+    slide.appendChild(card);
+   
+    return slide;
+}
+
+
+        function mountIframe(cardEl) {
+            if (cardEl.querySelector("iframe") || cardEl.querySelector("video")) return;
+
+            const src = cardEl.dataset.embed;
+            const info = getEmbedInfo(src);
+
+            const poster = cardEl.querySelector(".poster");
+            if (poster) poster.remove();
+            
+            const controls = createControls();
+            cardEl.appendChild(controls);
+
+            const centerPlayPauseBtn = document.createElement("div");
+            centerPlayPauseBtn.className = "center-play-pause-btn";
+            centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+            cardEl.appendChild(centerPlayPauseBtn);
+            
+            let player;
+
+            if (info.type === "youtube") {
+                const container = document.createElement("div");
+                container.className = "player-iframe";
+                cardEl.appendChild(container);
+
+                player = new YT.Player(container, {
+                    videoId: info.videoId,
+                    playerVars: { autoplay: 1, rel: 0, playsinline: 1, controls: 0, modestbranding: 1 },
+                    events: {
+                        onReady: (event) => {
+                            event.target.playVideo();
+                            setupControls(event.target, 'youtube', controls, centerPlayPauseBtn, cardEl);
+                        },
+                        onStateChange: (event) => {
+                            const state = event.data;
+                            if (state === YT.PlayerState.PLAYING) {
+                                centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                                centerPlayPauseBtn.style.opacity = 0;
+                            } else if (state === YT.PlayerState.PAUSED) {
+                                centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                                centerPlayPauseBtn.style.opacity = 1;
+                            } else {
+                                centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                            }
+                        }
+                    }
+                });
+                players[src] = player;
+            } else if (info.type === "mp4") {
+                const video = document.createElement("video");
+                video.className = "player-iframe";
+                video.setAttribute("autoplay", "true");
+                video.setAttribute("playsinline", "true");
+                video.style.width = "100%";
+                video.style.height = "100%";
+                video.style.background = "#000";
+
+                const source = document.createElement("source");
+                source.src = src;
+                source.type = "video/mp4";
+                video.appendChild(source);
+                cardEl.appendChild(video);
+
+                player = video;
+                players[src] = player;
+
+                video.addEventListener('loadedmetadata', () => {
+                    setupControls(video, 'mp4', controls, centerPlayPauseBtn, cardEl);
+                });
+                video.addEventListener('play', () => {
+                    centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    centerPlayPauseBtn.style.opacity = 0;
+                });
+                video.addEventListener('pause', () => {
+                    centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                    centerPlayPauseBtn.style.opacity = 1;
+                });
+                video.addEventListener('ended', () => {
+                    centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                    centerPlayPauseBtn.style.opacity = 1;
+                });
+            } else {
+                 const iframe = document.createElement("iframe");
+                 iframe.className = "player-iframe";
+                 iframe.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share");
+                 iframe.setAttribute("allowfullscreen", "true");
+                 iframe.src = src + (src.includes("?") ? "&" : "?") + "autoplay=1";
+                 cardEl.appendChild(iframe);
+            }
+        }
+        
+        function createControls() {
+            const controlsBar = document.createElement("div");
+            controlsBar.className = "controls-bar";
+
+            const playPauseBtn = document.createElement("button");
+            playPauseBtn.className = "play-pause-btn";
+            playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+
+            const progressBarContainer = document.createElement("div");
+            progressBarContainer.className = "progress-bar";
+            const progress = document.createElement("div");
+            progress.className = "progress";
+            progressBarContainer.appendChild(progress);
+
+            const timeDisplay = document.createElement("div");
+            timeDisplay.className = "time";
+            timeDisplay.textContent = "00:00 / 00:00";
+
+            const volumeControl = document.createElement("div");
+            volumeControl.className = "volume-control";
+            const volumeIcon = document.createElement("span");
+            volumeIcon.className = "volume-icon";
+            volumeIcon.innerHTML = '<i class="fas fa-volume-up"></i>';
+            const volumeSlider = document.createElement("input");
+            volumeSlider.type = "range";
+            volumeSlider.min = "0";
+            volumeSlider.max = "1";
+            volumeSlider.step = "0.01";
+            volumeSlider.value = "1";
+            volumeControl.appendChild(volumeIcon);
+            volumeControl.appendChild(volumeSlider);
+
+            controlsBar.appendChild(playPauseBtn);
+            controlsBar.appendChild(progressBarContainer);
+            controlsBar.appendChild(timeDisplay);
+            controlsBar.appendChild(volumeControl);
+
+            return controlsBar;
+        }
+
+        function formatTime(seconds) {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            return [h, m, s]
+                .filter(v => v > 0 || v === 0)
+                .map(v => v.toString().padStart(2, '0'))
+                .join(':')
+                .replace(/^00:/, '');
+        }
+
+        function setupControls(player, type, controls, centerPlayPauseBtn, cardEl) {
+            const playPauseBtn = controls.querySelector('.play-pause-btn');
+            const progressBarContainer = controls.querySelector('.progress-bar');
+            const progress = controls.querySelector('.progress');
+            const volumeSlider = controls.querySelector('.volume-control input');
+            const timeDisplay = controls.querySelector('.time');
+            let totalTime = 0;
+            let timeoutId;
+            
+            const hideControls = () => {
+                controls.style.opacity = 0;
+                if (type === 'youtube' && player.getPlayerState() === YT.PlayerState.PLAYING) {
+                    centerPlayPauseBtn.style.opacity = 0;
+                } else if (type === 'mp4' && !player.paused) {
+                    centerPlayPauseBtn.style.opacity = 0;
+                }
+            };
+            
+            const showControls = () => {
+                clearTimeout(timeoutId);
+                controls.style.opacity = 1;
+                centerPlayPauseBtn.style.opacity = 1;
+                timeoutId = setTimeout(hideControls, 3000);
+            };
+
+            const updateTime = () => {
+                let currentTime = 0;
+                if (type === 'youtube') {
+                    currentTime = player.getCurrentTime();
+                } else {
+                    currentTime = player.currentTime;
+                }
+                const progressPercentage = (currentTime / totalTime) * 100;
+                progress.style.width = `${progressPercentage}%`;
+                timeDisplay.textContent = `${formatTime(currentTime)} / ${formatTime(totalTime)}`;
+            };
+
+            const interval = setInterval(updateTime, 1000);
+
+            cardEl.addEventListener('mouseenter', showControls);
+            cardEl.addEventListener('mouseleave', hideControls);
+            cardEl.addEventListener('mousemove', showControls);
+            
+            if (type === 'youtube') {
+                totalTime = player.getDuration();
+                updateTime();
+                playPauseBtn.onclick = () => {
+                    const state = player.getPlayerState();
+                    if (state === YT.PlayerState.PLAYING) {
+                        player.pauseVideo();
+                    } else {
+                        player.playVideo();
+                    }
+                };
+                centerPlayPauseBtn.onclick = playPauseBtn.onclick;
+
+                progressBarContainer.onclick = (e) => {
+                    const clickX = e.offsetX;
+                    const totalWidth = progressBarContainer.clientWidth;
+                    const newTime = (clickX / totalWidth) * totalTime;
+                    player.seekTo(newTime, true);
+                };
+                volumeSlider.oninput = (e) => player.setVolume(e.target.value * 100);
+            } else if (type === 'mp4') {
+                totalTime = player.duration;
+                updateTime();
+                playPauseBtn.onclick = () => {
+                    if (player.paused) {
+                        player.play();
+                    } else {
+                        player.pause();
+                    }
+                };
+                centerPlayPauseBtn.onclick = playPauseBtn.onclick;
+                progressBarContainer.onclick = (e) => {
+                    const clickX = e.offsetX;
+                    const totalWidth = progressBarContainer.clientWidth;
+                    const newTime = (clickX / totalWidth) * totalTime;
+                    player.currentTime = newTime;
+                };
+                volumeSlider.oninput = (e) => player.volume = e.target.value;
+                player.addEventListener('timeupdate', updateTime);
+            }
+        }
+
+        function restorePoster(card) {
+            const src = card.dataset.embed;
+            const player = players[src];
+            if (player) {
+                if (typeof player.pauseVideo === 'function') {
+                    player.pauseVideo();
+                } else if (typeof player.pause === 'function') {
+                    player.pause();
+                }
+            }
+
+            const playerContainer = card.querySelector(".player-iframe");
+            if (playerContainer) playerContainer.remove();
+
+            const controlsBar = card.querySelector(".controls-bar");
+            if (controlsBar) controlsBar.remove();
+            
+            const centerBtn = card.querySelector(".center-play-pause-btn");
+            if (centerBtn) centerBtn.remove();
+
+            if (!card.querySelector(".poster")) {
+                const info = getEmbedInfo(src);
+                const posterEl = document.createElement("div");
+                posterEl.className = "poster";
+                if (info.poster) {
+                    posterEl.style.backgroundImage = `url("${info.poster}")`;
+                }
+                const playBtn = document.createElement("div");
+                playBtn.className = "play-btn";
+                playBtn.innerHTML = '<i class="fas fa-play"></i>';
+                posterEl.appendChild(playBtn);
+                posterEl.addEventListener("click", () => mountIframe(card));
+                card.appendChild(posterEl);
+            }
+        }
+
+        // --- INICIO DE LA CORRECCIÓN ---
+        function cleanupIframesExceptActive() {
+            if (!swiper) return;
+            const prevIndex = swiper.previousIndex;
+            
+            // Si hay un slide anterior, asegúrate de restaurar su póster y detener su video.
+            if (prevIndex !== undefined && swiper.slides[prevIndex]) {
+                const card = swiper.slides[prevIndex].querySelector(".player-card");
+                if (card) {
+                    restorePoster(card);
+                }
+            }
+        }
+        // --- FIN DE LA CORRECCIÓN ---
+
+     function updateFixedTitle(swiperInstance) {
+    const fixedBox = document.getElementById("video-title-fixed");
+    if (!fixedBox || !swiperInstance) return;
+
+    // Obtener el slide activo
+    const activeSlide = swiperInstance.slides[swiperInstance.activeIndex] || document.querySelector('.swiper-slide-active');
+
+    if (!activeSlide) return;
+
+    const newTitle = activeSlide.dataset.title || "Video";
+    const newDesc = activeSlide.dataset.descripcion || "";
+
+    const titleEl = fixedBox.querySelector(".video-title");
+    const descEl = fixedBox.querySelector(".video-desc");
+
+    // Verificar si el contenido ya es el mismo para evitar parpadeos innecesarios
+    const currentTitle = titleEl.querySelector('.text-container')?.textContent;
+    const currentDesc = descEl.querySelector('.text-container')?.textContent;
+    
+    if (currentTitle === newTitle && currentDesc === newDesc) {
+        return;
+    }
+
+    // Transición suave al cambiar de título
+    fixedBox.style.opacity = 0;
+
+    setTimeout(() => {
+        // Función genérica para manejar el truncamiento y expansión
+        const setupExpandableText = (element, text) => {
+            // Eliminar contenido anterior para evitar duplicados
+            element.innerHTML = `<span class="text-container">${text}</span>`;
+            const container = element.querySelector('.text-container');
+            
+            // Usar setTimeout para asegurar que la renderización está completa antes de medir
+            setTimeout(() => {
+                // Comprobar si el contenido se desborda y necesita truncamiento
+                if (container.scrollHeight > container.clientHeight) {
+                    const toggleButton = document.createElement('span');
+                    toggleButton.className = 'toggle-text';
+                    toggleButton.textContent = '...más';
+                    element.appendChild(toggleButton);
+
+                    // Añadir el listener para expandir/contraer
+                    element.addEventListener('click', () => {
+                        const isExpanded = container.classList.contains('expanded');
+                        if (isExpanded) {
+                            container.classList.remove('expanded');
+                            toggleButton.textContent = '...más';
+                        } else {
+                            container.classList.add('expanded');
+                            toggleButton.textContent = 'mostrar menos';
+                        }
+                    });
+                } else {
+                    // Si no necesita truncamiento, limpiar el listener y el botón
+                    const existingButton = element.querySelector('.toggle-text');
+                    if (existingButton) existingButton.remove();
+                    // Importante: Eliminar el listener si no es necesario para evitar problemas
+                    const clonedElement = element.cloneNode(true);
+                    element.parentNode.replaceChild(clonedElement, element);
+                }
+            }, 50);
+        };
+
+        // Aplicar la lógica al título y la descripción
+        setupExpandableText(titleEl, newTitle);
+        setupExpandableText(descEl, newDesc);
+
+        // Mostrar el contenedor de nuevo
+        fixedBox.style.opacity = 1;
+    }, 120);
+}
+
+async function cargarVideos(checkNew = false) {
+  const loader = document.getElementById("loader");
+  if (!checkNew) loader.style.display = "flex";
+
+  try {
+    const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
+    const data = await res.json();
+
+    let newVideos = [];
+    if (Array.isArray(data.data)) {
+      data.data.forEach((row) => {
+        const titulo = row[0];
+        const link = row[1];
+        const descripcion = row[4] || "";
+        newVideos.push({ title: titulo, link, desc: descripcion });
+      });
+    }
+
+    // Comparar con lastVideos
+    if (checkNew && lastVideos.length > 0) {
+      newVideos.forEach(v => {
+        if (!lastVideos.find(old => old.link === v.link)) {
+          notifications.unshift(v); // nuevo video arriba
+        }
+      });
+      renderNotifications();
+    }
+
+    // === 👇 En vez de destruir swiper, actualiza slides ===
+    if (!swiper) {
+      // primera vez
+      const wrapper = document.getElementById("slides");
+      wrapper.innerHTML = "";
+      newVideos.forEach(v => wrapper.appendChild(createSlide(v.title, v.link, v.desc)));
+
+      swiper = new Swiper(".swiper", {
+        loop: true,
+        direction: "horizontal",
+        slidesPerView: 1,
+        spaceBetween: 10,
+        pagination: false,
+        on: {
+          init() { updateFixedTitle(this); },
+          slideChange() {
+            cleanupIframesExceptActive();
+            updateFixedTitle(this);
+          }
+        },
+      });
+    } else {
+      // 👇 refrescar solo si cambia el listado
+      if (JSON.stringify(lastVideos) !== JSON.stringify(newVideos)) {
+        const wrapper = document.getElementById("slides");
+        wrapper.innerHTML = "";
+        newVideos.forEach(v => wrapper.appendChild(createSlide(v.title, v.link, v.desc)));
+        swiper.update(); // refresca sin resetear índice
+      }
+    }
+
+    lastVideos = newVideos;
+    updateFixedTitle(swiper);
+
+  } catch (e) {
+    console.error("Error cargando videos:", e);
+  } finally {
+    loader.style.display = "none";
+  }
+}
+
+
+// === AUTO REFRESCO EN SEGUNDO PLANO ===
+setInterval(() => {
+  cargarVideos(true); // revisa solo si hay nuevos videos
+}, 3000); // cada 10 segundos (ajusta según quieras)
+
+
+        cargarVideos();
     </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
