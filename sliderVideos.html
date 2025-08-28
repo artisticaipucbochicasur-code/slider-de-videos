@@ -36,7 +36,7 @@
     /* Botones flotantes */
     .floating-buttons {
         position: fixed;
-        bottom: 20px;
+        bottom: 80px;
         right: 20px;
         display: flex;
         flex-direction: column;
@@ -44,13 +44,13 @@
         z-index: 2000;
     }
     .fab {
-        width: 48px;
-        height: 48px;
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
         border: none;
         background: transparent;
         color: white;
-        font-size: 34px;
+        font-size: 24px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -248,9 +248,9 @@
 }
 /* 🔔 Notificaciones */
 #notification-wrapper {
-  position: fixed;
-  top: 15px;
-  right: 15px;
+   position: relative;
+  top: 0;
+  right: 0;
   z-index: 5000;
 }
 #notification-btn {
@@ -462,9 +462,10 @@
 
     
         <!-- BOTONES flotantes -->
-    <div class="floating-buttons">
-        <button id="btn-delete" class="fab danger"><i class="fas fa-trash"></i></button>
-    </div>
+   <div class="floating-buttons">
+  <button id="notification-btn" class="fab"><i class="fas fa-bell"></i></button>
+  <button id="btn-delete" class="fab danger"><i class="fas fa-trash"></i></button>
+</div>
 
   
 
@@ -1216,6 +1217,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
