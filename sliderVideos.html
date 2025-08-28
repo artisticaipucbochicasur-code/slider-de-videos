@@ -515,10 +515,11 @@ function renderNotifications() {
         return card && card.dataset.embed === getEmbedInfo(notif.link).embedSrc;
       });
 
-      // Si no existe, lo agregas
+      // Si no existe el slide, lo agregas
       if (slideIndex === -1) {
+        // Crea y agrega el slide al DOM
         wrapper.appendChild(createSlide(notif.title, notif.link, notif.desc));
-        if (swiper) swiper.update();
+        if (swiper) swiper.update(); // Refresca Swiper para que reconozca el nuevo slide
         slideIndex = wrapper.children.length - 1;
       }
 
@@ -527,7 +528,7 @@ function renderNotifications() {
         swiper.slideToLoop(slideIndex, 0);
         updateFixedTitle(swiper);
         cleanupIframesExceptActive();
-        // Opcional: montar el iframe automáticamente
+        // Monta el iframe automáticamente para reproducir
         const slide = wrapper.children[slideIndex];
         const card = slide.querySelector('.player-card');
         if (card) mountIframe(card);
@@ -1154,6 +1155,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
