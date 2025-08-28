@@ -1144,6 +1144,19 @@ async function cargarVideos(checkNew = false) {
       });
     }
 
+    // 🔥 Eliminación silenciosa (solo en modo checkNew para no afectar carga inicial)
+    if (checkNew) {
+      const linksActivos = newVideos.map(v => v.link);
+
+      Array.from(wrapper.children).forEach(slide => {
+        const card = slide.querySelector(".player-card");
+        if (card && !linksActivos.includes(card.dataset.embed)) {
+          wrapper.removeChild(slide);
+          if (swiper) swiper.update();
+        }
+      });
+    }
+
     // 🔥 Corregido: ahora también notifica si es el primer video
     if (checkNew) {
       newVideos.forEach(v => {
@@ -1193,6 +1206,7 @@ async function cargarVideos(checkNew = false) {
 
 
 
+
 // === AUTO REFRESCO EN SEGUNDO PLANO ===
 setInterval(() => {
   cargarVideos(true); // solo refresca notificaciones, no toca el slider
@@ -1202,6 +1216,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
