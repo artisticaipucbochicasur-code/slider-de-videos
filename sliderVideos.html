@@ -492,6 +492,7 @@ function renderNotifications() {
   const count = document.getElementById("notification-count");
 
   list.innerHTML = "";
+
   if (notifications.length === 0) {
     list.innerHTML = "<div>Sin notificaciones</div>";
     count.textContent = "0";
@@ -506,39 +507,50 @@ function renderNotifications() {
     const item = document.createElement("div");
     item.textContent = notif.title;
     item.style.cursor = "pointer";
-item.onclick = () => {
-  const wrapper = document.getElementById("slides");
-  // Limpia todos los reproductores antes de navegar
-  Array.from(wrapper.children).forEach(slide => {
-    const card = slide.querySelector('.player-card');
-    if (card) restorePoster(card);
-  });
 
-  // ... resto del código para buscar/agregar el slide
+    item.onclick = () => {
+      const wrapper = document.getElementById("slides");
 
-  if (swiper && slideIndex !== -1) {
-    swiper.slideToLoop(slideIndex, 0);
-    updateFixedTitle(swiper);
+      // Limpia todos los reproductores antes de navegar
+      Array.from(wrapper.children).forEach(slide => {
+        const card = slide.querySelector('.player-card');
+        if (card) restorePoster(card);
+      });
 
-    swiper.once('slideChangeTransitionEnd', () => {
-      cleanupIframesExceptActive();
-      // Monta el reproductor solo si no está ya montado
-      const activeCard = document.querySelector('.swiper-slide-active .player-card');
-      if (activeCard && !activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
-        mountIframe(activeCard);
+      // 🔥 Buscar índice del slide que corresponde al anuncio
+      let slideIndex = -1;
+      Array.from(wrapper.children).forEach((slide, idx) => {
+        const card = slide.querySelector('.player-card');
+        if (card && card.dataset.embed === notif.link) {
+          slideIndex = idx;
+        }
+      });
+
+      if (swiper && slideIndex !== -1) {
+        swiper.slideToLoop(slideIndex, 0);
+        updateFixedTitle(swiper);
+
+        swiper.once('slideChangeTransitionEnd', () => {
+          cleanupIframesExceptActive();
+
+          // Monta el reproductor solo si no está ya montado
+          const activeCard = document.querySelector('.swiper-slide-active .player-card');
+          if (activeCard && !activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
+            mountIframe(activeCard);
+          }
+        });
       }
-    });
-  }
 
-  // Marcar como leída y cerrar el panel
-  notifications.splice(i, 1);
-  renderNotifications();
-  document.getElementById("notification-list").classList.add("hidden");
-};
+      // 🔥 Marcar como leída y cerrar el panel
+      notifications.splice(i, 1);
+      renderNotifications();
+      document.getElementById("notification-list").classList.add("hidden");
+    };
 
     list.appendChild(item);
   });
 }
+
 // --- BOTÓN NOTIFICACIONES UNIVERSAL ---
 const notifBtn = document.getElementById("notification-btn");
 const notifList = document.getElementById("notification-list");
@@ -556,12 +568,12 @@ notifBtn.addEventListener("touchstart", (e) => {
 // Ocultar la lista al hacer clic fuera
 document.addEventListener("click", (e) => {
   if (!notifList.classList.contains("hidden")) {
-    // Si el click NO es en el botón ni en la lista
     if (!notifList.contains(e.target) && e.target !== notifBtn) {
       notifList.classList.add("hidden");
     }
   }
 });
+
 // --- MANEJO DE ELIMINACIÓN ---
 
 // Variables para almacenar los datos del usuario, obtenidos de la URL
@@ -1163,6 +1175,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
