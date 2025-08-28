@@ -508,44 +508,52 @@ function renderNotifications() {
     item.textContent = notif.title;
     item.style.cursor = "pointer";
 
-    item.onclick = () => {
-      const wrapper = document.getElementById("slides");
+   item.onclick = () => {
+  const wrapper = document.getElementById("slides");
 
-      // Limpia todos los reproductores antes de navegar
-      Array.from(wrapper.children).forEach(slide => {
-        const card = slide.querySelector('.player-card');
-        if (card) restorePoster(card);
-      });
+  // Si el slide NO existe todavía, crearlo e insertarlo
+  let slide = Array.from(wrapper.children).find(s => {
+    const card = s.querySelector('.player-card');
+    return card && card.dataset.embed === notif.link;
+  });
 
-      // 🔥 Buscar índice del slide que corresponde al anuncio
-      let slideIndex = -1;
-      Array.from(wrapper.children).forEach((slide, idx) => {
-        const card = slide.querySelector('.player-card');
-        if (card && card.dataset.embed === notif.link) {
-          slideIndex = idx;
-        }
-      });
+  if (!slide) {
+    // Crear el slide igual que en cargarVideos
+    const nuevoSlide = createSlide(notif.title, notif.link, notif.desc);
+    wrapper.appendChild(nuevoSlide);
 
-      if (swiper && slideIndex !== -1) {
-        swiper.slideToLoop(slideIndex, 0);
-        updateFixedTitle(swiper);
+    // 🔥 Reinstanciar swiper para que tome en cuenta el nuevo slide
+    swiper.update();
+  }
 
-        swiper.once('slideChangeTransitionEnd', () => {
-          cleanupIframesExceptActive();
+  // Buscar índice del slide al que ir
+  let slideIndex = -1;
+  Array.from(wrapper.children).forEach((s, idx) => {
+    const card = s.querySelector('.player-card');
+    if (card && card.dataset.embed === notif.link) {
+      slideIndex = idx;
+    }
+  });
 
-          // Monta el reproductor solo si no está ya montado
-          const activeCard = document.querySelector('.swiper-slide-active .player-card');
-          if (activeCard && !activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
-            mountIframe(activeCard);
-          }
-        });
+  if (swiper && slideIndex !== -1) {
+    swiper.slideToLoop(slideIndex, 0);
+    updateFixedTitle(swiper);
+
+    swiper.once('slideChangeTransitionEnd', () => {
+      cleanupIframesExceptActive();
+
+      const activeCard = document.querySelector('.swiper-slide-active .player-card');
+      if (activeCard && !activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
+        mountIframe(activeCard);
       }
+    });
+  }
 
-      // 🔥 Marcar como leída y cerrar el panel
-      notifications.splice(i, 1);
-      renderNotifications();
-      document.getElementById("notification-list").classList.add("hidden");
-    };
+  // Marcar como leída y cerrar el panel
+  notifications.splice(i, 1);
+  renderNotifications();
+  document.getElementById("notification-list").classList.add("hidden");
+};
 
     list.appendChild(item);
   });
@@ -560,11 +568,8 @@ notifBtn.addEventListener("click", (e) => {
   e.stopPropagation();
   notifList.classList.toggle("hidden");
 });
-notifBtn.addEventListener("touchstart", (e) => {
-  e.stopPropagation();
-  notifList.classList.toggle("hidden");
-});
 
+        
 // Ocultar la lista al hacer clic fuera
 document.addEventListener("click", (e) => {
   if (!notifList.classList.contains("hidden")) {
@@ -1175,6 +1180,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
