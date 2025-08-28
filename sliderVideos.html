@@ -1045,67 +1045,63 @@ async function cargarVideos(checkNew = false) {
     const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
     const data = await res.json();
 
-    const wrapper = document.getElementById("slides");
-    wrapper.innerHTML = "";
+    if (!Array.isArray(data.data)) return;
 
-    let newVideos = [];
-    if (Array.isArray(data.data)) {
-      data.data.forEach((row) => {
-        const titulo = row[0];
-        const link = row[1];
-        const descripcion = row[4] || "";
-        wrapper.appendChild(createSlide(titulo, link, descripcion));
-        newVideos.push({ title: titulo, link, desc: descripcion });
-      });
-    }
+    let newVideos = data.data.map(row => ({
+      title: row[0],
+      link: row[1],
+      desc: row[4] || ""
+    }));
 
-    // 🔹 Detectar nuevos videos y generar notificaciones
-    if (checkNew && lastVideos.length > 0) {
+    if (checkNew) {
+      // 🔹 Comparar solo para detectar nuevos sin destruir lo actual
       newVideos.forEach(v => {
         if (!lastVideos.find(old => old.link === v.link)) {
           notifications.unshift(v);
+          // Agregar slide nuevo dinámicamente sin borrar los demás
+          const wrapper = document.getElementById("slides");
+          wrapper.appendChild(createSlide(v.title, v.link, v.desc));
+          if (swiper) swiper.update(); // refrescar swiper sin destruirlo
         }
       });
       renderNotifications();
-    }
+    } else {
+      // 🔹 Primer cargue: sí se crea todo el swiper
+      const wrapper = document.getElementById("slides");
+      wrapper.innerHTML = "";
+      newVideos.forEach(v => {
+        wrapper.appendChild(createSlide(v.title, v.link, v.desc));
+      });
 
-    // 🔹 Guardar el índice actual ANTES de destruir el swiper
-    let currentIndex = swiper ? swiper.realIndex : 0;
+      if (swiper) swiper.destroy(true, true);
+      swiper = new Swiper(".swiper", {
+        loop: true,
+        direction: "horizontal",
+        slidesPerView: 1,
+        spaceBetween: 10,
+        pagination: false,
+        on: {
+          init() { updateFixedTitle(this); },
+          slideChange() {
+            cleanupIframesExceptActive();
+            updateFixedTitle(this);
+          },
+          slideChangeTransitionEnd() { updateFixedTitle(this); }
+        },
+      });
+
+      cleanupIframesExceptActive();
+      updateFixedTitle(swiper);
+    }
 
     lastVideos = newVideos;
-
-    if (swiper) swiper.destroy(true, true);
-
-    swiper = new Swiper(".swiper", {
-      loop: true,
-      direction: "horizontal",
-      slidesPerView: 1,
-      spaceBetween: 10,
-      pagination: false,
-      on: {
-        init() { updateFixedTitle(this); },
-        slideChange() {
-          cleanupIframesExceptActive();
-          updateFixedTitle(this);
-        },
-        slideChangeTransitionEnd() { updateFixedTitle(this); }
-      },
-    });
-
-    // 🔹 Restaurar la posición del slider al mismo índice
-    if (checkNew && swiper && lastVideos.length > 0) {
-      swiper.slideToLoop(currentIndex, 0, false);
-    }
-
-    cleanupIframesExceptActive();
-    updateFixedTitle(swiper);
-
   } catch (e) {
     console.error("Error cargando videos:", e);
   } finally {
     loader.style.display = "none";
   }
 }
+
 
 
 
@@ -1119,6 +1115,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
