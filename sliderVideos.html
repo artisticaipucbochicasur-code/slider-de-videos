@@ -486,18 +486,11 @@
 let notifications = [];
 let lastVideos = [];
 
-// 👉 Cuando generas la notificación
-notifications.push({
-  title: video.title,
-  link: video.link,
-  index: indexEnLastVideos  // guardamos también el índice
-});
-
-// 👉 Función para renderizar la lista de notificaciones
+// Renderizar lista de notificaciones
 function renderNotifications() {
   const list = document.getElementById("notification-list");
   const count = document.getElementById("notification-count");
-
+  
   list.innerHTML = "";
   if (notifications.length === 0) {
     list.innerHTML = "<div>Sin notificaciones</div>";
@@ -515,16 +508,13 @@ function renderNotifications() {
     item.className = "notification-item";
 
     item.onclick = () => {
-      // 🔹 Usar el índice guardado directamente
-      if (typeof notif.index === "number") {
-        swiper.slideTo(notif.index, 500, false);
-      } else {
-        // fallback por si alguna notificación no tiene index
-        const index = lastVideos.findIndex(v => v.link === notif.link);
-        if (index !== -1) swiper.slideTo(index, 500, false);
+      // Buscar el índice en lastVideos
+      const index = lastVideos.findIndex(v => v.link === notif.link);
+      if (index !== -1) {
+        swiper.slideToLoop(index); // mover al anuncio correcto
       }
 
-      // Quitar notificación de la lista
+      // Marcar como leída
       notifications.splice(i, 1);
       renderNotifications();
     };
@@ -532,6 +522,11 @@ function renderNotifications() {
     list.appendChild(item);
   });
 }
+
+// Botón toggle
+document.getElementById("notification-btn").onclick = () => {
+  document.getElementById("notification-list").classList.toggle("hidden");
+};
 
 
 // --- MANEJO DE ELIMINACIÓN ---
@@ -1064,6 +1059,7 @@ function normalizar(txt) {
     .trim();
 }
 
+// === CARGA DE VIDEOS ===
 async function cargarVideos(checkNew = false) {
   const loader = document.getElementById("loader");
   if (!checkNew) loader.style.display = "flex";
@@ -1071,7 +1067,6 @@ async function cargarVideos(checkNew = false) {
   try {
     const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
     const data = await res.json();
-
     if (!Array.isArray(data.data)) return;
 
     let newVideos = data.data.map(row => ({
@@ -1081,19 +1076,15 @@ async function cargarVideos(checkNew = false) {
     }));
 
     if (checkNew) {
-      // 🔹 Comparar solo para detectar nuevos sin destruir lo actual
+      // 🚫 Ya NO actualizamos slides ni swiper aquí
       newVideos.forEach(v => {
         if (!lastVideos.find(old => old.link === v.link)) {
-          notifications.unshift(v);
-          // Agregar slide nuevo dinámicamente sin borrar los demás
-          const wrapper = document.getElementById("slides");
-          wrapper.appendChild(createSlide(v.title, v.link, v.desc));
-          if (swiper) swiper.update(); // refrescar swiper sin destruirlo
+          notifications.unshift(v); // solo mostrar notificación
         }
       });
       renderNotifications();
     } else {
-      // 🔹 Primer cargue: sí se crea todo el swiper
+      // 🔹 Primer cargue: sí construimos swiper
       const wrapper = document.getElementById("slides");
       wrapper.innerHTML = "";
       newVideos.forEach(v => {
@@ -1122,7 +1113,6 @@ async function cargarVideos(checkNew = false) {
     }
 
     lastVideos = newVideos;
-    reconstruirIndiceVideos(); // 🔥 construir índice después de actualizar lastVideos
   } catch (e) {
     console.error("Error cargando videos:", e);
   } finally {
@@ -1130,19 +1120,16 @@ async function cargarVideos(checkNew = false) {
   }
 }
 
-
-
-
 // === AUTO REFRESCO EN SEGUNDO PLANO ===
 setInterval(() => {
-  cargarVideos(true); // revisa solo si hay nuevos videos
-}, 3000); // cada 10 segundos (ajusta según quieras)
-
+  cargarVideos(true); // ahora solo revisa notificaciones
+}, 3000); 
 
         cargarVideos();
     </script>
 </body>
 </html>
+
 
 
 
