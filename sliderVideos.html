@@ -310,6 +310,52 @@
   background: #333;
 }
 
+.comentarios-wrapper {
+  background: rgba(0, 0, 0, 0.4); /* semitransparente */
+  border-radius: 10px;
+  padding: 10px;
+  margin-top: 10px;
+}
+
+.comentarios-list {
+  max-height: 120px;  /* scrollable si son muchos */
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
+
+.comentario {
+  padding: 5px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  color: white;
+  font-size: 14px;
+}
+
+.comentario strong {
+  color: #ffcc00; /* nombre resaltado */
+}
+
+.comentar-box {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.comentar-box input {
+  flex: 1;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+}
+
+.btn-comentar {
+  background: rgba(255,255,255,0.2);
+  border: none;
+  border-radius: 50%;
+  padding: 8px;
+  cursor: pointer;
+  color: white;
+}
 
         
 
@@ -493,7 +539,54 @@
         const SCRIPT_URL =
             "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
 
-  
+async function cargarComentarios(videoId) {
+  try {
+    const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${videoId}`);
+    const data = await res.json();
+    const contenedor = document.getElementById(`comentarios-${videoId}`);
+    
+    contenedor.innerHTML = ""; 
+    if (Array.isArray(data.data) && data.data.length > 0) {
+      data.data.forEach(c => {
+        const div = document.createElement("div");
+        div.classList.add("comentario");
+        div.innerHTML = `<strong>${c[2]}</strong>: ${c[1]} <br><small>${c[4]}</small>`;
+        contenedor.appendChild(div);
+      });
+    } else {
+      contenedor.innerHTML = "<div class='comentario'>Sé el primero en comentar...</div>";
+    }
+  } catch (e) {
+    console.error("Error cargando comentarios:", e);
+  }
+}
+
+async function enviarComentario(videoId) {
+  const input = document.getElementById(`input-${videoId}`);
+  const texto = input.value.trim();
+  if (!texto) return;
+
+  try {
+    await fetch(SCRIPT_URL, {
+      method: "POST",
+      body: new URLSearchParams({
+        accion: "agregarComentarioVideo",
+        videoId,
+        comentario: texto,
+        autor: currentUser.name,
+        correo: currentUser.email,
+      })
+    });
+
+    input.value = "";
+    cargarComentarios(videoId); // 🔄 refrescar comentarios
+  } catch (e) {
+    console.error("Error enviando comentario:", e);
+  }
+}
+
+
+        
 // === NOTIFICACIONES ===
 let notifications = [];
 let lastVideos = [];
@@ -740,7 +833,7 @@ deleteConfirm.onclick = async () => {
             return { type: "other", embedSrc: link, poster: "" };
         }
 
-       function createSlide(titulo, link, descripcion) {
+       function createSlide(titulo, link, descripcion, id) {
     const { embedSrc, poster } = getEmbedInfo(link);
     const slide = document.createElement("div");
     slide.className = "swiper-slide";
@@ -750,6 +843,7 @@ deleteConfirm.onclick = async () => {
     const card = document.createElement("div");
     card.className = "player-card";
     card.dataset.embed = embedSrc;
+    card.dataset.id = id; // 👈 guardamos ID único del video
 
     const posterEl = document.createElement("div");
     posterEl.className = "poster";
@@ -766,10 +860,31 @@ deleteConfirm.onclick = async () => {
 
     card.appendChild(posterEl);
 
+    // 🔥 Bloque de comentarios (nuevo)
+    const comentariosWrapper = document.createElement("div");
+    comentariosWrapper.className = "comentarios-wrapper";
+
+    comentariosWrapper.innerHTML = `
+      <div class="comentarios-list" id="comentarios-${id}">
+        <!-- aquí van los comentarios -->
+      </div>
+      <div class="comentar-box">
+        <input type="text" id="input-${id}" placeholder="Escribe un comentario..." />
+        <button class="btn-comentar" onclick="enviarComentario('${id}')">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+    `;
+
+    card.appendChild(comentariosWrapper);
     slide.appendChild(card);
-   
+
+    // 🔄 cargar comentarios automáticamente al crear el slide
+    setTimeout(() => cargarComentarios(id), 100);
+
     return slide;
 }
+
 
 
         function mountIframe(cardEl) {
@@ -1224,6 +1339,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
