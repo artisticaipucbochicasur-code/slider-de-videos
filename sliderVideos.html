@@ -833,53 +833,55 @@ deleteConfirm.onclick = async () => {
             return { type: "other", embedSrc: link, poster: "" };
         }
 
- function createSlide(titulo, link, descripcion) {
-    const { embedSrc, poster } = getEmbedInfo(link);
-    const slide = document.createElement("div");
-    slide.className = "swiper-slide";
-    slide.dataset.title = titulo || "Video";
-    slide.dataset.descripcion = descripcion || "";
+ function createSlide(id, titulo, link, descripcion) {
+  const { embedSrc, poster } = getEmbedInfo(link);
+  const slide = document.createElement("div");
+  slide.className = "swiper-slide";
+  slide.dataset.title = titulo || "Video";
+  slide.dataset.descripcion = descripcion || "";
 
-    const card = document.createElement("div");
-    card.className = "player-card";
-    card.dataset.embed = embedSrc;
+  const card = document.createElement("div");
+  card.className = "player-card";
+  card.dataset.embed = embedSrc;
 
-    const posterEl = document.createElement("div");
-    posterEl.className = "poster";
-    if (poster) posterEl.style.backgroundImage = `url("${poster}")`;
+  const posterEl = document.createElement("div");
+  posterEl.className = "poster";
+  if (poster) posterEl.style.backgroundImage = `url("${poster}")`;
 
-    const playBtn = document.createElement("div");
-    playBtn.className = "play-btn";
-    playBtn.innerHTML = '<i class="fas fa-play"></i>';
-    posterEl.appendChild(playBtn);
+  const playBtn = document.createElement("div");
+  playBtn.className = "play-btn";
+  playBtn.innerHTML = '<i class="fas fa-play"></i>';
+  posterEl.appendChild(playBtn);
 
-    posterEl.addEventListener("click", () => {
-        mountIframe(card);
-    });
+  posterEl.addEventListener("click", () => {
+    mountIframe(card);
+  });
 
-    card.appendChild(posterEl);
+  card.appendChild(posterEl);
 
-    // 👇 Agregar sección de comentarios
-    const id = "ID-" + Date.now(); // después lo ajustamos al ID real del video
-    const comentariosWrapper = document.createElement("div");
-    comentariosWrapper.className = "comentarios-wrapper";
+  // 👇 Sección de comentarios (ligada al ID real del video)
+  const comentariosWrapper = document.createElement("div");
+  comentariosWrapper.className = "comentarios-wrapper";
 
-    comentariosWrapper.innerHTML = `
-      <div class="comentarios-list" id="comentarios-${id}">
-        <!-- aquí van los comentarios -->
-      </div>
-      <div class="comentar-box">
-        <input type="text" id="input-${id}" placeholder="Escribe un comentario..." />
-        <button class="btn-comentar" onclick="enviarComentario('${id}')">
-          <i class="fas fa-paper-plane"></i>
-        </button>
-      </div>
-    `;
+  comentariosWrapper.innerHTML = `
+    <div class="comentarios-list" id="comentarios-${id}">
+      <div class="comentario">Cargando comentarios...</div>
+    </div>
+    <div class="comentar-box">
+      <input type="text" id="input-${id}" placeholder="Escribe un comentario..." />
+      <button class="btn-comentar" onclick="enviarComentario('${id}')">
+        <i class="fas fa-paper-plane"></i>
+      </button>
+    </div>
+  `;
 
-    slide.appendChild(card);
-    slide.appendChild(comentariosWrapper);
+  slide.appendChild(card);
+  slide.appendChild(comentariosWrapper);
 
-    return slide;
+  // 🔥 cargar los comentarios al crear el slide
+  cargarComentarios(id);
+
+  return slide;
 }
 
 
@@ -1336,6 +1338,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
