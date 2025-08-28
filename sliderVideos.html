@@ -519,10 +519,16 @@ function renderNotifications() {
   });
 }
 
+// Alias para usar renderNotificaciones también
+function renderNotificaciones() {
+  renderNotifications();
+}
+
 // Botón toggle
 document.getElementById("notification-btn").onclick = () => {
   document.getElementById("notification-list").classList.toggle("hidden");
 };
+
 
 // --- MANEJO DE ELIMINACIÓN ---
 
@@ -1037,6 +1043,23 @@ deleteConfirm.onclick = async () => {
     }, 120);
 }
 
+let indiceVideos = [];
+
+function reconstruirIndiceVideos() {
+  indiceVideos = lastVideos.map((v, i) => {
+    const key = normalizar(`${v.title} ${v.desc} ${v.link}`);
+    return { i, key, title: v.title };
+  });
+}
+
+function normalizar(txt) {
+  return (txt || "")
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // quitar tildes
+    .replace(/\s+/g, " ") // espacios uniformes
+    .trim();
+}
+
 async function cargarVideos(checkNew = false) {
   const loader = document.getElementById("loader");
   if (!checkNew) loader.style.display = "flex";
@@ -1095,6 +1118,7 @@ async function cargarVideos(checkNew = false) {
     }
 
     lastVideos = newVideos;
+    reconstruirIndiceVideos(); // 🔥 construir índice después de actualizar lastVideos
   } catch (e) {
     console.error("Error cargando videos:", e);
   } finally {
@@ -1115,6 +1139,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
