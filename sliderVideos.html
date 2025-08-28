@@ -178,59 +178,36 @@
             background: #000;
         }
 
-/* Truncamiento para el contenedor del título y la descripción */
-#video-title-fixed .text-container {
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2; /* Truncar a 2 líneas por defecto */
-    transition: -webkit-line-clamp 0.3s ease;
-    cursor: pointer; /* Cursor de puntero para indicar que es clicable */
-    position: relative;
-    max-height: 4em; /* Altura máxima cuando está truncado */
-    line-height: 1.2;
-}
+        .video-title {
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 10px;
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            color: #f1f1f1;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+        }
 
-#video-title-fixed .text-container.expanded {
-    -webkit-line-clamp: unset;
-    cursor: pointer;
-    overflow-y: auto; /* Hacer que el contenedor sea scrollable si el contenido es muy largo */
-    max-height: 60vh; /* <<-- Ajuste: Altura máxima al expandir (50% de la altura de la ventana) */
-    padding-right: 15px; /* Espacio para la barra de desplazamiento */
-}
+        /* título fijo con transición para evitar parpadeos */
+        #video-title-fixed {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            background: rgba(0,0,0,0.3);
+            transition: opacity 0.18s ease;
+            opacity: 1;
+        }
 
-/* Estilo para el botón de 'más' o 'menos' */
-#video-title-fixed .toggle-text {
-    color: #ccc;
-    font-size: 12px;
-    font-weight: bold;
-    user-select: none;
-    display: inline-block;
-    position: absolute; /* Colocar en la esquina para que siempre esté visible */
-    bottom: 0;
-    right: 20px; /* <<-- Ajuste: Separación del borde derecho */
-    background: rgba(0, 0, 0, 0.5); /* Fondo semitransparente para que sea legible */
-    padding: 2px 5px;
-    border-radius: 3px;
-    backdrop-filter: blur(2px);
-}
-
-#video-title-fixed {
-    position: absolute;
-    top: 0;
-    left: 10px; /* Ajuste: Desplaza el contenedor 10px desde el borde izquierdo */
-    width: auto; /* Ajuste: El ancho se ajustará al contenido + márgenes */
-    max-width: 80%; /* Mantienes este ajuste para el ancho máximo */
-    z-index: 1000;
-    background: rgba(0,0,0,0.3);
-    transition: opacity 0.18s ease;
-    opacity: 1;
+        #video-title-fixed {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: flex-start; /* 👈 alinea a la izquierda */
     padding: 6px 10px;
-    margin: 0; /* Ajuste: Elimina el centrado para que 'left' funcione */
-    right: auto; /* Ajuste: Desactiva el valor de la derecha */
 }
 
 #video-title-fixed .video-title {
@@ -246,60 +223,7 @@
     text-align: left;
     color: #ddd;
 }
-/* 🔔 Notificaciones */
-#notification-wrapper {
-  position: fixed;
-  top: 15px;
-  right: 15px;
-  z-index: 5000;
-}
-#notification-btn {
-  position: relative;
-  background: #111;
-  border: none;
-  border-radius: 50%;
-  width: 46px;
-  height: 46px;
-  color: white;
-  font-size: 22px;
-  cursor: pointer;
-}
-#notification-count {
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  background: red;
-  color: white;
-  font-size: 12px;
-  font-weight: bold;
-  padding: 2px 6px;
-  border-radius: 50%;
-}
-#notification-list {
-  position: absolute;
-  top: 55px;
-  right: 0;
-  background: #222;
-  border: 1px solid #444;
-  border-radius: 10px;
-  width: 260px;
-  max-height: 320px;
-  overflow-y: auto;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.6);
-}
-#notification-list.hidden { display: none; }
-#notification-list div {
-  padding: 10px;
-  border-bottom: 1px solid #333;
-  cursor: pointer;
-  color: #ddd;
-}
-#notification-list div:hover {
-  background: #333;
-}
 
-
-        
 
         #loader {
             position: fixed;
@@ -425,25 +349,7 @@
     </style>
 </head>
 <body>
-<!-- Notificaciones -->
-<div id="notification-wrapper">
-  <button id="notification-btn">
-    <i class="fas fa-bell"></i>
-    <span id="notification-count">0</span>
-  </button>
-  <div id="notification-list" class="hidden"></div>
-</div>
 
-    
-<div id="custom-alert-modal" class="modal hidden">
-  <div class="modal-content">
-    <h3>¡Atención!</h3>
-    <p id="custom-alert-message"></p>
-    <div class="modal-actions">
-      <button id="custom-alert-ok" style="background:#007bff; color:white; padding:8px; border:none; border-radius:6px; cursor:pointer;">Aceptar</button>
-    </div>
-  </div>
-</div>
 <!-- Modal de eliminación -->
 <div id="delete-modal" class="modal hidden">
   <div class="modal-content">
@@ -482,81 +388,8 @@
             "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
 
   
-// === NOTIFICACIONES ===
-let notifications = [];
-let lastVideos = [];
 
-// Actualiza el listado de notificaciones
-function renderNotifications() {
-  const list = document.getElementById("notification-list");
-  const count = document.getElementById("notification-count");
-  
-  list.innerHTML = "";
-  if (notifications.length === 0) {
-    list.innerHTML = "<div>Sin notificaciones</div>";
-    count.textContent = "0";
-    count.style.display = "none";
-    return;
-  }
-
-  count.textContent = notifications.length;
-  count.style.display = "block";
-
-  notifications.forEach((notif, i) => {
-    const item = document.createElement("div");
-    item.textContent = notif.title;
-    item.onclick = () => {
-      // Ir al video correspondiente
-      const index = lastVideos.findIndex(v => v.link === notif.link);
-      if (index !== -1) {
-        swiper.slideToLoop(index);
-      }
-      // Marcar como leída
-      notifications.splice(i, 1);
-      renderNotifications();
-    };
-    list.appendChild(item);
-  });
-}
-
-// Botón toggle
-document.getElementById("notification-btn").onclick = () => {
-  document.getElementById("notification-list").classList.toggle("hidden");
-};
-
-// --- MANEJO DE ELIMINACIÓN ---
-
-// Variables para almacenar los datos del usuario, obtenidos de la URL
-let usuarioAutor = "";
-let usuarioCorreo = "";
-
-// Función para obtener los parámetros 'name' y 'email' de la URL
-function getUsuarioDataFromUrl() {
-    const params = new URLSearchParams(window.location.search);
-    usuarioAutor = params.get("name") || "";
-    usuarioCorreo = params.get("email") || "";
-}
-
-// Llamar a la función al cargar la página para obtener los datos
-document.addEventListener("DOMContentLoaded", getUsuarioDataFromUrl);
-
-// NUEVO: Variables para el modal de alerta personalizada
-const customAlertModal = document.getElementById("custom-alert-modal");
-const customAlertMessage = document.getElementById("custom-alert-message");
-const customAlertOk = document.getElementById("custom-alert-ok");
-
-// NUEVO: Función para mostrar el modal de alerta personalizado
-function showAlert(message, title = "¡Atención!") {
-    customAlertMessage.textContent = message;
-    customAlertModal.querySelector('h3').textContent = title;
-    customAlertModal.classList.remove("hidden");
-}
-
-// NUEVO: Ocultar el modal de alerta cuando se hace clic en "Aceptar"
-customAlertOk.onclick = () => {
-    customAlertModal.classList.add("hidden");
-};
-
+ // --- ELIMINAR ---
 const btnDelete = document.getElementById("btn-delete");
 const deleteModal = document.getElementById("delete-modal");
 const deleteTitle = document.getElementById("delete-video-title");
@@ -573,12 +406,6 @@ btnDelete.onclick = () => {
     const title = activeSlide.dataset.title;
     const link = activeSlide.querySelector(".player-card")?.dataset.embed;
 
-    // Si no hay datos de usuario, notificar y salir
-    if (!usuarioAutor || !usuarioCorreo) {
-        showAlert("No se pudo obtener la información de tu cuenta. Intenta recargar la página.");
-        return;
-    }
-
     pendingDelete = { title, link };
     deleteTitle.textContent = `¿Eliminar "${title}"?`;
     deleteModal.classList.remove("hidden");
@@ -593,31 +420,24 @@ deleteConfirm.onclick = async () => {
     if (!pendingDelete) return;
     const { title, link } = pendingDelete;
 
-    deleteModal.classList.add("hidden");
-    pendingDelete = null;
-
+    // Extraemos el identificador de archive.org (si existe)
     let identifier = "";
     let fileName = "";
+
     let archiveMatch = link.match(/archive\.org\/download\/([^/]+)\/(.+)$/);
     if (archiveMatch) {
-        identifier = archiveMatch[1];
-        fileName = decodeURIComponent(archiveMatch[2]);
+        identifier = archiveMatch[1];   
+        fileName = decodeURIComponent(archiveMatch[2]); 
     }
-    
-    // Aquí usamos las variables 'usuarioAutor' y 'usuarioCorreo'
-    const deleteUrl = `${SCRIPT_URL}?accion=eliminar&link=${encodeURIComponent(link)}&id=${encodeURIComponent(identifier)}&file=${encodeURIComponent(fileName)}&autor=${encodeURIComponent(usuarioAutor)}&correo=${encodeURIComponent(usuarioCorreo)}`;
 
-    const response = await fetch(deleteUrl);
-    const data = await response.json();
+    // Enviamos al Apps Script
+    await fetch(`${SCRIPT_URL}?accion=eliminar&link=${encodeURIComponent(link)}&id=${encodeURIComponent(identifier)}&file=${encodeURIComponent(fileName)}`);
 
-    if (data.status === "success") {
-        showAlert("✅ Video eliminado con éxito.", "¡Listo!");
-    } else {
-        showAlert("❌ Error al eliminar: " + data.message, "Error");
-    }
-    
+    deleteModal.classList.add("hidden");
+    pendingDelete = null;
     cargarVideos();
 };
+
 
 
 
@@ -964,172 +784,100 @@ deleteConfirm.onclick = async () => {
         }
         // --- FIN DE LA CORRECCIÓN ---
 
-     function updateFixedTitle(swiperInstance) {
+      function updateFixedTitle(swiperInstance) {
     const fixedBox = document.getElementById("video-title-fixed");
     if (!fixedBox || !swiperInstance) return;
 
-    // Obtener el slide activo
-    const activeSlide = swiperInstance.slides[swiperInstance.activeIndex] || document.querySelector('.swiper-slide-active');
+    let activeSlide = null;
 
-    if (!activeSlide) return;
-
-    const newTitle = activeSlide.dataset.title || "Video";
-    const newDesc = activeSlide.dataset.descripcion || "";
-
-    const titleEl = fixedBox.querySelector(".video-title");
-    const descEl = fixedBox.querySelector(".video-desc");
-
-    // Verificar si el contenido ya es el mismo para evitar parpadeos innecesarios
-    const currentTitle = titleEl.querySelector('.text-container')?.textContent;
-    const currentDesc = descEl.querySelector('.text-container')?.textContent;
-    
-    if (currentTitle === newTitle && currentDesc === newDesc) {
-        return;
+    // 1) Usar activeIndex
+    if (typeof swiperInstance.activeIndex === 'number' && swiperInstance.slides && swiperInstance.slides[swiperInstance.activeIndex]) {
+        activeSlide = swiperInstance.slides[swiperInstance.activeIndex];
     }
 
-    // Transición suave al cambiar de título
+    // 2) Fallback a clase .swiper-slide-active
+    if (!activeSlide) {
+        activeSlide = document.querySelector('.swiper-slide-active');
+    }
+
+    // 3) Fallback a realIndex
+    if (!activeSlide && typeof swiperInstance.realIndex === 'number' && swiperInstance.slides && swiperInstance.slides[swiperInstance.realIndex]) {
+        activeSlide = swiperInstance.slides[swiperInstance.realIndex];
+    }
+
+    const newTitle = activeSlide?.dataset?.title || "Video";
+    const newDesc  = activeSlide?.dataset?.descripcion || "";
+
+    const titleEl = fixedBox.querySelector(".video-title");
+    const descEl  = fixedBox.querySelector(".video-desc");
+
+    // Evitar actualización innecesaria
+    if (titleEl.textContent === newTitle && descEl.textContent === newDesc) return;
+
+    // Transición suave
     fixedBox.style.opacity = 0;
-
     setTimeout(() => {
-        // Función genérica para manejar el truncamiento y expansión
-        const setupExpandableText = (element, text) => {
-            // Eliminar contenido anterior para evitar duplicados
-            element.innerHTML = `<span class="text-container">${text}</span>`;
-            const container = element.querySelector('.text-container');
-            
-            // Usar setTimeout para asegurar que la renderización está completa antes de medir
-            setTimeout(() => {
-                // Comprobar si el contenido se desborda y necesita truncamiento
-                if (container.scrollHeight > container.clientHeight) {
-                    const toggleButton = document.createElement('span');
-                    toggleButton.className = 'toggle-text';
-                    toggleButton.textContent = '...más';
-                    element.appendChild(toggleButton);
-
-                    // Añadir el listener para expandir/contraer
-                    element.addEventListener('click', () => {
-                        const isExpanded = container.classList.contains('expanded');
-                        if (isExpanded) {
-                            container.classList.remove('expanded');
-                            toggleButton.textContent = '...más';
-                        } else {
-                            container.classList.add('expanded');
-                            toggleButton.textContent = 'mostrar menos';
-                        }
-                    });
-                } else {
-                    // Si no necesita truncamiento, limpiar el listener y el botón
-                    const existingButton = element.querySelector('.toggle-text');
-                    if (existingButton) existingButton.remove();
-                    // Importante: Eliminar el listener si no es necesario para evitar problemas
-                    const clonedElement = element.cloneNode(true);
-                    element.parentNode.replaceChild(clonedElement, element);
-                }
-            }, 50);
-        };
-
-        // Aplicar la lógica al título y la descripción
-        setupExpandableText(titleEl, newTitle);
-        setupExpandableText(descEl, newDesc);
-
-        // Mostrar el contenedor de nuevo
+        titleEl.textContent = newTitle;
+        descEl.textContent  = newDesc;
         fixedBox.style.opacity = 1;
     }, 120);
 }
 
-async function cargarVideos(checkNew = false) {
-  const loader = document.getElementById("loader");
-  if (!checkNew) loader.style.display = "flex";
 
-  try {
-    const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
-    const data = await res.json();
+       async function cargarVideos() {
+    const loader = document.getElementById("loader");
+    loader.style.display = "flex";
+    try {
+        const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
+        const data = await res.json();
 
-    if (!Array.isArray(data.data)) return;
+        const wrapper = document.getElementById("slides");
+        wrapper.innerHTML = "";
 
-    let newVideos = data.data.map(row => ({
-      title: row[0],
-      link: row[1],
-      desc: row[4] || ""
-    }));
-
-    if (checkNew) {
-      // 🔹 Comparar solo para detectar nuevos sin destruir lo actual
-      newVideos.forEach(v => {
-        if (!lastVideos.find(old => old.link === v.link)) {
-          notifications.unshift(v);
-          // Agregar slide nuevo dinámicamente sin borrar los demás
-          const wrapper = document.getElementById("slides");
-          wrapper.appendChild(createSlide(v.title, v.link, v.desc));
-          if (swiper) swiper.update(); // refrescar swiper sin destruirlo
+        if (Array.isArray(data.data)) {
+            data.data.forEach((row) => {
+                const titulo = row[0];       // Columna 1
+                const link = row[1];         // Columna 2
+                const descripcion = row[4] || ""; // Columna 5
+                wrapper.appendChild(createSlide(titulo, link, descripcion));
+            });
         }
-      });
-      renderNotifications();
-    } else {
-      // 🔹 Primer cargue: sí se crea todo el swiper
-      const wrapper = document.getElementById("slides");
-      wrapper.innerHTML = "";
-      newVideos.forEach(v => {
-        wrapper.appendChild(createSlide(v.title, v.link, v.desc));
-      });
 
-      if (swiper) swiper.destroy(true, true);
-      swiper = new Swiper(".swiper", {
-        loop: true,
-        direction: "horizontal",
-        slidesPerView: 1,
-        spaceBetween: 10,
-        pagination: false,
-        on: {
-          init() { updateFixedTitle(this); },
-          slideChange() {
-            cleanupIframesExceptActive();
-            updateFixedTitle(this);
-          },
-          slideChangeTransitionEnd() { updateFixedTitle(this); }
-        },
-      });
+        if (swiper) swiper.destroy(true, true);
+        swiper = new Swiper(".swiper", {
+            loop: true,
+            direction: "horizontal",
+            slidesPerView: 1,
+            spaceBetween: 10,
+            pagination: false,
+            on: {
+                init() {
+                    updateFixedTitle(this);
+                },
+                slideChange() {
+                    cleanupIframesExceptActive();
+                    updateFixedTitle(this);
+                },
+                slideChangeTransitionEnd() {
+                    updateFixedTitle(this);
+                }
+            },
+        });
 
-      cleanupIframesExceptActive();
-      updateFixedTitle(swiper);
+        cleanupIframesExceptActive();
+        updateFixedTitle(swiper);
+    } catch (e) {
+        console.error("Error cargando videos:", e);
+    } finally {
+        loader.style.display = "none";
     }
-
-    lastVideos = newVideos;
-  } catch (e) {
-    console.error("Error cargando videos:", e);
-  } finally {
-    loader.style.display = "none";
-  }
 }
-
-
-
-
-// === AUTO REFRESCO EN SEGUNDO PLANO ===
-setInterval(() => {
-  cargarVideos(true); // revisa solo si hay nuevos videos
-}, 3000); // cada 10 segundos (ajusta según quieras)
 
 
         cargarVideos();
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
