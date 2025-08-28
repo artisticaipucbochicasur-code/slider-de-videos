@@ -508,7 +508,7 @@ function renderNotifications() {
     item.textContent = notif.title;
     item.style.cursor = "pointer";
 
-   item.onclick = () => {
+ item.onclick = () => {
   const wrapper = document.getElementById("slides");
 
   // Buscar si ya existe el slide del anuncio
@@ -535,6 +535,10 @@ function renderNotifications() {
 
   if (swiper && slideIndex !== -1) {
     swiper.update(); // 🔥 asegurar que Swiper esté sincronizado
+
+    // 👇 limpiar el slide actual ANTES de movernos
+    cleanupIframesExceptActive();
+
     swiper.slideToLoop(slideIndex, 0); // ir al anuncio
     updateFixedTitle(swiper);
 
@@ -1180,6 +1184,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
