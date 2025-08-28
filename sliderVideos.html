@@ -505,12 +505,12 @@ function renderNotifications() {
   notifications.forEach((notif, i) => {
     const item = document.createElement("div");
     item.textContent = notif.title;
+    item.style.cursor = "pointer";
+
     item.onclick = () => {
-      // ¿Ya existe el slide en el DOM?
-      const index = lastVideos.findIndex(v => v.link === notif.link);
       const wrapper = document.getElementById("slides");
+      // Busca el slide por embedSrc
       let slideIndex = Array.from(wrapper.children).findIndex(slide => {
-        // slide.dataset.title y slide.dataset.descripcion pueden variar, compara por link
         const card = slide.querySelector('.player-card');
         return card && card.dataset.embed === getEmbedInfo(notif.link).embedSrc;
       });
@@ -519,7 +519,6 @@ function renderNotifications() {
       if (slideIndex === -1) {
         wrapper.appendChild(createSlide(notif.title, notif.link, notif.desc));
         if (swiper) swiper.update();
-        // El nuevo slide será el último
         slideIndex = wrapper.children.length - 1;
       }
 
@@ -534,14 +533,38 @@ function renderNotifications() {
         if (card) mountIframe(card);
       }
 
-      // Marcar como leída
+      // Marcar como leída y cerrar el panel
       notifications.splice(i, 1);
       renderNotifications();
+      document.getElementById("notification-list").classList.add("hidden");
     };
+
     list.appendChild(item);
   });
 }
+// --- BOTÓN NOTIFICACIONES UNIVERSAL ---
+const notifBtn = document.getElementById("notification-btn");
+const notifList = document.getElementById("notification-list");
 
+// Mostrar/ocultar la lista al tocar el botón (desktop y móvil)
+notifBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  notifList.classList.toggle("hidden");
+});
+notifBtn.addEventListener("touchstart", (e) => {
+  e.stopPropagation();
+  notifList.classList.toggle("hidden");
+});
+
+// Ocultar la lista al hacer clic fuera
+document.addEventListener("click", (e) => {
+  if (!notifList.classList.contains("hidden")) {
+    // Si el click NO es en el botón ni en la lista
+    if (!notifList.contains(e.target) && e.target !== notifBtn) {
+      notifList.classList.add("hidden");
+    }
+  }
+});
 // --- MANEJO DE ELIMINACIÓN ---
 
 // Variables para almacenar los datos del usuario, obtenidos de la URL
@@ -1131,6 +1154,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
