@@ -674,7 +674,6 @@ deleteConfirm.onclick = async () => {
         fileName = decodeURIComponent(archiveMatch[2]);
     }
     
-    // Aquí usamos las variables 'usuarioAutor' y 'usuarioCorreo'
     const deleteUrl = `${SCRIPT_URL}?accion=eliminar&link=${encodeURIComponent(link)}&id=${encodeURIComponent(identifier)}&file=${encodeURIComponent(fileName)}&autor=${encodeURIComponent(usuarioAutor)}&correo=${encodeURIComponent(usuarioCorreo)}`;
 
     try {
@@ -682,16 +681,17 @@ deleteConfirm.onclick = async () => {
         const data = await response.json();
 
         if (data.status === "success") {
-            // ✅ Eliminar solo el slide actual
-            const activeIndex = swiper.realIndex;
-            const activeSlide = document.querySelector(".swiper-slide-active");
+            const activeIndex = swiper.activeIndex; // 👈 usar activeIndex real del DOM
+            const activeSlide = swiper.slides[activeIndex];
+
             if (activeSlide) {
                 activeSlide.remove();
                 swiper.update();
 
-                // Mover al siguiente slide o al anterior si no hay siguiente
+                // Si hay slides, ir al mismo índice (que ahora apunta al siguiente inmediato)
                 if (swiper.slides.length > 0) {
-                    swiper.slideTo(Math.min(activeIndex, swiper.slides.length - 1));
+                    let targetIndex = Math.min(activeIndex, swiper.slides.length - 1);
+                    swiper.slideTo(targetIndex, 0); // 👈 movimiento exacto
                 }
             }
 
@@ -1211,6 +1211,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
