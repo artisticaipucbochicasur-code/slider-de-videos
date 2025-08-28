@@ -506,49 +506,49 @@ function renderNotifications() {
     const item = document.createElement("div");
     item.textContent = notif.title;
     item.style.cursor = "pointer";
+item.onclick = () => {
+  const wrapper = document.getElementById("slides");
 
-    item.onclick = () => {
-      const wrapper = document.getElementById("slides");
+  // Pausa y desmonta TODOS los reproductores excepto el slide activo (por si hay otros montados)
+  Array.from(wrapper.children).forEach(slide => {
+    const card = slide.querySelector('.player-card');
+    if (card) restorePoster(card);
+  });
 
-      // --- PAUSA Y DESMONTA EL REPRODUCTOR ACTUAL ---
-      if (swiper) {
-        const prevIndex = swiper.activeIndex;
-        const prevSlide = wrapper.children[prevIndex];
-        if (prevSlide) {
-          const prevCard = prevSlide.querySelector('.player-card');
-          if (prevCard) restorePoster(prevCard); // desmonta y pausa el reproductor anterior
-        }
-      }
+  // Busca el slide por embedSrc
+  let slideIndex = Array.from(wrapper.children).findIndex(slide => {
+    const card = slide.querySelector('.player-card');
+    return card && card.dataset.embed === getEmbedInfo(notif.link).embedSrc;
+  });
 
-      // Busca el slide por embedSrc
-      let slideIndex = Array.from(wrapper.children).findIndex(slide => {
-        const card = slide.querySelector('.player-card');
-        return card && card.dataset.embed === getEmbedInfo(notif.link).embedSrc;
-      });
+  // Si no existe el slide, lo agregas
+  if (slideIndex === -1) {
+    wrapper.appendChild(createSlide(notif.title, notif.link, notif.desc));
+    if (swiper) swiper.update();
+    slideIndex = wrapper.children.length - 1;
+  }
 
-      // Si no existe el slide, lo agregas
-      if (slideIndex === -1) {
-        wrapper.appendChild(createSlide(notif.title, notif.link, notif.desc));
-        if (swiper) swiper.update();
-        slideIndex = wrapper.children.length - 1;
-      }
+  // Navega al slide correspondiente
+  if (swiper && slideIndex !== -1) {
+    swiper.slideToLoop(slideIndex, 0);
+    updateFixedTitle(swiper);
 
-      // Navega al slide correspondiente
-      if (swiper && slideIndex !== -1) {
-        swiper.slideToLoop(slideIndex, 0);
-        updateFixedTitle(swiper);
-        cleanupIframesExceptActive();
-        // Monta el iframe automáticamente para reproducir
-        const slide = wrapper.children[slideIndex];
-        const card = slide.querySelector('.player-card');
+    // MONTAR EL PLAYER SOLO EN EL SLIDE ACTIVO, DESPUÉS DE LA TRANSICIÓN
+    swiper.once('slideChangeTransitionEnd', () => {
+      cleanupIframesExceptActive();
+      const activeSlide = wrapper.children[swiper.realIndex];
+      if (activeSlide) {
+        const card = activeSlide.querySelector('.player-card');
         if (card) mountIframe(card);
       }
+    });
+  }
 
-      // Marcar como leída y cerrar el panel
-      notifications.splice(i, 1);
-      renderNotifications();
-      document.getElementById("notification-list").classList.add("hidden");
-    };
+  // Marcar como leída y cerrar el panel
+  notifications.splice(i, 1);
+  renderNotifications();
+  document.getElementById("notification-list").classList.add("hidden");
+};
 
     list.appendChild(item);
   });
@@ -1002,18 +1002,17 @@ deleteConfirm.onclick = async () => {
         }
 
         // --- INICIO DE LA CORRECCIÓN ---
-        function cleanupIframesExceptActive() {
-            if (!swiper) return;
-            const prevIndex = swiper.previousIndex;
-            
-            // Si hay un slide anterior, asegúrate de restaurar su póster y detener su video.
-            if (prevIndex !== undefined && swiper.slides[prevIndex]) {
-                const card = swiper.slides[prevIndex].querySelector(".player-card");
-                if (card) {
-                    restorePoster(card);
-                }
-            }
-        }
+     function cleanupIframesExceptActive() {
+  if (!swiper) return;
+  const wrapper = document.getElementById("slides");
+  Array.from(wrapper.children).forEach((slide, i) => {
+    const card = slide.querySelector('.player-card');
+    if (!card) return;
+    if (i !== swiper.realIndex) {
+      restorePoster(card);
+    }
+  });
+}
         // --- FIN DE LA CORRECCIÓN ---
 
      function updateFixedTitle(swiperInstance) {
@@ -1165,6 +1164,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
