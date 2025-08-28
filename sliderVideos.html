@@ -490,7 +490,7 @@ let lastVideos = [];
 function renderNotifications() {
   const list = document.getElementById("notification-list");
   const count = document.getElementById("notification-count");
-  
+
   list.innerHTML = "";
   if (notifications.length === 0) {
     list.innerHTML = "<div>Sin notificaciones</div>";
@@ -505,29 +505,26 @@ function renderNotifications() {
   notifications.forEach((notif, i) => {
     const item = document.createElement("div");
     item.textContent = notif.title;
+    item.className = "notification-item";
+
     item.onclick = () => {
-      // Ir al video correspondiente
+      // Buscar el índice del anuncio en lastVideos
       const index = lastVideos.findIndex(v => v.link === notif.link);
+      
       if (index !== -1) {
-        swiper.slideToLoop(index);
+        // Navegar al anuncio correspondiente en el swiper
+        swiper.slideTo(index, 500, false);
       }
-      // Marcar como leída
+
+      // Marcar como leída y actualizar lista
       notifications.splice(i, 1);
       renderNotifications();
     };
+
     list.appendChild(item);
   });
 }
 
-// Alias para usar renderNotificaciones también
-function renderNotificaciones() {
-  renderNotifications();
-}
-
-// Botón toggle
-document.getElementById("notification-btn").onclick = () => {
-  document.getElementById("notification-list").classList.toggle("hidden");
-};
 
 
 // --- MANEJO DE ELIMINACIÓN ---
@@ -1139,6 +1136,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
