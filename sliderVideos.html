@@ -1040,6 +1040,7 @@ deleteConfirm.onclick = async () => {
 async function cargarVideos(checkNew = false) {
   const loader = document.getElementById("loader");
   if (!checkNew) loader.style.display = "flex";
+
   try {
     const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
     const data = await res.json();
@@ -1058,19 +1059,23 @@ async function cargarVideos(checkNew = false) {
       });
     }
 
-    // Comparar con los anteriores solo si es refresco en segundo plano
+    // 🔹 Detectar nuevos videos y generar notificaciones
     if (checkNew && lastVideos.length > 0) {
       newVideos.forEach(v => {
         if (!lastVideos.find(old => old.link === v.link)) {
-          notifications.unshift(v); // nuevo video arriba
+          notifications.unshift(v);
         }
       });
       renderNotifications();
     }
 
+    // 🔹 Guardar el índice actual ANTES de destruir el swiper
+    let currentIndex = swiper ? swiper.realIndex : 0;
+
     lastVideos = newVideos;
 
     if (swiper) swiper.destroy(true, true);
+
     swiper = new Swiper(".swiper", {
       loop: true,
       direction: "horizontal",
@@ -1087,14 +1092,21 @@ async function cargarVideos(checkNew = false) {
       },
     });
 
+    // 🔹 Restaurar la posición del slider al mismo índice
+    if (checkNew && swiper && lastVideos.length > 0) {
+      swiper.slideToLoop(currentIndex, 0, false);
+    }
+
     cleanupIframesExceptActive();
     updateFixedTitle(swiper);
+
   } catch (e) {
     console.error("Error cargando videos:", e);
   } finally {
     loader.style.display = "none";
   }
 }
+
 
 
 // === AUTO REFRESCO EN SEGUNDO PLANO ===
@@ -1107,6 +1119,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
