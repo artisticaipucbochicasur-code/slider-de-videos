@@ -1179,39 +1179,17 @@ async function cargarVideos(checkNew = false) {
 }
 
 
-// Cada 3 segundos revisa si hay nuevos videos
+// === AUTO REFRESCO EN SEGUNDO PLANO ===
 setInterval(() => {
-  revisarNuevosVideos();
+  cargarVideos(true); // ahora solo revisa nuevos, sin interrumpir reproducción
 }, 3000);
-
-function revisarNuevosVideos() {
-  fetch("api/videos.json")
-    .then(r => r.json())
-    .then(nuevos => {
-      if (nuevos.length > lastVideos.length) {
-        // Solo avisar, NO refrescar todavía
-        mostrarAvisoNuevos(nuevos.length - lastVideos.length);
-      }
-    });
-}
-
-function mostrarAvisoNuevos(cuantos) {
-  let aviso = document.getElementById("avisoNuevos");
-  if (!aviso) {
-    aviso = document.createElement("div");
-    aviso.id = "avisoNuevos";
-    aviso.className = "aviso-nuevos";
-    document.body.appendChild(aviso);
-  }
-  aviso.textContent = `🔔 Hay ${cuantos} nuevos videos`;
-  aviso.style.display = "block";
-}
 
 
         cargarVideos();
     </script>
 </body>
 </html>
+
 
 
 
