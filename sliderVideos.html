@@ -1105,40 +1105,41 @@ async function cargarVideos(checkNew = false) {
       });
     }
 
-    // Solo en refresco silencioso: acumula notificaciones, no agrega slides
-    if (checkNew && lastVideos.length > 0) {
+    // 🔥 Corregido: ahora también notifica si es el primer video
+    if (checkNew) {
       newVideos.forEach(v => {
         if (!lastVideos.find(old => old.link === v.link)) {
           notifications.unshift(v); // acumula notificación
         }
       });
-      renderNotifications();
+      if (notifications.length > 0) {
+        renderNotifications();
+      }
     }
 
     lastVideos = newVideos;
 
     if (!checkNew) {
       if (swiper) swiper.destroy(true, true);
-     swiper = new Swiper(".swiper", {
-    loop: true,
-    direction: "horizontal",
-    slidesPerView: 1,
-    spaceBetween: 10,
-    pagination: false,
-    on: {
-        init() {
+      swiper = new Swiper(".swiper", {
+        loop: true,
+        direction: "horizontal",
+        slidesPerView: 1,
+        spaceBetween: 10,
+        pagination: false,
+        on: {
+          init() {
             updateFixedTitle(this);
-        },
-        slideChange() {
+          },
+          slideChange() {
             cleanupIframesExceptActive();
             updateFixedTitle(this);
-        },
-        slideChangeTransitionEnd() {
+          },
+          slideChangeTransitionEnd() {
             updateFixedTitle(this);
-        }
-    },
-});
-
+          }
+        },
+      });
 
       cleanupIframesExceptActive();
       updateFixedTitle(swiper);
@@ -1162,6 +1163,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
