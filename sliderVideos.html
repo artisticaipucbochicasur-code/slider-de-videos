@@ -677,27 +677,32 @@ deleteConfirm.onclick = async () => {
     // Aquí usamos las variables 'usuarioAutor' y 'usuarioCorreo'
     const deleteUrl = `${SCRIPT_URL}?accion=eliminar&link=${encodeURIComponent(link)}&id=${encodeURIComponent(identifier)}&file=${encodeURIComponent(fileName)}&autor=${encodeURIComponent(usuarioAutor)}&correo=${encodeURIComponent(usuarioCorreo)}`;
 
-    const response = await fetch(deleteUrl);
-    const data = await response.json();
+    try {
+        const response = await fetch(deleteUrl);
+        const data = await response.json();
 
-  if (data.status === "success") {
-    // ✅ Eliminar el slide actual directamente
-    const activeIndex = swiper.realIndex;
-    const activeSlide = document.querySelector(".swiper-slide-active");
-    if (activeSlide) {
-        activeSlide.remove();
-        swiper.update();
-        
-        // Mover al siguiente slide o al anterior si no hay siguiente
-        if (swiper.slides.length > 0) {
-            swiper.slideTo(Math.min(activeIndex, swiper.slides.length - 1));
+        if (data.status === "success") {
+            // ✅ Eliminar solo el slide actual
+            const activeIndex = swiper.realIndex;
+            const activeSlide = document.querySelector(".swiper-slide-active");
+            if (activeSlide) {
+                activeSlide.remove();
+                swiper.update();
+
+                // Mover al siguiente slide o al anterior si no hay siguiente
+                if (swiper.slides.length > 0) {
+                    swiper.slideTo(Math.min(activeIndex, swiper.slides.length - 1));
+                }
+            }
+
+            showAlert("✅ Video eliminado con éxito.", "¡Listo!");
+        } else {
+            showAlert("❌ Error al eliminar: " + data.message, "Error");
         }
+    } catch (err) {
+        showAlert("⚠️ Error de conexión al intentar eliminar.", "Error");
     }
-
-    showAlert("✅ Video eliminado con éxito.", "¡Listo!");
-} else {
-    showAlert("❌ Error al eliminar: " + data.message, "Error");
-}
+};
 
 
 
@@ -1206,6 +1211,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
