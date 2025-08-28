@@ -1046,7 +1046,9 @@ async function cargarVideos(checkNew = false) {
     const data = await res.json();
 
     const wrapper = document.getElementById("slides");
-    wrapper.innerHTML = "";
+    if (!checkNew) {
+      wrapper.innerHTML = "";
+    }
 
     let newVideos = [];
     if (Array.isArray(data.data)) {
@@ -1054,7 +1056,9 @@ async function cargarVideos(checkNew = false) {
         const titulo = row[0];
         const link = row[1];
         const descripcion = row[4] || "";
-        wrapper.appendChild(createSlide(titulo, link, descripcion));
+        if (!checkNew) {
+          wrapper.appendChild(createSlide(titulo, link, descripcion));
+        }
         newVideos.push({ title: titulo, link, desc: descripcion });
       });
     }
@@ -1064,6 +1068,8 @@ async function cargarVideos(checkNew = false) {
       newVideos.forEach(v => {
         if (!lastVideos.find(old => old.link === v.link)) {
           notifications.unshift(v); // nuevo video arriba
+          // Si quieres agregar el slide dinámicamente en el refresco, puedes hacerlo aquí:
+          // wrapper.appendChild(createSlide(v.title, v.link, v.desc));
         }
       });
       renderNotifications();
@@ -1071,32 +1077,33 @@ async function cargarVideos(checkNew = false) {
 
     lastVideos = newVideos;
 
-    if (swiper) swiper.destroy(true, true);
-    swiper = new Swiper(".swiper", {
-      loop: true,
-      direction: "horizontal",
-      slidesPerView: 1,
-      spaceBetween: 10,
-      pagination: false,
-      on: {
-        init() { updateFixedTitle(this); },
-        slideChange() {
-          cleanupIframesExceptActive();
-          updateFixedTitle(this);
+    if (!checkNew) { // SOLO en la carga principal, NO en el refresco en segundo plano
+      if (swiper) swiper.destroy(true, true);
+      swiper = new Swiper(".swiper", {
+        loop: true,
+        direction: "horizontal",
+        slidesPerView: 1,
+        spaceBetween: 10,
+        pagination: false,
+        on: {
+          init() { updateFixedTitle(this); },
+          slideChange() {
+            cleanupIframesExceptActive();
+            updateFixedTitle(this);
+          },
+          slideChangeTransitionEnd() { updateFixedTitle(this); }
         },
-        slideChangeTransitionEnd() { updateFixedTitle(this); }
-      },
-    });
+      });
 
-    cleanupIframesExceptActive();
-    updateFixedTitle(swiper);
+      cleanupIframesExceptActive();
+      updateFixedTitle(swiper);
+    }
   } catch (e) {
     console.error("Error cargando videos:", e);
   } finally {
     loader.style.display = "none";
   }
 }
-
 
 
 
@@ -1110,4 +1117,5 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
