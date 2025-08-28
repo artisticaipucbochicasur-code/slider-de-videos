@@ -508,40 +508,24 @@ function renderNotifications() {
     item.style.cursor = "pointer";
 item.onclick = () => {
   const wrapper = document.getElementById("slides");
-
-  // Pausa y desmonta TODOS los reproductores
+  // Limpia todos los reproductores antes de navegar
   Array.from(wrapper.children).forEach(slide => {
     const card = slide.querySelector('.player-card');
     if (card) restorePoster(card);
   });
 
-  // Busca el slide por embedSrc
-  let slideIndex = Array.from(wrapper.children).findIndex(slide => {
-    const card = slide.querySelector('.player-card');
-    return card && card.dataset.embed === getEmbedInfo(notif.link).embedSrc;
-  });
+  // ... resto del código para buscar/agregar el slide
 
-  // Si no existe el slide, lo agregas
-  if (slideIndex === -1) {
-    wrapper.appendChild(createSlide(notif.title, notif.link, notif.desc));
-    if (swiper) swiper.update();
-    slideIndex = wrapper.children.length - 1;
-  }
-
-  // Navega al slide correspondiente
   if (swiper && slideIndex !== -1) {
     swiper.slideToLoop(slideIndex, 0);
     updateFixedTitle(swiper);
 
-    // SOLO después de la transición, monta el reproductor en el slide activo
     swiper.once('slideChangeTransitionEnd', () => {
       cleanupIframesExceptActive();
-      // OJO: swiper.realIndex para el slide real, pero si usas loop, Swiper puede duplicar slides,
-      // asegúrate de usar la clase .swiper-slide-active
-      const activeSlide = document.querySelector('.swiper-slide-active');
-      if (activeSlide) {
-        const card = activeSlide.querySelector('.player-card');
-        if (card) mountIframe(card);
+      // Monta el reproductor solo si no está ya montado
+      const activeCard = document.querySelector('.swiper-slide-active .player-card');
+      if (activeCard && !activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
+        mountIframe(activeCard);
       }
     });
   }
@@ -1166,6 +1150,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
