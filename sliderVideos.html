@@ -490,7 +490,7 @@ let lastVideos = [];
 function renderNotifications() {
   const list = document.getElementById("notification-list");
   const count = document.getElementById("notification-count");
-  
+
   list.innerHTML = "";
   if (notifications.length === 0) {
     list.innerHTML = "<div>Sin notificaciones</div>";
@@ -506,11 +506,34 @@ function renderNotifications() {
     const item = document.createElement("div");
     item.textContent = notif.title;
     item.onclick = () => {
-      // Ir al video correspondiente
+      // ¿Ya existe el slide en el DOM?
       const index = lastVideos.findIndex(v => v.link === notif.link);
-      if (index !== -1) {
-        swiper.slideToLoop(index);
+      const wrapper = document.getElementById("slides");
+      let slideIndex = Array.from(wrapper.children).findIndex(slide => {
+        // slide.dataset.title y slide.dataset.descripcion pueden variar, compara por link
+        const card = slide.querySelector('.player-card');
+        return card && card.dataset.embed === getEmbedInfo(notif.link).embedSrc;
+      });
+
+      // Si no existe, lo agregas
+      if (slideIndex === -1) {
+        wrapper.appendChild(createSlide(notif.title, notif.link, notif.desc));
+        if (swiper) swiper.update();
+        // El nuevo slide será el último
+        slideIndex = wrapper.children.length - 1;
       }
+
+      // Navega al slide correspondiente
+      if (swiper && slideIndex !== -1) {
+        swiper.slideToLoop(slideIndex, 0);
+        updateFixedTitle(swiper);
+        cleanupIframesExceptActive();
+        // Opcional: montar el iframe automáticamente
+        const slide = wrapper.children[slideIndex];
+        const card = slide.querySelector('.player-card');
+        if (card) mountIframe(card);
+      }
+
       // Marcar como leída
       notifications.splice(i, 1);
       renderNotifications();
@@ -518,12 +541,6 @@ function renderNotifications() {
     list.appendChild(item);
   });
 }
-
-// Botón toggle
-document.getElementById("notification-btn").onclick = () => {
-  document.getElementById("notification-list").classList.toggle("hidden");
-};
-
 
 // --- MANEJO DE ELIMINACIÓN ---
 
@@ -1063,13 +1080,11 @@ async function cargarVideos(checkNew = false) {
       });
     }
 
-    // Comparar con los anteriores solo si es refresco en segundo plano
+    // Solo en refresco silencioso: acumula notificaciones, no agrega slides
     if (checkNew && lastVideos.length > 0) {
       newVideos.forEach(v => {
         if (!lastVideos.find(old => old.link === v.link)) {
-          notifications.unshift(v); // nuevo video arriba
-          // Si quieres agregar el slide dinámicamente en el refresco, puedes hacerlo aquí:
-          // wrapper.appendChild(createSlide(v.title, v.link, v.desc));
+          notifications.unshift(v); // acumula notificación
         }
       });
       renderNotifications();
@@ -1077,7 +1092,7 @@ async function cargarVideos(checkNew = false) {
 
     lastVideos = newVideos;
 
-    if (!checkNew) { // SOLO en la carga principal, NO en el refresco en segundo plano
+    if (!checkNew) {
       if (swiper) swiper.destroy(true, true);
       swiper = new Swiper(".swiper", {
         loop: true,
@@ -1109,13 +1124,13 @@ async function cargarVideos(checkNew = false) {
 
 // === AUTO REFRESCO EN SEGUNDO PLANO ===
 setInterval(() => {
-  cargarVideos(true); // revisa solo si hay nuevos videos
-}, 3000); // cada 10 segundos (ajusta según quieras)
-
+  cargarVideos(true); // solo refresca notificaciones, no toca el slider
+}, 3000);
 
         cargarVideos();
     </script>
 </body>
 </html>
+
 
 
