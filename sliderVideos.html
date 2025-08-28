@@ -509,7 +509,7 @@ function renderNotifications() {
 item.onclick = () => {
   const wrapper = document.getElementById("slides");
 
-  // Pausa y desmonta TODOS los reproductores excepto el slide activo (por si hay otros montados)
+  // Pausa y desmonta TODOS los reproductores
   Array.from(wrapper.children).forEach(slide => {
     const card = slide.querySelector('.player-card');
     if (card) restorePoster(card);
@@ -533,10 +533,12 @@ item.onclick = () => {
     swiper.slideToLoop(slideIndex, 0);
     updateFixedTitle(swiper);
 
-    // MONTAR EL PLAYER SOLO EN EL SLIDE ACTIVO, DESPUÉS DE LA TRANSICIÓN
+    // SOLO después de la transición, monta el reproductor en el slide activo
     swiper.once('slideChangeTransitionEnd', () => {
       cleanupIframesExceptActive();
-      const activeSlide = wrapper.children[swiper.realIndex];
+      // OJO: swiper.realIndex para el slide real, pero si usas loop, Swiper puede duplicar slides,
+      // asegúrate de usar la clase .swiper-slide-active
+      const activeSlide = document.querySelector('.swiper-slide-active');
       if (activeSlide) {
         const card = activeSlide.querySelector('.player-card');
         if (card) mountIframe(card);
@@ -1002,14 +1004,14 @@ deleteConfirm.onclick = async () => {
         }
 
         // --- INICIO DE LA CORRECCIÓN ---
-     function cleanupIframesExceptActive() {
-  if (!swiper) return;
+function cleanupIframesExceptActive() {
   const wrapper = document.getElementById("slides");
-  Array.from(wrapper.children).forEach((slide, i) => {
-    const card = slide.querySelector('.player-card');
-    if (!card) return;
-    if (i !== swiper.realIndex) {
-      restorePoster(card);
+  // Busca el slide realmente activo. Si usas loop, Swiper puede duplicar slides
+  const activeSlide = document.querySelector('.swiper-slide-active');
+  Array.from(wrapper.children).forEach((slide) => {
+    if (slide !== activeSlide) {
+      const card = slide.querySelector('.player-card');
+      if (card) restorePoster(card);
     }
   });
 }
@@ -1164,6 +1166,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
