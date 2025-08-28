@@ -509,6 +509,17 @@ function renderNotifications() {
 
     item.onclick = () => {
       const wrapper = document.getElementById("slides");
+
+      // --- PAUSA Y DESMONTA EL REPRODUCTOR ACTUAL ---
+      if (swiper) {
+        const prevIndex = swiper.activeIndex;
+        const prevSlide = wrapper.children[prevIndex];
+        if (prevSlide) {
+          const prevCard = prevSlide.querySelector('.player-card');
+          if (prevCard) restorePoster(prevCard); // desmonta y pausa el reproductor anterior
+        }
+      }
+
       // Busca el slide por embedSrc
       let slideIndex = Array.from(wrapper.children).findIndex(slide => {
         const card = slide.querySelector('.player-card');
@@ -517,9 +528,8 @@ function renderNotifications() {
 
       // Si no existe el slide, lo agregas
       if (slideIndex === -1) {
-        // Crea y agrega el slide al DOM
         wrapper.appendChild(createSlide(notif.title, notif.link, notif.desc));
-        if (swiper) swiper.update(); // Refresca Swiper para que reconozca el nuevo slide
+        if (swiper) swiper.update();
         slideIndex = wrapper.children.length - 1;
       }
 
@@ -1155,6 +1165,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
