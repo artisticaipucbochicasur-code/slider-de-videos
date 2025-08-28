@@ -511,22 +511,20 @@ function renderNotifications() {
    item.onclick = () => {
   const wrapper = document.getElementById("slides");
 
-  // Si el slide NO existe todavía, crearlo e insertarlo
+  // Buscar si ya existe el slide del anuncio
   let slide = Array.from(wrapper.children).find(s => {
     const card = s.querySelector('.player-card');
     return card && card.dataset.embed === notif.link;
   });
 
+  // Si no existe, crearlo y agregarlo
   if (!slide) {
-    // Crear el slide igual que en cargarVideos
     const nuevoSlide = createSlide(notif.title, notif.link, notif.desc);
     wrapper.appendChild(nuevoSlide);
-
-    // 🔥 Reinstanciar swiper para que tome en cuenta el nuevo slide
-    swiper.update();
+    swiper.update(); // 🔥 muy importante: avisar a Swiper
   }
 
-  // Buscar índice del slide al que ir
+  // Buscar índice del slide ya existente o recién agregado
   let slideIndex = -1;
   Array.from(wrapper.children).forEach((s, idx) => {
     const card = s.querySelector('.player-card');
@@ -536,7 +534,8 @@ function renderNotifications() {
   });
 
   if (swiper && slideIndex !== -1) {
-    swiper.slideToLoop(slideIndex, 0);
+    swiper.update(); // 🔥 asegurar que Swiper esté sincronizado
+    swiper.slideToLoop(slideIndex, 0); // ir al anuncio
     updateFixedTitle(swiper);
 
     swiper.once('slideChangeTransitionEnd', () => {
@@ -549,11 +548,12 @@ function renderNotifications() {
     });
   }
 
-  // Marcar como leída y cerrar el panel
+  // Marcar como leída y cerrar panel
   notifications.splice(i, 1);
   renderNotifications();
   document.getElementById("notification-list").classList.add("hidden");
 };
+
 
     list.appendChild(item);
   });
@@ -1180,6 +1180,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
