@@ -248,11 +248,12 @@
 }
 /* 🔔 Notificaciones */
 #notification-wrapper {
-   position: relative;
-  top: 0;
-  right: 0;
+  position: fixed;
+  right: 20px;
+  bottom: 140px; /* la subimos para que quede arriba del bote */
   z-index: 5000;
 }
+
 #notification-btn {
   position: relative;
   background: #111;
@@ -276,6 +277,7 @@
   padding: 2px 6px;
   border-radius: 50%;
 }
+
 
 
 
@@ -463,7 +465,6 @@
     
         <!-- BOTONES flotantes -->
    <div class="floating-buttons">
-  <button id="notification-btn" class="fab"><i class="fas fa-bell"></i></button>
   <button id="btn-delete" class="fab danger"><i class="fas fa-trash"></i></button>
 </div>
 
@@ -1217,6 +1218,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
