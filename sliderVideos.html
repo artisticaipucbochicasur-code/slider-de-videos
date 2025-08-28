@@ -486,11 +486,29 @@
 let notifications = [];
 let lastVideos = [];
 
+function goToLink(link) {
+  if (!swiper) return;
+  const idx = lastVideos.findIndex(v => v.link === link);
+  if (idx === -1) return;
+
+  const keep = swiper.realIndex; // conservar el actual
+  swiper.slideToLoop(idx, 0, false);
+
+  // (Opcional) Autoplay al llegar:
+  // setTimeout(() => {
+  //   const activeCard = document.querySelector('.swiper-slide-active .player-card');
+  //   if (activeCard && !activeCard.querySelector('iframe') && !activeCard.querySelector('video')) {
+  //     mountIframe(activeCard);
+  //   }
+  // }, 50);
+}
+
+        
 // Actualiza el listado de notificaciones
 function renderNotifications() {
   const list = document.getElementById("notification-list");
   const count = document.getElementById("notification-count");
-  
+
   list.innerHTML = "";
   if (notifications.length === 0) {
     list.innerHTML = "<div>Sin notificaciones</div>";
@@ -505,24 +523,16 @@ function renderNotifications() {
   notifications.forEach((notif, i) => {
     const item = document.createElement("div");
     item.textContent = notif.title;
+    item.className = "notification-item";
     item.onclick = () => {
-      // Usar el índice que guardamos en la notificación
-      if (typeof notif.index !== "undefined") {
-        swiper.slideToLoop(notif.index);
-      }
-
-      // Marcar como leída
-      notifications.splice(i, 1);
+      goToLink(notif.link);      // 👈 navegar
+      notifications.splice(i, 1); // marcar leída
       renderNotifications();
     };
     list.appendChild(item);
   });
 }
 
-// Botón toggle
-document.getElementById("notification-btn").onclick = () => {
-  document.getElementById("notification-list").classList.toggle("hidden");
-};
 
 // --- MANEJO DE ELIMINACIÓN ---
 
@@ -1054,7 +1064,6 @@ function normalizar(txt) {
     .trim();
 }
 
-// === CARGA DE VIDEOS ===
 async function cargarVideos(checkNew = false) {
   const loader = document.getElementById("loader");
   if (!checkNew) loader.style.display = "flex";
@@ -1064,32 +1073,17 @@ async function cargarVideos(checkNew = false) {
     const data = await res.json();
     if (!Array.isArray(data.data)) return;
 
-    let newVideos = data.data.map(row => ({
+    const fetched = data.data.map(row => ({
       title: row[0],
       link: row[1],
       desc: row[4] || ""
     }));
 
-    if (checkNew) {
-  newVideos.forEach((v, idx) => {
-    if (!lastVideos.find(old => old.link === v.link)) {
-      // Guardamos también el índice en la notificación
-      notifications.unshift({
-        title: v.title,
-        link: v.link,
-        index: idx  // 👈 índice dentro de lastVideos
-      });
-    }
-  });
-  renderNotifications();
-}
-else {
-      // 🔹 Primer cargue: sí construimos swiper
+    // Primer cargue: construir todo
+    if (!swiper || !document.querySelector(".swiper-wrapper").children.length) {
       const wrapper = document.getElementById("slides");
       wrapper.innerHTML = "";
-      newVideos.forEach(v => {
-        wrapper.appendChild(createSlide(v.title, v.link, v.desc));
-      });
+      fetched.forEach(v => wrapper.appendChild(createSlide(v.title, v.link, v.desc)));
 
       if (swiper) swiper.destroy(true, true);
       swiper = new Swiper(".swiper", {
@@ -1110,9 +1104,73 @@ else {
 
       cleanupIframesExceptActive();
       updateFixedTitle(swiper);
+
+      // set base
+      lastVideos = fetched.slice();
+      return;
     }
 
-    lastVideos = newVideos;
+    // Actualizaciones en caliente: SOLO agregar nuevos, sin destruir ni reordenar
+    if (checkNew) {
+      const known = new Set(lastVideos.map(v => v.link));
+      const newcomers = fetched.filter(v => !known.has(v.link));
+      if (newcomers.length) {
+        const wrapper = document.getElementById("slides");
+        const keep = swiper.realIndex; // conservar el slide actual
+
+        newcomers.forEach(v => {
+          // 1) avisos
+          notifications.unshift({ title: v.title, link: v.link });
+
+          // 2) modelo + UI (append DOM sin tocar el activo)
+          lastVideos.push(v);
+          const slideEl = createSlide(v.title, v.link, v.desc);
+          wrapper.appendChild(slideEl);
+        });
+
+        // 3) actualizar Swiper sin romper reproducción
+        swiper.update();
+        if (swiper.params.loop) {
+          // re-crear duplicados del loop para coherencia
+          swiper.loopDestroy();
+          swiper.loopCreate();
+        }
+        // volver al mismo realIndex instantáneo y sin animación
+        swiper.slideToLoop(keep, 0, false);
+
+        renderNotifications();
+      }
+      return; // 👈 clave: no pisar lastVideos con `fetched`
+    }
+
+    // Si pides un refresco manual completo (no checkNew): reconstruir todo
+    {
+      const wrapper = document.getElementById("slides");
+      wrapper.innerHTML = "";
+      fetched.forEach(v => wrapper.appendChild(createSlide(v.title, v.link, v.desc)));
+
+      if (swiper) swiper.destroy(true, true);
+      swiper = new Swiper(".swiper", {
+        loop: true,
+        direction: "horizontal",
+        slidesPerView: 1,
+        spaceBetween: 10,
+        pagination: false,
+        on: {
+          init() { updateFixedTitle(this); },
+          slideChange() {
+            cleanupIframesExceptActive();
+            updateFixedTitle(this);
+          },
+          slideChangeTransitionEnd() { updateFixedTitle(this); }
+        },
+      });
+
+      cleanupIframesExceptActive();
+      updateFixedTitle(swiper);
+
+      lastVideos = fetched.slice();
+    }
   } catch (e) {
     console.error("Error cargando videos:", e);
   } finally {
@@ -1120,15 +1178,41 @@ else {
   }
 }
 
-// === AUTO REFRESCO EN SEGUNDO PLANO ===
+
+// Cada 3 segundos revisa si hay nuevos videos
 setInterval(() => {
-  cargarVideos(true); // ahora solo revisa notificaciones
-}, 3000); 
+  revisarNuevosVideos();
+}, 3000);
+
+function revisarNuevosVideos() {
+  fetch("api/videos.json")
+    .then(r => r.json())
+    .then(nuevos => {
+      if (nuevos.length > lastVideos.length) {
+        // Solo avisar, NO refrescar todavía
+        mostrarAvisoNuevos(nuevos.length - lastVideos.length);
+      }
+    });
+}
+
+function mostrarAvisoNuevos(cuantos) {
+  let aviso = document.getElementById("avisoNuevos");
+  if (!aviso) {
+    aviso = document.createElement("div");
+    aviso.id = "avisoNuevos";
+    aviso.className = "aviso-nuevos";
+    document.body.appendChild(aviso);
+  }
+  aviso.textContent = `🔔 Hay ${cuantos} nuevos videos`;
+  aviso.style.display = "block";
+}
+
 
         cargarVideos();
     </script>
 </body>
 </html>
+
 
 
 
