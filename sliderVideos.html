@@ -1040,10 +1040,12 @@ deleteConfirm.onclick = async () => {
 async function cargarVideos(checkNew = false) {
   const loader = document.getElementById("loader");
   if (!checkNew) loader.style.display = "flex";
-
   try {
     const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
     const data = await res.json();
+
+    const wrapper = document.getElementById("slides");
+    wrapper.innerHTML = "";
 
     let newVideos = [];
     if (Array.isArray(data.data)) {
@@ -1051,11 +1053,12 @@ async function cargarVideos(checkNew = false) {
         const titulo = row[0];
         const link = row[1];
         const descripcion = row[4] || "";
+        wrapper.appendChild(createSlide(titulo, link, descripcion));
         newVideos.push({ title: titulo, link, desc: descripcion });
       });
     }
 
-    // Comparar con lastVideos
+    // Comparar con los anteriores solo si es refresco en segundo plano
     if (checkNew && lastVideos.length > 0) {
       newVideos.forEach(v => {
         if (!lastVideos.find(old => old.link === v.link)) {
@@ -1065,40 +1068,27 @@ async function cargarVideos(checkNew = false) {
       renderNotifications();
     }
 
-    // === 👇 En vez de destruir swiper, actualiza slides ===
-    if (!swiper) {
-      // primera vez
-      const wrapper = document.getElementById("slides");
-      wrapper.innerHTML = "";
-      newVideos.forEach(v => wrapper.appendChild(createSlide(v.title, v.link, v.desc)));
-
-      swiper = new Swiper(".swiper", {
-        loop: true,
-        direction: "horizontal",
-        slidesPerView: 1,
-        spaceBetween: 10,
-        pagination: false,
-        on: {
-          init() { updateFixedTitle(this); },
-          slideChange() {
-            cleanupIframesExceptActive();
-            updateFixedTitle(this);
-          }
-        },
-      });
-    } else {
-      // 👇 refrescar solo si cambia el listado
-      if (JSON.stringify(lastVideos) !== JSON.stringify(newVideos)) {
-        const wrapper = document.getElementById("slides");
-        wrapper.innerHTML = "";
-        newVideos.forEach(v => wrapper.appendChild(createSlide(v.title, v.link, v.desc)));
-        swiper.update(); // refresca sin resetear índice
-      }
-    }
-
     lastVideos = newVideos;
-    updateFixedTitle(swiper);
 
+    if (swiper) swiper.destroy(true, true);
+    swiper = new Swiper(".swiper", {
+      loop: true,
+      direction: "horizontal",
+      slidesPerView: 1,
+      spaceBetween: 10,
+      pagination: false,
+      on: {
+        init() { updateFixedTitle(this); },
+        slideChange() {
+          cleanupIframesExceptActive();
+          updateFixedTitle(this);
+        },
+        slideChangeTransitionEnd() { updateFixedTitle(this); }
+      },
+    });
+
+    cleanupIframesExceptActive();
+    updateFixedTitle(swiper);
   } catch (e) {
     console.error("Error cargando videos:", e);
   } finally {
@@ -1117,6 +1107,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
