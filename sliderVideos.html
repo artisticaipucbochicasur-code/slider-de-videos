@@ -505,17 +505,16 @@ function renderNotifications() {
   notifications.forEach((notif, i) => {
     const item = document.createElement("div");
     item.textContent = notif.title;
-   item.onclick = () => {
-  const index = lastVideos.findIndex(v => v.link === notif.link);
-  if (index !== -1 && swiper) {
-    swiper.update(); // <-- AGREGADO: actualiza Swiper antes de navegar
-    swiper.slideToLoop(index, 0); // el segundo parámetro puede ser la velocidad (0 = instantáneo)
-    updateFixedTitle(swiper);     // <-- Opcional: actualiza el título fijo
-    cleanupIframesExceptActive(); // <-- Opcional: limpia iframes del anterior
-  }
-  notifications.splice(i, 1);
-  renderNotifications();
-};
+    item.onclick = () => {
+      // Ir al video correspondiente
+      const index = lastVideos.findIndex(v => v.link === notif.link);
+      if (index !== -1) {
+        swiper.slideToLoop(index);
+      }
+      // Marcar como leída
+      notifications.splice(i, 1);
+      renderNotifications();
+    };
     list.appendChild(item);
   });
 }
@@ -524,6 +523,7 @@ function renderNotifications() {
 document.getElementById("notification-btn").onclick = () => {
   document.getElementById("notification-list").classList.toggle("hidden");
 };
+
 
 // --- MANEJO DE ELIMINACIÓN ---
 
@@ -1041,60 +1041,55 @@ deleteConfirm.onclick = async () => {
 async function cargarVideos(checkNew = false) {
   const loader = document.getElementById("loader");
   if (!checkNew) loader.style.display = "flex";
-
   try {
     const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
     const data = await res.json();
 
-    if (!Array.isArray(data.data)) return;
+    const wrapper = document.getElementById("slides");
+    wrapper.innerHTML = "";
 
-    let newVideos = data.data.map(row => ({
-      title: row[0],
-      link: row[1],
-      desc: row[4] || ""
-    }));
-
-   if (checkNew) {
-  newVideos.forEach(v => {
-    if (!lastVideos.find(old => old.link === v.link)) {
-      notifications.unshift(v);
-      const wrapper = document.getElementById("slides");
-      wrapper.appendChild(createSlide(v.title, v.link, v.desc));
-      lastVideos.push(v); // <-- AGREGADO: actualiza el arreglo
-      if (swiper) swiper.update(); // refrescar swiper sin destruirlo
+    let newVideos = [];
+    if (Array.isArray(data.data)) {
+      data.data.forEach((row) => {
+        const titulo = row[0];
+        const link = row[1];
+        const descripcion = row[4] || "";
+        wrapper.appendChild(createSlide(titulo, link, descripcion));
+        newVideos.push({ title: titulo, link, desc: descripcion });
+      });
     }
-  });
-  renderNotifications();
-} else {
-      // 🔹 Primer cargue: sí se crea todo el swiper
-      const wrapper = document.getElementById("slides");
-      wrapper.innerHTML = "";
+
+    // Comparar con los anteriores solo si es refresco en segundo plano
+    if (checkNew && lastVideos.length > 0) {
       newVideos.forEach(v => {
-        wrapper.appendChild(createSlide(v.title, v.link, v.desc));
+        if (!lastVideos.find(old => old.link === v.link)) {
+          notifications.unshift(v); // nuevo video arriba
+        }
       });
-
-      if (swiper) swiper.destroy(true, true);
-      swiper = new Swiper(".swiper", {
-        loop: true,
-        direction: "horizontal",
-        slidesPerView: 1,
-        spaceBetween: 10,
-        pagination: false,
-        on: {
-          init() { updateFixedTitle(this); },
-          slideChange() {
-            cleanupIframesExceptActive();
-            updateFixedTitle(this);
-          },
-          slideChangeTransitionEnd() { updateFixedTitle(this); }
-        },
-      });
-
-      cleanupIframesExceptActive();
-      updateFixedTitle(swiper);
+      renderNotifications();
     }
 
     lastVideos = newVideos;
+
+    if (swiper) swiper.destroy(true, true);
+    swiper = new Swiper(".swiper", {
+      loop: true,
+      direction: "horizontal",
+      slidesPerView: 1,
+      spaceBetween: 10,
+      pagination: false,
+      on: {
+        init() { updateFixedTitle(this); },
+        slideChange() {
+          cleanupIframesExceptActive();
+          updateFixedTitle(this);
+        },
+        slideChangeTransitionEnd() { updateFixedTitle(this); }
+      },
+    });
+
+    cleanupIframesExceptActive();
+    updateFixedTitle(swiper);
   } catch (e) {
     console.error("Error cargando videos:", e);
   } finally {
@@ -1115,3 +1110,4 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
