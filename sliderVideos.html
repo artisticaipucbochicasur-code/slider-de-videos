@@ -1110,21 +1110,53 @@ async function cargarVideos(checkNew = false) {
       return;
     }
 
-    // Actualizaciones en caliente: SOLO agregar nuevos, sin destruir ni reordenar
-    if (checkNew) {
-      const known = new Set(lastVideos.map(v => v.link));
-      const newcomers = fetched.filter(v => !known.has(v.link));
-      if (newcomers.length) {
-        const wrapper = document.getElementById("slides");
-        const keep = swiper.realIndex; // conservar el slide actual
+// Actualizaciones en caliente: SOLO agregar nuevos, sin destruir ni reordenar
+if (checkNew) {
+  const known = new Set(lastVideos.map(v => v.link));
+  const newcomers = fetched.filter(v => !known.has(v.link));
 
-        newcomers.forEach(v => {
-          // 1) guardar notificación
-          notifications.unshift({
-            title: v.title,
-            link: v.link,
-            index: lastVideos.length // 👈 índice del nuevo en el array
-          });
+  if (newcomers.length) {
+    const wrapper = document.getElementById("slides");
+    const keep = swiper.realIndex; // conservar el slide actual
+
+    // 1) Por cada video nuevo, guardarlo en el modelo y agregarlo al DOM
+    newcomers.forEach(v => {
+      // guardar en la lista de videos conocidos
+      lastVideos.push(v);
+
+      // crear el slide para el DOM
+      const slideEl = createSlide(v.title, v.link, v.desc);
+      
+      // AQUI ESTA LA CORRECCION CLAVE: USAR swiper.appendSlide()
+      // En lugar de wrapper.appendChild(slideEl), que no notifica a Swiper
+      swiper.appendSlide(slideEl);
+      
+      // guardar la notificación
+      notifications.unshift({
+        title: v.title,
+        link: v.link,
+        index: lastVideos.length - 1 // el índice del nuevo video
+      });
+    });
+
+    // 2) Actualizar Swiper
+    swiper.update();
+    
+    // La re-creación del loop solo es necesaria si el DOM se manipula directamente
+    // con appendChild. Usando swiper.appendSlide() a menudo es suficiente.
+    // Aunque tu código lo tenía, puedes probar si es necesario.
+    if (swiper.params.loop) {
+      // Estas dos líneas pueden ser opcionales si swiper.appendSlide() ya maneja el loop
+      // swiper.loopDestroy();
+      // swiper.loopCreate();
+    }
+    swiper.slideToLoop(keep, 0, false);
+
+    // 3) refrescar notificaciones
+    renderNotifications();
+  }
+  return; // 👈 clave: no pisar lastVideos con `fetched`
+}
 
           // 2) modelo + UI (append DOM sin tocar el activo)
           lastVideos.push(v);
@@ -1242,6 +1274,7 @@ function mostrarAvisoNuevos(cuantos) {
     </script>
 </body>
 </html>
+
 
 
 
