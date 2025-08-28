@@ -993,16 +993,16 @@ deleteConfirm.onclick = async () => {
 
         // --- INICIO DE LA CORRECCIÓN ---
 function cleanupIframesExceptActive() {
-  const wrapper = document.getElementById("slides");
-  const activeCard = document.querySelector('.swiper-slide-active .player-card');
-  Array.from(wrapper.children).forEach((slide) => {
-    const card = slide.querySelector('.player-card');
-    // Si NO es el card activo, desmonta el reproductor
-    if (card && card !== activeCard) {
-      restorePoster(card);
-    }
-  });
+    if (!swiper) return;
+
+    swiper.slides.forEach((slide, index) => {
+        if (index !== swiper.activeIndex) {
+            const card = slide.querySelector(".player-card");
+            if (card) restorePoster(card);
+        }
+    });
 }
+
         // --- FIN DE LA CORRECCIÓN ---
 
      function updateFixedTitle(swiperInstance) {
@@ -1119,27 +1119,26 @@ async function cargarVideos(checkNew = false) {
 
     if (!checkNew) {
       if (swiper) swiper.destroy(true, true);
-      swiper = new Swiper(".swiper", {
-        loop: true,
-        direction: "horizontal",
-        slidesPerView: 1,
-        spaceBetween: 10,
-        pagination: false,
-        on: {
-          init() { 
-            cleanupIframesExceptActive(); 
-            updateFixedTitle(this); 
-          },
-          slideChange() {
-            // 🔥 desmontar inmediatamente el video anterior
+     swiper = new Swiper(".swiper", {
+    loop: true,
+    direction: "horizontal",
+    slidesPerView: 1,
+    spaceBetween: 10,
+    pagination: false,
+    on: {
+        init() {
+            updateFixedTitle(this);
+        },
+        slideChange() {
             cleanupIframesExceptActive();
             updateFixedTitle(this);
-          },
-          slideChangeTransitionEnd() { 
-            updateFixedTitle(this); 
-          }
         },
-      });
+        slideChangeTransitionEnd() {
+            updateFixedTitle(this);
+        }
+    },
+});
+
 
       cleanupIframesExceptActive();
       updateFixedTitle(swiper);
@@ -1163,6 +1162,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
