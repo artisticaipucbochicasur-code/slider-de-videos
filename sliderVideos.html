@@ -486,7 +486,14 @@
 let notifications = [];
 let lastVideos = [];
 
-// Actualiza el listado de notificaciones
+// 👉 Cuando generas la notificación
+notifications.push({
+  title: video.title,
+  link: video.link,
+  index: indexEnLastVideos  // guardamos también el índice
+});
+
+// 👉 Función para renderizar la lista de notificaciones
 function renderNotifications() {
   const list = document.getElementById("notification-list");
   const count = document.getElementById("notification-count");
@@ -508,15 +515,16 @@ function renderNotifications() {
     item.className = "notification-item";
 
     item.onclick = () => {
-      // Buscar el índice del anuncio en lastVideos
-      const index = lastVideos.findIndex(v => v.link === notif.link);
-      
-      if (index !== -1) {
-        // Navegar al anuncio correspondiente en el swiper
-        swiper.slideTo(index, 500, false);
+      // 🔹 Usar el índice guardado directamente
+      if (typeof notif.index === "number") {
+        swiper.slideTo(notif.index, 500, false);
+      } else {
+        // fallback por si alguna notificación no tiene index
+        const index = lastVideos.findIndex(v => v.link === notif.link);
+        if (index !== -1) swiper.slideTo(index, 500, false);
       }
 
-      // Marcar como leída y actualizar lista
+      // Quitar notificación de la lista
       notifications.splice(i, 1);
       renderNotifications();
     };
@@ -524,7 +532,6 @@ function renderNotifications() {
     list.appendChild(item);
   });
 }
-
 
 
 // --- MANEJO DE ELIMINACIÓN ---
@@ -1136,6 +1143,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
