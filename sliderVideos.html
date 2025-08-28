@@ -275,6 +275,8 @@
   padding: 2px 6px;
   border-radius: 50%;
 }
+
+
 #notification-list {
   position: absolute;
   top: 55px;
@@ -495,13 +497,13 @@ function renderNotifications() {
 
   if (notifications.length === 0) {
     list.innerHTML = "<div>Sin notificaciones</div>";
-    //count.textContent = "0";
-    count.style.display = "none";
+    count.textContent = "";             // 👈 aseguramos que no quede número
+    count.style.display = "none";       // 👈 escondemos el circulito rojo
     return;
   }
 
   count.textContent = notifications.length;
-  count.style.display = "block";
+  count.style.display = "block";        // 👈 solo aparece si hay notificaciones
 
   notifications.forEach((notif, i) => {
     const item = document.createElement("div");
@@ -521,46 +523,32 @@ function renderNotifications() {
       if (!slide) {
         const nuevoSlide = createSlide(notif.title, notif.link, notif.desc);
         wrapper.appendChild(nuevoSlide);
-        swiper.update(); // 🔥 muy importante: avisar a Swiper
+        swiper.update();
       }
 
-      // Buscar índice del slide ya existente o recién agregado
-      let slideIndex = -1;
-      Array.from(wrapper.children).forEach((s, idx) => {
+      // Buscar índice real del slide en Swiper
+      let realIndex = -1;
+      swiper.slides.forEach((s, idx) => {
         const card = s.querySelector('.player-card');
         if (card && card.dataset.embed === notif.link) {
-          slideIndex = idx;
+          realIndex = idx;
         }
       });
 
-      if (swiper && slideIndex !== -1) {
-        swiper.update(); // 🔥 asegurar que Swiper esté sincronizado
-
-        // 👇 limpiar el slide actual ANTES de movernos
+      if (swiper && realIndex !== -1) {
+        swiper.update();
         cleanupIframesExceptActive();
 
-        // ✅ Buscar el índice real en Swiper (no solo en wrapper)
-        let realIndex = -1;
-        swiper.slides.forEach((s, idx) => {
-          const card = s.querySelector('.player-card');
-          if (card && card.dataset.embed === notif.link) {
-            realIndex = idx;
+        swiper.slideTo(realIndex, 0);
+        updateFixedTitle(swiper);
+
+        swiper.once('slideChangeTransitionEnd', () => {
+          cleanupIframesExceptActive();
+          const activeCard = document.querySelector('.swiper-slide-active .player-card');
+          if (activeCard && !activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
+            mountIframe(activeCard);
           }
         });
-
-        if (realIndex !== -1) {
-          swiper.slideTo(realIndex, 0); // 🔥 ir exactamente al anuncio
-          updateFixedTitle(swiper);
-
-          swiper.once('slideChangeTransitionEnd', () => {
-            cleanupIframesExceptActive();
-
-            const activeCard = document.querySelector('.swiper-slide-active .player-card');
-            if (activeCard && !activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
-              mountIframe(activeCard);
-            }
-          });
-        }
       }
 
       // Marcar como leída y cerrar panel
@@ -572,6 +560,7 @@ function renderNotifications() {
     list.appendChild(item);
   });
 }
+
 
 
 // --- BOTÓN NOTIFICACIONES UNIVERSAL ---
@@ -1211,6 +1200,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
