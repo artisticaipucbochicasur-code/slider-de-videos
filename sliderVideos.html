@@ -486,7 +486,7 @@
 let notifications = [];
 let lastVideos = [];
 
-// Renderizar lista de notificaciones
+// Actualiza el listado de notificaciones
 function renderNotifications() {
   const list = document.getElementById("notification-list");
   const count = document.getElementById("notification-count");
@@ -505,20 +505,16 @@ function renderNotifications() {
   notifications.forEach((notif, i) => {
     const item = document.createElement("div");
     item.textContent = notif.title;
-    item.className = "notification-item";
-
     item.onclick = () => {
-      // Buscar el índice en lastVideos
-      const index = lastVideos.findIndex(v => v.link === notif.link);
-      if (index !== -1) {
-        swiper.slideToLoop(index); // mover al anuncio correcto
+      // Usar el índice que guardamos en la notificación
+      if (typeof notif.index !== "undefined") {
+        swiper.slideToLoop(notif.index);
       }
 
       // Marcar como leída
       notifications.splice(i, 1);
       renderNotifications();
     };
-
     list.appendChild(item);
   });
 }
@@ -527,7 +523,6 @@ function renderNotifications() {
 document.getElementById("notification-btn").onclick = () => {
   document.getElementById("notification-list").classList.toggle("hidden");
 };
-
 
 // --- MANEJO DE ELIMINACIÓN ---
 
@@ -1076,14 +1071,19 @@ async function cargarVideos(checkNew = false) {
     }));
 
     if (checkNew) {
-      // 🚫 Ya NO actualizamos slides ni swiper aquí
-      newVideos.forEach(v => {
-        if (!lastVideos.find(old => old.link === v.link)) {
-          notifications.unshift(v); // solo mostrar notificación
-        }
+  newVideos.forEach((v, idx) => {
+    if (!lastVideos.find(old => old.link === v.link)) {
+      // Guardamos también el índice en la notificación
+      notifications.unshift({
+        title: v.title,
+        link: v.link,
+        index: idx  // 👈 índice dentro de lastVideos
       });
-      renderNotifications();
-    } else {
+    }
+  });
+  renderNotifications();
+}
+else {
       // 🔹 Primer cargue: sí construimos swiper
       const wrapper = document.getElementById("slides");
       wrapper.innerHTML = "";
@@ -1129,6 +1129,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
