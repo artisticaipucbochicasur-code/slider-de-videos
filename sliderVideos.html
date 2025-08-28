@@ -1006,12 +1006,12 @@ deleteConfirm.onclick = async () => {
         // --- INICIO DE LA CORRECCIÓN ---
 function cleanupIframesExceptActive() {
   const wrapper = document.getElementById("slides");
-  // Busca el slide realmente activo. Si usas loop, Swiper puede duplicar slides
-  const activeSlide = document.querySelector('.swiper-slide-active');
+  const activeCard = document.querySelector('.swiper-slide-active .player-card');
   Array.from(wrapper.children).forEach((slide) => {
-    if (slide !== activeSlide) {
-      const card = slide.querySelector('.player-card');
-      if (card) restorePoster(card);
+    const card = slide.querySelector('.player-card');
+    // Si NO es el card activo, desmonta el reproductor
+    if (card && card !== activeCard) {
+      restorePoster(card);
     }
   });
 }
@@ -1166,6 +1166,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
