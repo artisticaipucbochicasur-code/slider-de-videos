@@ -256,17 +256,20 @@
 
 #notification-btn {
   position: relative;
-  background: rgba(0,0,0,0.35); /* negro con 35% de opacidad */
+  background: transparent;   /* 👈 Igual que el bote */
   border: none;
   border-radius: 50%;
-  width: 46px;
-  height: 46px;
+  width: 40px;              /* 👈 mismo tamaño que el fab */
+  height: 40px;
   color: white;
-  font-size: 22px;
+  font-size: 24px;
   cursor: pointer;
-  backdrop-filter: blur(4px);  /* efecto "vidrio esmerilado" */
-  box-shadow: 0 2px 6px rgba(0,0,0,0.4); /* sombrita suave */
+  display: flex;            /* 👈 centra el icono */
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4); /* 👈 igual que el bote */
 }
+
 
 #notification-count {
   display: none; /* 👈 arranca escondido */
@@ -1221,6 +1224,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
