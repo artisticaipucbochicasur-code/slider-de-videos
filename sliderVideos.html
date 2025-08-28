@@ -833,7 +833,7 @@ deleteConfirm.onclick = async () => {
             return { type: "other", embedSrc: link, poster: "" };
         }
 
-       function createSlide(titulo, link, descripcion, id) {
+ function createSlide(titulo, link, descripcion) {
     const { embedSrc, poster } = getEmbedInfo(link);
     const slide = document.createElement("div");
     slide.className = "swiper-slide";
@@ -843,7 +843,6 @@ deleteConfirm.onclick = async () => {
     const card = document.createElement("div");
     card.className = "player-card";
     card.dataset.embed = embedSrc;
-    card.dataset.id = id; // 👈 guardamos ID único del video
 
     const posterEl = document.createElement("div");
     posterEl.className = "poster";
@@ -860,7 +859,8 @@ deleteConfirm.onclick = async () => {
 
     card.appendChild(posterEl);
 
-    // 🔥 Bloque de comentarios (nuevo)
+    // 👇 Agregar sección de comentarios
+    const id = "ID-" + Date.now(); // después lo ajustamos al ID real del video
     const comentariosWrapper = document.createElement("div");
     comentariosWrapper.className = "comentarios-wrapper";
 
@@ -876,11 +876,8 @@ deleteConfirm.onclick = async () => {
       </div>
     `;
 
-    card.appendChild(comentariosWrapper);
     slide.appendChild(card);
-
-    // 🔄 cargar comentarios automáticamente al crear el slide
-    setTimeout(() => cargarComentarios(id), 100);
+    slide.appendChild(comentariosWrapper);
 
     return slide;
 }
@@ -1339,6 +1336,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
