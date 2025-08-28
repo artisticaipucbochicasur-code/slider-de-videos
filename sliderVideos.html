@@ -486,22 +486,11 @@
 let notifications = [];
 let lastVideos = [];
 
-function goToLink(link) {
-  if (!swiper) return;
-  
-  // Buscar el índice del video por su enlace en la lista completa
-  const idx = lastVideos.findIndex(v => v.link === link);
-  if (idx === -1) return;
-
-  const keep = swiper.realIndex; // conservar el actual
-  swiper.slideToLoop(idx, 0, false);
-}
-
 // Actualiza el listado de notificaciones
 function renderNotifications() {
   const list = document.getElementById("notification-list");
   const count = document.getElementById("notification-count");
-
+  
   list.innerHTML = "";
   if (notifications.length === 0) {
     list.innerHTML = "<div>Sin notificaciones</div>";
@@ -516,15 +505,24 @@ function renderNotifications() {
   notifications.forEach((notif, i) => {
     const item = document.createElement("div");
     item.textContent = notif.title;
-    item.className = "notification-item";
     item.onclick = () => {
-      goToLink(notif.link);       // 👈 navegar al video por su enlace
-      notifications.splice(i, 1); // marcar leída
+      // Ir al video correspondiente
+      const index = lastVideos.findIndex(v => v.link === notif.link);
+      if (index !== -1) {
+        swiper.slideToLoop(index);
+      }
+      // Marcar como leída
+      notifications.splice(i, 1);
       renderNotifications();
     };
     list.appendChild(item);
   });
 }
+
+// Botón toggle
+document.getElementById("notification-btn").onclick = () => {
+  document.getElementById("notification-list").classList.toggle("hidden");
+};
 
 // --- MANEJO DE ELIMINACIÓN ---
 
@@ -1039,190 +1037,84 @@ deleteConfirm.onclick = async () => {
     }, 120);
 }
 
-let indiceVideos = [];
-
-function reconstruirIndiceVideos() {
-  indiceVideos = lastVideos.map((v, i) => {
-    const key = normalizar(`${v.title} ${v.desc} ${v.link}`);
-    return { i, key, title: v.title };
-  });
-}
-
-function normalizar(txt) {
-  return (txt || "")
-    .toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // quitar tildes
-    .replace(/\s+/g, " ") // espacios uniformes
-    .trim();
-}
-
 async function cargarVideos(checkNew = false) {
-    const loader = document.getElementById("loader");
-    if (!checkNew) loader.style.display = "flex";
+  const loader = document.getElementById("loader");
+  if (!checkNew) loader.style.display = "flex";
 
-    try {
-        const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
-        const data = await res.json();
-        if (!Array.isArray(data.data)) return;
+  try {
+    const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
+    const data = await res.json();
 
-        const fetched = data.data.map(row => ({
-            title: row[0],
-            link: row[1],
-            desc: row[4] || ""
-        }));
+    if (!Array.isArray(data.data)) return;
 
-        // Si es la carga inicial o si se ha eliminado un video, se reconstruye todo.
-        if (!swiper || !document.querySelector(".swiper-wrapper").children.length || !checkNew) {
-            
-            // Destruimos el Swiper existente para evitar errores al reconstruir el DOM
-            if (swiper) {
-                swiper.destroy(true, true);
-            }
+    let newVideos = data.data.map(row => ({
+      title: row[0],
+      link: row[1],
+      desc: row[4] || ""
+    }));
 
-            const wrapper = document.getElementById("slides");
-            wrapper.innerHTML = "";
-            fetched.forEach(v => wrapper.appendChild(createSlide(v.title, v.link, v.desc)));
+    if (checkNew) {
+      // 🔹 Comparar solo para detectar nuevos sin destruir lo actual
+      newVideos.forEach(v => {
+        if (!lastVideos.find(old => old.link === v.link)) {
+          notifications.unshift(v);
+          // Agregar slide nuevo dinámicamente sin borrar los demás
+          const wrapper = document.getElementById("slides");
+          wrapper.appendChild(createSlide(v.title, v.link, v.desc));
+          if (swiper) swiper.update(); // refrescar swiper sin destruirlo
+        }
+      });
+      renderNotifications();
+    } else {
+      // 🔹 Primer cargue: sí se crea todo el swiper
+      const wrapper = document.getElementById("slides");
+      wrapper.innerHTML = "";
+      newVideos.forEach(v => {
+        wrapper.appendChild(createSlide(v.title, v.link, v.desc));
+      });
 
-            swiper = new Swiper(".swiper", {
-                loop: true,
-                direction: "horizontal",
-                slidesPerView: 1,
-                spaceBetween: 10,
-                pagination: false,
-                on: {
-                    init() { updateFixedTitle(this); },
-                    slideChange() {
-                        cleanupIframesExceptActive();
-                        updateFixedTitle(this);
-                    },
-                    slideChangeTransitionEnd() { updateFixedTitle(this); }
-                },
-            });
-
+      if (swiper) swiper.destroy(true, true);
+      swiper = new Swiper(".swiper", {
+        loop: true,
+        direction: "horizontal",
+        slidesPerView: 1,
+        spaceBetween: 10,
+        pagination: false,
+        on: {
+          init() { updateFixedTitle(this); },
+          slideChange() {
             cleanupIframesExceptActive();
-            updateFixedTitle(swiper);
-            lastVideos = fetched.slice();
-            return;
-        }
+            updateFixedTitle(this);
+          },
+          slideChangeTransitionEnd() { updateFixedTitle(this); }
+        },
+      });
 
-        // Si es una actualización de nuevos videos (checkNew), solo agregamos los nuevos.
-        if (checkNew) {
-            const known = new Set(lastVideos.map(v => v.link));
-            const newcomers = fetched.filter(v => !known.has(v.link));
-
-            if (newcomers.length) {
-                const keep = swiper.realIndex; 
-
-                newcomers.forEach(v => {
-                    // Agregamos al modelo de datos
-                    lastVideos.push(v);
-                    
-                    // Creamos el slide del DOM
-                    const slideEl = createSlide(v.title, v.link, v.desc);
-                    
-                    // Agregamos el slide al Swiper usando el método oficial
-                    swiper.appendSlide(slideEl);
-                    
-                    // Guardamos la notificación
-                    notifications.unshift({
-                        title: v.title,
-                        link: v.link
-                    });
-                });
-
-                // Actualizamos el Swiper para que reconozca los nuevos slides
-                swiper.update();
-                // Si el loop está activado, es buena práctica recrearlo después de añadir slides
-                if (swiper.params.loop) {
-                    swiper.loopDestroy();
-                    swiper.loopCreate();
-                }
-                swiper.slideToLoop(keep, 0, false);
-                renderNotifications();
-            }
-            return;
-        }
-
-    } catch (e) {
-        console.error("Error cargando videos:", e);
-        // Opcional: Mostrar un aviso de error al usuario
-        // showAlert("❌ Error al cargar los videos. Intenta recargar la página.", "Error de carga");
-    } finally {
-        loader.style.display = "none";
+      cleanupIframesExceptActive();
+      updateFixedTitle(swiper);
     }
+
+    lastVideos = newVideos;
+  } catch (e) {
+    console.error("Error cargando videos:", e);
+  } finally {
+    loader.style.display = "none";
+  }
 }
+
 
 
 
 // === AUTO REFRESCO EN SEGUNDO PLANO ===
-// Cada 3 segundos revisa si hay nuevos videos
-// Cada 3 segundos revisa si hay nuevos videos
 setInterval(() => {
-    revisarNuevosVideos();
-}, 3000);
-
-function revisarNuevosVideos() {
-    fetch("api/videos.json")
-      .then(r => r.json())
-      .then(nuevos => {
-          // Si aún no tenemos referencia o si la lista ha cambiado (ej. se borró un video)
-          // se gatilla una carga completa. Esto evita errores.
-          if (lastVideos.length === 0 || nuevos.length !== lastVideos.length) {
-              cargarVideos(); // Carga completa
-              return;
-          }
-          
-          // Si hay más videos, llama a la función de carga con checkNew
-          if (nuevos.length > lastVideos.length) {
-              const cuantosNuevos = nuevos.length - lastVideos.length;
-              mostrarAvisoNuevos(cuantosNuevos);
-              
-              // No actualizamos lastVideos aquí, se hace en cargarVideos(true)
-          }
-      })
-      .catch(err => console.error("Error revisando videos:", err));
-}
-
-function mostrarAvisoNuevos(cuantos) {
-    let aviso = document.getElementById("avisoNuevos");
-    if (!aviso) {
-        aviso = document.createElement("div");
-        aviso.id = "avisoNuevos";
-        aviso.className = "aviso-nuevos";
-        aviso.style.position = "fixed";
-        aviso.style.bottom = "20px";
-        aviso.style.right = "20px";
-        aviso.style.background = "#ffcc00";
-        aviso.style.padding = "10px 15px";
-        aviso.style.borderRadius = "8px";
-        aviso.style.cursor = "pointer";
-        aviso.style.zIndex = "9999";
-        aviso.onclick = () => {
-            cargarVideos(true);  // 🔹 La clave: pasar `true` para solo agregar nuevos
-            aviso.remove();
-        };
-        document.body.appendChild(aviso);
-    }
-    aviso.textContent = `🔔 Hay ${cuantos} nuevos videos. Haz clic para verlos.`;
-    aviso.style.display = "block";
-}
-
+  cargarVideos(true); // revisa solo si hay nuevos videos
+}, 3000); // cada 10 segundos (ajusta según quieras)
 
 
         cargarVideos();
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
 
 
 
