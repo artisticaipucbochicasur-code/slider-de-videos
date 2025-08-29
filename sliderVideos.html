@@ -1536,27 +1536,31 @@ async function cargarVideos(checkNew = false) {
 
     if (!checkNew) {
       if (swiper) swiper.destroy(true, true);
-    swiper = new Swiper(".swiper", {
-  loop: true,
-  direction: "horizontal",
-  slidesPerView: 1,
-  spaceBetween: 10,
-  pagination: false,
-  on: {
-    init() {
-      updateFixedTitle(this);             // Título/desc al cargar
-      refrescarComentariosSlide();        // Comentarios al cargar
-    },
-    slideChange() {
-      updateFixedTitle(this);             // Título/desc instantáneo al cambiar
-      // NO refrescarComentariosSlide aquí (para evitar fetch doble/lento)
-    },
-    slideChangeTransitionEnd() {
-      refrescarComentariosSlide();        // Comentarios cuando la animación termina
-    }
-  },
-});
+      swiper = new Swiper(".swiper", {
+        loop: true,
+        direction: "horizontal",
+        slidesPerView: 1,
+        spaceBetween: 10,
+        pagination: false,
+        on: {
+          init() {
+            updateFixedTitle(this);             // Título/desc al cargar
+            refrescarComentariosSlide();        // Comentarios al cargar
+          },
+          slideChange() {
+            updateFixedTitle(this);             // Título/desc instantáneo al cambiar
 
+            // 🔥 Ahora comentarios también al instante
+            const videoId = getActiveVideoId();
+            if (videoId) {
+              commentsList.innerHTML = "<li>Cargando comentarios...</li>";
+              commentCountValue.textContent = "...";
+              cargarComentarios(videoId);
+            }
+          }
+          // ❌ Ya no necesitamos esperar hasta slideChangeTransitionEnd
+        },
+      });
 
       cleanupIframesExceptActive();
       updateFixedTitle(swiper);
@@ -1572,7 +1576,6 @@ async function cargarVideos(checkNew = false) {
 
 
 
-
 // === AUTO REFRESCO EN SEGUNDO PLANO ===
 setInterval(() => {
   cargarVideos(true); // solo refresca notificaciones, no toca el slider
@@ -1582,6 +1585,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
