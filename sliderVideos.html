@@ -663,12 +663,25 @@ document.addEventListener("DOMContentLoaded", () => {
   if (typeof swiper !== "undefined") {
     swiper.on("slideChange", () => {
       updateFixedTitle(swiper);
+
+      // 🚀 cargar comentarios del video actual
+      const videoId = obtenerIdVideoActivo();
+      if (videoId) {
+        cargarComentarios(videoId);
+      }
     });
   }
 
-  // cargar del primer video
-  setTimeout(() => updateFixedTitle(swiper), 300);
+  // 🚀 cargar comentarios del primer video apenas abre
+  setTimeout(() => {
+    updateFixedTitle(swiper);
+    const videoId = obtenerIdVideoActivo();
+    if (videoId) {
+      cargarComentarios(videoId);
+    }
+  }, 300);
 });
+
 
         
 // === NOTIFICACIONES ===
@@ -1409,6 +1422,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
