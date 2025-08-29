@@ -642,27 +642,30 @@ async function cargarComentariosSiNoEstan(videoId) {
 }
 
 // === Recargar comentarios de un video específico (se guarda en cache) ===
-async function cargarComentarios(videoId) {
-  if (!videoId) return; // Si no hay videoId, salimos de la función.
+async function cargarComentariosSiNoEstan(videoId) {
+  if (!videoId) return;
+
+  // ⚡ Mostrar comentarios de caché primero
+  renderizarComentarios(comentariosPorVideo[videoId] || []);
+
   try {
-    // Realiza la petición para obtener los comentarios del video.
     const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}`);
     const data = await res.json();
-
-    // Guarda los comentarios en el objeto global comentariosPorVideo.
     comentariosPorVideo[videoId] = data.data || [];
 
-    // ⚡ Solo renderiza si ese video sigue activo (el usuario no cambió de video mientras se cargaban los comentarios)
+    // ⚡ Solo actualiza UI si el video sigue siendo el activo
     const currentId = obtenerIdVideoActivo();
     if (videoId === currentId) {
-      renderizarComentarios(comentariosPorVideo[videoId]); // Muestra los comentarios en pantalla.
+      renderizarComentarios(comentariosPorVideo[videoId]);
     }
   } catch (err) {
-    // Si ocurre un error, lo mostramos en consola y en la interfaz.
     console.error("Error cargando comentarios:", err);
-    contenedorComentarios.innerHTML = "<p>Error al cargar comentarios.</p>";
+    if (!comentariosPorVideo[videoId]) {
+      contenedorComentarios.innerHTML = "<p>Error al cargar comentarios.</p>";
+    }
   }
 }
+
 
 // === Verificar en segundo plano si hubo cambios en comentarios ===
 async function verificarComentarios() {
@@ -728,7 +731,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // ⚡ mostrar y actualizar comentarios de forma instantánea
       const videoId = obtenerIdVideoActivo();
-      if (videoId) mostrarYActualizarComentarios(videoId);
+     // Ahora:
+if (videoId) mostrarYActualizarComentarios(videoId);
     });
   }
 
@@ -1432,18 +1436,19 @@ async function cargarVideos(checkNew = false) {
     init() {
       updateFixedTitle(this);
       const firstId = obtenerIdVideoActivo();
-      if (firstId) cargarComentarios(firstId); // ✅ carga comentarios del primer video
+      if (firstId) mostrarYActualizarComentarios(firstId); // ✅ mostrar rápido + actualizar en segundo plano
     },
     slideChange() {
       cleanupIframesExceptActive();
       updateFixedTitle(this);
-
-      // 🚀 cargar comentarios del video actual de inmediato
+      
+      // ✅ mostrar y actualizar comentarios del video actual
       const videoId = obtenerIdVideoActivo();
-      if (videoId) cargarComentarios(videoId);
+      if (videoId) mostrarYActualizarComentarios(videoId);
     }
   },
 });
+
 
       cleanupIframesExceptActive();
       updateFixedTitle(swiper);
@@ -1471,6 +1476,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
