@@ -598,12 +598,29 @@ function renderizarComentarios(lista) {
 // Cargar comentarios de un video específico
 async function cargarComentarios(videoId) {
   if (!videoId) return;
+
+  const comentariosBox = document.getElementById("comentariosBox");
+  if (comentariosBox) {
+    comentariosBox.innerHTML = "<p><em>Cargando comentarios...</em></p>";
+  }
+
   try {
     const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}`);
     const data = await res.json();
+
+    // ⚡ Verificar si todavía estamos en el mismo video activo
+    const currentId = obtenerIdVideoActivo();
+    if (videoId !== currentId) {
+      console.log("Respuesta descartada, ya cambió el video");
+      return;
+    }
+
     renderizarComentarios(data.data || []);
   } catch (err) {
     console.error("Error cargando comentarios:", err);
+    if (comentariosBox) {
+      comentariosBox.innerHTML = "<p>Error cargando comentarios.</p>";
+    }
   }
 }
 
@@ -626,12 +643,17 @@ async function enviarComentario() {
         correo: usuarioCorreo  // correo real desde la URL
       })
     });
+
     entradaComentario.value = "";
-    cargarComentarios(videoId); // ✅ recargar los comentarios del video actual
+
+    // 🔥 recargar los comentarios del video actual de inmediato
+    cargarComentarios(videoId);
+
   } catch (err) {
     console.error("Error guardando comentario:", err);
   }
 }
+
 
 // Asignar evento al botón
 botonEnviarComentario.onclick = enviarComentario;
@@ -1385,6 +1407,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
