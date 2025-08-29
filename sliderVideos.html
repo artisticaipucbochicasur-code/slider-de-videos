@@ -435,131 +435,69 @@
             color: #fff;
         }
 
-.comments-overlay-container {
-  position: fixed;
-  bottom: 90px;
-  left: 0; right: 0;
-  max-height: 40vh;
-  background: rgba(32, 32, 32, 0.90); /* Fondo oscuro y semi-transparente */
-  color: #fff;                        /* Letras blancas */
-  box-shadow: 0 -2px 12px #0005;      /* Sombra más marcada */
-  overflow-y: auto;
-  z-index: 20;
-  border-radius: 14px 14px 0 0;
-  transition: max-height 0.25s;
-}
-.comments-overlay-container.expanded {
-  max-height: 80vh;
-}
-.comments-overlay-container.hidden-overlay {
-  display: none;
-}
+/* Contenedor de comentarios */
+  #comments-container {
+    position: absolute;
+    bottom: 70px; /* arriba de la caja para escribir */
+    left: 10px;
+    right: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+    background: rgba(0,0,0,0.4);
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 14px;
+    z-index: 1500;
+  }
+  #comments-container .comment {
+    text-align: left;
+    margin-bottom: 6px;
+    padding: 6px 8px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 6px;
+  }
 
-.comments-counter {
-  position: fixed;
-  bottom: 70px;
-  right: 16px;
-  background: #fff;
-  border-radius: 24px;
-  box-shadow: 0 2px 8px #0002;
-  padding: 8px 14px;
-  font-size: 17px;
-  z-index: 21;
-  display: flex;
-  align-items: center;
-}
-.comments-counter .icon {
-  margin-right: 7px;
-}
-
-.comment-input-container {
-  position: fixed;
-  bottom: 20px;
-  left: 0; right: 0;
-  z-index: 22;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.comment-input-container input {
-  flex: 1;
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  font-size: 16px;
-  margin-right: 8px;
-}
-.comment-input-container button {
-  background: #007bff;
-  color: #fff;
-  border: none;
-  padding: 10px 15px;
-  border-radius: 8px;
-  font-size: 18px;
-  cursor: pointer;
-}
-
-#commentsList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-#commentsList li {
-  margin: 0;
-  padding: 10px 15px;
-  border-bottom: 1px solid #444;       /* Más oscuro */
-  display: flex;
-  align-items: center;
-  background: transparent;              /* Fondo transparente */
-  position: relative;
-  overflow-x: hidden;
-  color: #fff;                         /* Letras blancas */
-}
-.comment-content {
-  flex: 1;
-  transition: transform 0.3s;
-  color: #fff;                         /* Letras blancas */
-}
-.delete-btn-container {
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 80px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #e74c3c;
-  color: #fff;
-  font-weight: bold;
-  border-radius: 0 12px 12px 0;
-  transition: transform 0.3s;
-  z-index: 1;
-}
-.delete-btn {
-  cursor: pointer;
-  padding: 6px 12px;
-  border-radius: 10px;
-  background: #c0392b;
-  color: #fff;
-  margin-left: 8px;
-}
+  /* Caja para escribir */
+  #comment-box {
+    position: absolute;
+    bottom: 20px;
+    left: 10px;
+    right: 10px;
+    display: flex;
+    align-items: center;
+    background: rgba(0,0,0,0.6);
+    border-radius: 30px;
+    padding: 6px 10px;
+    z-index: 2000;
+  }
+  #comment-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: white;
+    font-size: 14px;
+    padding: 6px;
+  }
+  #comment-send {
+    background: none;
+    border: none;
+    color: #1e90ff;
+    font-size: 18px;
+    cursor: pointer;
+  }
         
     </style>
 </head>
 <body>
 
-<!-- Overlay flotante para comentarios -->
-<div class="comments-overlay-container" id="commentsOverlay">
-  <ul id="commentsList"></ul>
-</div>
-<div class="comments-counter" id="commentsCounter">
-  <span class="icon">💬</span>
-  <span class="count" id="commentCountValue">0</span>
-</div>
-<div class="comment-input-container">
-  <input type="text" id="commentInput" placeholder="Escribe un comentario...">
-  <button class="send-comment-btn"><i class="fas fa-paper-plane"></i></button>
-</div>
+<!-- === ÁREA DE COMENTARIOS === -->
+<div id="comments-container"></div>
 
+<div id="comment-box">
+  <input type="text" id="comment-input" placeholder="Escribe un comentario..." />
+  <button id="comment-send"><i class="fas fa-paper-plane"></i></button>
+</div>
     
 <!-- Notificaciones -->
 <div id="notification-wrapper">
@@ -617,226 +555,66 @@
         const SCRIPT_URL =
             "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
 
+  const autor = "NombreUsuario"; // 👈 cambia dinámicamente desde tu app si quieres
+  const correo = "correo@ejemplo.com"; // 👈 idem
 
+  const commentInput = document.getElementById("comment-input");
+  const commentSend = document.getElementById("comment-send");
+  const commentsContainer = document.getElementById("comments-container");
 
-// === Comentarios móviles ===
-const commentsOverlay = document.getElementById('commentsOverlay');
-const commentsCounter = document.getElementById('commentsCounter');
-const commentCountValue = document.getElementById('commentCountValue');
-const commentsList = document.getElementById('commentsList');
-const commentInputContainer = document.querySelector('.comment-input-container');
-const commentInput = document.getElementById('commentInput');
-const sendCommentBtn = document.querySelector('.send-comment-btn');
-
-let comentariosPorVideo = {}; // videoId: [ {autor, correo, fecha, comentario} ]
-let lastTapTime = 0;
-let activeComment = null;
-let startX = 0;
-let isSwiping = false;
-
-// Mostrar/ocultar overlays al tocar el slider
-document.querySelector('.swiper').addEventListener('click', () => {
-  const currentTime = new Date().getTime();
-  if (currentTime - lastTapTime > 300) {
-    commentsOverlay.classList.toggle('hidden-overlay');
-    commentsCounter.classList.toggle('hidden-overlay');
-    commentInputContainer.classList.toggle('hidden-overlay');
+  // Renderizar lista de comentarios
+  function renderComments(lista) {
+    commentsContainer.innerHTML = "";
+    lista.forEach(row => {
+      const div = document.createElement("div");
+      div.className = "comment";
+      div.textContent = row[1] + " — " + row[2]; // Comentario — Autor
+      commentsContainer.appendChild(div);
+    });
   }
-  lastTapTime = currentTime;
-});
 
-// Expandir/colapsar comentarios
-commentsOverlay.addEventListener('click', (e) => {
-  if (!isSwiping) {
-    commentsOverlay.classList.toggle('expanded');
-  }
-  isSwiping = false;
-});
+  // Cargar comentarios de video activo
+  async function loadComments() {
+    const activeSlide = document.querySelector(".swiper-slide-active .player-card");
+    if (!activeSlide) return;
 
-// --- Swipe-to-delete en móviles ---
-commentsList.addEventListener('touchmove', (e) => {
-  if (!activeComment) return;
-  const currentX = e.touches[0].clientX;
-  const diffX = currentX - startX;
-  if (Math.abs(diffX) > 10) isSwiping = true;
-  if (diffX > 0) {
-    activeComment.querySelector('.comment-content').style.transform = `translateX(${diffX}px)`;
-    let deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
-    if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(0)`;
-  } else {
-    activeComment.querySelector('.comment-content').style.transform = `translateX(0)`;
-    let deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
-    if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
-  }
-});
-commentsList.addEventListener('touchend', (e) => {
-  if (!activeComment) return;
-  const swipeThreshold = 50;
-  const diffX = e.changedTouches[0].clientX - startX;
-  const commentContent = activeComment.querySelector('.comment-content');
-  let deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
-  commentContent.style.transition = 'transform 0.3s ease';
-  if (diffX > swipeThreshold) {
-    commentContent.style.transform = `translateX(100px)`;
-    if (!deleteBtnContainer) {
-      deleteBtnContainer = document.createElement('div');
-      deleteBtnContainer.className = 'delete-btn-container';
-      let deleteBtn = document.createElement('div');
-      deleteBtn.className = 'delete-btn';
-      deleteBtn.textContent = 'Borrar';
-      deleteBtnContainer.appendChild(deleteBtn);
-      activeComment.insertBefore(deleteBtnContainer, commentContent);
-      deleteBtnContainer.style.transform = `translateX(0)`;
-      deleteBtn.addEventListener('click', (ev) => {
-        ev.stopPropagation();
-        const commentData = activeComment.dataset;
-        eliminarComentario(getActiveVideoId(), commentData.texto, commentData.correo);
-      });
-    } else {
-      deleteBtnContainer.style.transform = `translateX(0)`;
+    const videoId = activeSlide.dataset.id; // ⬅️ ahora se usa el ID único
+    try {
+      const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}`);
+      const data = await res.json();
+      renderComments(data.data || []);
+    } catch (err) {
+      console.error("Error cargando comentarios:", err);
     }
-  } else {
-    commentContent.style.transform = `translateX(0)`;
-    if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
   }
-  activeComment = null;
-  startX = 0;
-}
 
-// --- Lógica de comentarios por video ---
-function getActiveVideoId() {
-  if (!swiper) return null;
-  const activeSlide = swiper.slides[swiper.activeIndex];
-  if (!activeSlide) return null;
-  return activeSlide.dataset.videoid || null; // ← AHORA USA EL ID ÚNICO
-}
+  // Enviar comentario
+  async function sendComment() {
+    const text = commentInput.value.trim();
+    if (!text) return;
 
-async function cargarComentarios(videoId) {
-  try {
-    const res = await fetch(${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)});
-    const data = await res.json();
-    comentariosPorVideo[videoId] = [];
-    if (Array.isArray(data.data) && data.data.length > 0) {
-      comentariosPorVideo[videoId] = data.data.map(c => ({
-        autor: c[2] || "Anónimo",
-        comentario: c[1] || "",
-        fecha: c[4] || "",
-        correo: c[3] || ""
-      }));
+    const activeSlide = document.querySelector(".swiper-slide-active .player-card");
+    if (!activeSlide) return;
+    const videoId = activeSlide.dataset.id; // ⬅️ ID único
+
+    try {
+      await fetch(`${SCRIPT_URL}?accion=agregarComentarioVideo&videoId=${encodeURIComponent(videoId)}&comentario=${encodeURIComponent(text)}&autor=${encodeURIComponent(autor)}&correo=${encodeURIComponent(correo)}`);
+      commentInput.value = "";
+      loadComments(); // recargar después de guardar
+    } catch (err) {
+      console.error("Error guardando comentario:", err);
     }
-    renderComentarios(videoId);
-  } catch (e) {
-    comentariosPorVideo[videoId] = [];
-    renderComentarios(videoId);
   }
-}
 
-function renderComentarios(videoId) {
-  if (!videoId) return;
-  const lista = comentariosPorVideo[videoId] || [];
-  commentsList.innerHTML = '';
-  if (lista.length === 0) {
-    const li = document.createElement('li');
-    li.textContent = "Sé el primero en comentar...";
-    commentsList.appendChild(li);
-    commentCountValue.textContent = "0";
-    return;
-  }
-  lista.forEach(c => {
-    const li = document.createElement('li');
-    li.classList.add('deletable');
-    const commentContent = document.createElement('div');
-    commentContent.className = 'comment-content';
-    commentContent.textContent = ${c.autor} (${c.fecha}) - ${c.comentario};
-    li.appendChild(commentContent);
-    li.dataset.correo = c.correo;
-    li.dataset.texto = c.comentario;
-    if (normalizeText(c.correo) === normalizeText(usuarioCorreo)) {
-      // Eliminar solo si es del usuario actual
-      const deleteBtnContainer = document.createElement('div');
-      deleteBtnContainer.className = 'delete-btn-container';
-      const deleteBtn = document.createElement('div');
-      deleteBtn.className = 'delete-btn';
-      deleteBtn.textContent = 'Borrar';
-      deleteBtnContainer.appendChild(deleteBtn);
-      li.appendChild(deleteBtnContainer);
-      deleteBtn.addEventListener('click', (ev) => {
-        ev.stopPropagation();
-        eliminarComentario(videoId, c.comentario, c.correo);
-      });
+  commentSend.onclick = sendComment;
+
+  // Cuando cambie de video en swiper, actualizar comentarios
+  document.addEventListener("DOMContentLoaded", () => {
+    if (typeof swiper !== "undefined") {
+      swiper.on("slideChange", loadComments);
     }
-    commentsList.appendChild(li);
+    loadComments(); // cargar los del primer video
   });
-  commentCountValue.textContent = lista.length;
-}
-
-async function enviarComentario() {
-  const texto = commentInput.value.trim();
-  const videoId = getActiveVideoId();
-  if (!texto || !videoId) return;
-  sendCommentBtn.disabled = true;
-  try {
-    await fetch(SCRIPT_URL, {
-      method: "POST",
-      body: new URLSearchParams({
-        accion: "agregarComentarioVideo",
-        videoId,
-        comentario: texto,
-        autor: usuarioAutor,
-        correo: usuarioCorreo,
-      })
-    });
-    commentInput.value = "";
-    await cargarComentarios(videoId);
-  } catch (e) {
-    // Puedes mostrar un alert personalizado aquí si quieres
-  } finally {
-    sendCommentBtn.disabled = false;
-  }
-}
-
-async function eliminarComentario(videoId, comentario, correo) {
-  if (!videoId || !comentario || !correo) return;
-  try {
-    await fetch(SCRIPT_URL, {
-      method: "POST",
-      body: new URLSearchParams({
-        accion: "eliminarComentario",
-        videoId,
-        comentario,
-        correo
-      })
-    });
-    await cargarComentarios(videoId);
-  } catch (e) {}
-}
-
-// Input UX
-sendCommentBtn.addEventListener('click', enviarComentario);
-commentInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') enviarComentario();
-});
-commentInput.addEventListener('focus', () => {
-  document.body.style.transform = translateY(-40%);
-});
-commentInput.addEventListener('blur', () => {
-  document.body.style.transform = translateY(0);
-});
-
-// --- Refresca los comentarios según el video activo ---
-function refrescarComentariosSlide() {
-  const videoId = getActiveVideoId();
-  if (videoId) cargarComentarios(videoId);
-}
-if (window.swiper) {
-  swiper.on('slideChange', refrescarComentariosSlide);
-}
-document.addEventListener('DOMContentLoaded', refrescarComentariosSlide);
-
-// --- Utilidad para normalizar texto/correos ---
-function normalizeText(text) {
-  return (text || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
-}
 
         
 // === NOTIFICACIONES ===
@@ -994,7 +772,7 @@ btnDelete.onclick = () => {
     }
 
     pendingDelete = { title, link };
-    deleteTitle.textContent = ¿Eliminar "${title}"?;
+    deleteTitle.textContent = `¿Eliminar "${title}"?`;
     deleteModal.classList.remove("hidden");
 };
 
@@ -1018,7 +796,7 @@ deleteConfirm.onclick = async () => {
         fileName = decodeURIComponent(archiveMatch[2]);
     }
     
-    const deleteUrl = ${SCRIPT_URL}?accion=eliminar&link=${encodeURIComponent(link)}&id=${encodeURIComponent(identifier)}&file=${encodeURIComponent(fileName)}&autor=${encodeURIComponent(usuarioAutor)}&correo=${encodeURIComponent(usuarioCorreo)};
+    const deleteUrl = `${SCRIPT_URL}?accion=eliminar&link=${encodeURIComponent(link)}&id=${encodeURIComponent(identifier)}&file=${encodeURIComponent(fileName)}&autor=${encodeURIComponent(usuarioAutor)}&correo=${encodeURIComponent(usuarioCorreo)}`;
 
     try {
         const response = await fetch(deleteUrl);
@@ -1055,43 +833,42 @@ deleteConfirm.onclick = async () => {
         let swiper = null;
         let players = {};
 
-       function getEmbedInfo(link) {
-    const url = new URL(link, location.href);
-    if (url.hostname.includes("youtube.com") || url.hostname.includes("youtu.be")) {
-        let videoId = "";
-        if (url.hostname.includes("youtube.com")) {
-            videoId = url.searchParams.get("v") || "";
-        } else if (url.hostname.includes("youtu.be")) {
-            videoId = url.pathname.replace("/", "");
+        function getEmbedInfo(link) {
+            const url = new URL(link, location.href);
+            if (url.hostname.includes("youtube.com") || url.hostname.includes("youtu.be")) {
+                let videoId = "";
+                if (url.hostname.includes("youtube.com")) {
+                    videoId = url.searchParams.get("v") || "";
+                } else if (url.hostname.includes("youtu.be")) {
+                    videoId = url.pathname.replace("/", "");
+                }
+                if (videoId) {
+                    const embedSrc = `https://www.youtube.com/embed/${videoId}?rel=0&playsinline=1&controls=0&modestbranding=1`;
+                    const poster = "https://img.youtube.com/vi/" + videoId + "/hqdefault.jpg";
+                    return { type: "youtube", embedSrc, poster, videoId };
+                }
+            }
+            if (url.hostname.includes("archive.org")) {
+                let identifier = "";
+                const m = link.match(/archive\.org\/(?:embed|details|download)\/([^?&#/]+)/i);
+                if (m && m[1]) {
+                    identifier = m[1];
+                }
+                const poster = identifier ? `https://archive.org/services/img/${identifier}` : "";
+                return { type: "mp4", embedSrc: link, poster: poster };
+            }
+            if (url.pathname.endsWith(".mp4")) {
+                 return { type: "mp4", embedSrc: link, poster: "" };
+            }
+            return { type: "other", embedSrc: link, poster: "" };
         }
-        if (videoId) {
-            const embedSrc = `https://www.youtube.com/embed/${videoId}?rel=0&playsinline=1&controls=0&modestbranding=1`;
-            const poster = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-            return { type: "youtube", embedSrc, poster, videoId };
-        }
-    }
-    if (url.hostname.includes("archive.org")) {
-        let identifier = "";
-        const m = link.match(/archive\.org\/(?:embed|details|download)\/([^?&#/]+)/i);
-        if (m && m[1]) {
-            identifier = m[1];
-        }
-        const poster = identifier ? `https://archive.org/services/img/${identifier}` : "";
-        return { type: "mp4", embedSrc: link, poster: poster };
-    }
-    if (url.pathname.endsWith(".mp4")) {
-        return { type: "mp4", embedSrc: link, poster: "" };
-    }
-    return { type: "other", embedSrc: link, poster: "" };
-}
 
-function createSlide(titulo, link, descripcion, id) {
+       function createSlide(titulo, link, descripcion) {
     const { embedSrc, poster } = getEmbedInfo(link);
     const slide = document.createElement("div");
     slide.className = "swiper-slide";
     slide.dataset.title = titulo || "Video";
     slide.dataset.descripcion = descripcion || "";
-    slide.dataset.videoid = id || ""; // ← AGREGA EL ID ÚNICO AQUÍ
 
     const card = document.createElement("div");
     card.className = "player-card";
@@ -1111,10 +888,13 @@ function createSlide(titulo, link, descripcion, id) {
     });
 
     card.appendChild(posterEl);
-    slide.appendChild(card);
 
+    slide.appendChild(card);
+   
     return slide;
 }
+
+
         function mountIframe(cardEl) {
   // 🔥 Antes de montar, desmonta todo lo demás
   cleanupIframesExceptActive();
@@ -1293,8 +1073,8 @@ function createSlide(titulo, link, descripcion, id) {
                     currentTime = player.currentTime;
                 }
                 const progressPercentage = (currentTime / totalTime) * 100;
-                progress.style.width = ${progressPercentage}%;
-                timeDisplay.textContent = ${formatTime(currentTime)} / ${formatTime(totalTime)};
+                progress.style.width = `${progressPercentage}%`;
+                timeDisplay.textContent = `${formatTime(currentTime)} / ${formatTime(totalTime)}`;
             };
 
             const interval = setInterval(updateTime, 1000);
@@ -1370,7 +1150,7 @@ function createSlide(titulo, link, descripcion, id) {
                 const posterEl = document.createElement("div");
                 posterEl.className = "poster";
                 if (info.poster) {
-                    posterEl.style.backgroundImage = url("${info.poster}");
+                    posterEl.style.backgroundImage = `url("${info.poster}")`;
                 }
                 const playBtn = document.createElement("div");
                 playBtn.className = "play-btn";
@@ -1395,7 +1175,7 @@ function cleanupIframesExceptActive() {
 
         // --- FIN DE LA CORRECCIÓN ---
 
-    function updateFixedTitle(swiperInstance) {
+     function updateFixedTitle(swiperInstance) {
     const fixedBox = document.getElementById("video-title-fixed");
     if (!fixedBox || !swiperInstance) return;
 
@@ -1468,91 +1248,90 @@ function cleanupIframesExceptActive() {
     }, 120);
 }
 
+        
+
 async function cargarVideos(checkNew = false) {
-    const loader = document.getElementById("loader");
-    if (!checkNew) loader.style.display = "flex";
-    try {
-        const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
-        const data = await res.json();
+  const loader = document.getElementById("loader");
+  if (!checkNew) loader.style.display = "flex";
+  try {
+    const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
+    const data = await res.json();
 
-        const wrapper = document.getElementById("slides");
-        if (!checkNew) {
-            wrapper.innerHTML = "";
-        }
-
-        let newVideos = [];
-        if (Array.isArray(data.data)) {
-            data.data.forEach((row) => {
-                const titulo = row[0];
-                const link = row[1];
-                const descripcion = row[4] || "";
-                const id = row[5]; // ← ASEGÚRATE DE EXTRAER EL ID DE LA FILA
-                if (!checkNew) {
-                    wrapper.appendChild(createSlide(titulo, link, descripcion, id)); // ← PASA EL ID AQUÍ
-                }
-                newVideos.push({ title: titulo, link, desc: descripcion, id }); // ← GUARDA EL ID POR SI LO NECESITAS
-            });
-        }
-
-        // 🔥 Eliminación silenciosa (solo en modo checkNew para no afectar carga inicial)
-        if (checkNew) {
-            const linksActivos = newVideos.map(v => v.link);
-
-            Array.from(wrapper.children).forEach(slide => {
-                const card = slide.querySelector(".player-card");
-                if (card && !linksActivos.includes(card.dataset.embed)) {
-                    wrapper.removeChild(slide);
-                    if (swiper) swiper.update();
-                }
-            });
-        }
-
-        // 🔥 Corregido: ahora también notifica si es el primer video
-        if (checkNew) {
-            newVideos.forEach(v => {
-                if (!lastVideos.find(old => old.link === v.link)) {
-                    notifications.unshift(v); // acumula notificación
-                }
-            });
-            if (notifications.length > 0) {
-                renderNotifications();
-            }
-        }
-
-        lastVideos = newVideos;
-
-        if (!checkNew) {
-            if (swiper) swiper.destroy(true, true);
-            swiper = new Swiper(".swiper", {
-                loop: true,
-                direction: "horizontal",
-                slidesPerView: 1,
-                spaceBetween: 10,
-                pagination: false,
-                on: {
-                    init() {
-                        updateFixedTitle(this);             // Título/desc al cargar
-                        refrescarComentariosSlide();        // Comentarios al cargar
-                    },
-                    slideChange() {
-                        updateFixedTitle(this);             // Título/desc instantáneo al cambiar
-                        // NO refrescarComentariosSlide aquí (para evitar fetch doble/lento)
-                    },
-                    slideChangeTransitionEnd() {
-                        refrescarComentariosSlide();        // Comentarios cuando la animación termina
-                    }
-                },
-            });
-
-            cleanupIframesExceptActive();
-            updateFixedTitle(swiper);
-            refrescarComentariosSlide(); // ← LLAMA ESTO AL FINAL PARA CARGAR COMENTARIOS INICIALES
-        }
-    } catch (e) {
-        console.error("Error cargando videos:", e);
-    } finally {
-        loader.style.display = "none";
+    const wrapper = document.getElementById("slides");
+    if (!checkNew) {
+      wrapper.innerHTML = "";
     }
+
+    let newVideos = [];
+    if (Array.isArray(data.data)) {
+      data.data.forEach((row) => {
+        const titulo = row[0];
+        const link = row[1];
+        const descripcion = row[4] || "";
+        if (!checkNew) {
+          wrapper.appendChild(createSlide(titulo, link, descripcion));
+        }
+        newVideos.push({ title: titulo, link, desc: descripcion });
+      });
+    }
+
+    // 🔥 Eliminación silenciosa (solo en modo checkNew para no afectar carga inicial)
+    if (checkNew) {
+      const linksActivos = newVideos.map(v => v.link);
+
+      Array.from(wrapper.children).forEach(slide => {
+        const card = slide.querySelector(".player-card");
+        if (card && !linksActivos.includes(card.dataset.embed)) {
+          wrapper.removeChild(slide);
+          if (swiper) swiper.update();
+        }
+      });
+    }
+
+    // 🔥 Corregido: ahora también notifica si es el primer video
+    if (checkNew) {
+      newVideos.forEach(v => {
+        if (!lastVideos.find(old => old.link === v.link)) {
+          notifications.unshift(v); // acumula notificación
+        }
+      });
+      if (notifications.length > 0) {
+        renderNotifications();
+      }
+    }
+
+    lastVideos = newVideos;
+
+    if (!checkNew) {
+      if (swiper) swiper.destroy(true, true);
+      swiper = new Swiper(".swiper", {
+        loop: true,
+        direction: "horizontal",
+        slidesPerView: 1,
+        spaceBetween: 10,
+        pagination: false,
+        on: {
+          init() {
+            updateFixedTitle(this);
+          },
+          slideChange() {
+            cleanupIframesExceptActive();
+            updateFixedTitle(this);
+          },
+          slideChangeTransitionEnd() {
+            updateFixedTitle(this);
+          }
+        },
+      });
+
+      cleanupIframesExceptActive();
+      updateFixedTitle(swiper);
+    }
+  } catch (e) {
+    console.error("Error cargando videos:", e);
+  } finally {
+    loader.style.display = "none";
+  }
 }
 
 
@@ -1568,4 +1347,3 @@ setInterval(() => {
     </script>
 </body>
 </html>
-
