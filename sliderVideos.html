@@ -637,7 +637,7 @@ async function enviarComentario() {
     const response = await fetch(SCRIPT_URL, {
       method: "POST",
       body: new URLSearchParams({
-        accion: "agregarComentarioVideo",
+        accion: "agregarComentarioVideo",   // ✅ corregido
         videoId: videoId,
         comentario: texto,
         autor: usuarioAutor,
@@ -648,8 +648,8 @@ async function enviarComentario() {
     const data = await response.json();
 
     if (data.status === "success") {
-      entradaComentario.value = "";  // limpiar el campo
-      cargarComentarios(videoId);    // recargar los comentarios solo de ese video
+      entradaComentario.value = "";     // limpiar el campo
+      cargarComentarios(videoId);       // recargar solo los de ese video
     } else {
       showAlert("❌ Error al enviar comentario: " + (data.message || "Intenta de nuevo"));
     }
@@ -657,6 +657,7 @@ async function enviarComentario() {
     showAlert("⚠️ Error de conexión al enviar el comentario.");
   }
 }
+
 
 
 
@@ -1415,6 +1416,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
