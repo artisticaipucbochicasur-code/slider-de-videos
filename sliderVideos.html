@@ -1288,14 +1288,28 @@ function cleanupIframesExceptActive() {
       setupExpandableText(titleEl, newTitle);
       setupExpandableText(descEl, newDesc);
 
-      // 🔥 Corregido: cargar comentarios del video activo
+      // 🔥 Cargar comentarios sincronizados al título y descripción
       const videoId = obtenerIdVideoActivo();
-      if (videoId) cargarComentarios(videoId);
+      if (videoId) {
+        console.log("📌 Actualizando comentarios junto con título y descripción:", videoId);
+        cargarComentarios(videoId);
+      }
 
       // Mostrar el contenedor de nuevo
       fixedBox.style.opacity = 1;
   }, 120);
 }
+
+// 🌀 Sincronizar Swiper con título, descripción y comentarios
+let slideChangeTimeout = null;
+swiper.on("slideChange", () => {
+  if (slideChangeTimeout) clearTimeout(slideChangeTimeout);
+
+  slideChangeTimeout = setTimeout(() => {
+    updateFixedTitle(swiper); // ✅ ahora unifica todo: título + descripción + comentarios
+  }, 150);
+});
+
 
 
         
@@ -1407,6 +1421,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
