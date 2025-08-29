@@ -688,7 +688,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // ⚡ mostrar comentarios desde cache inmediatamente
       mostrarComentariosDelActivo();
 
-      // ⚡ refrescar en segundo plano
+      // ⚡ refrescar en segundo plano desde servidor
       const videoId = obtenerIdVideoActivo();
       if (videoId) cargarComentarios(videoId);
     });
@@ -707,6 +707,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 🔄 cada 5s verificar si hubo nuevos comentarios
   setInterval(verificarComentarios, 5000);
 });
+
 
 
         
@@ -1435,6 +1436,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
