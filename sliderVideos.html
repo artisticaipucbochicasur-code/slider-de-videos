@@ -567,7 +567,7 @@
 function obtenerIdVideoActivo() {
   const slideActivo = document.querySelector(".swiper-slide-active .player-card");
   if (!slideActivo) return null;
-  return slideActivo.dataset.id; // ⬅️ ID único del video
+  return slideActivo.dataset.id; // ID único del video
 }
 
 // Renderizar comentarios en el contenedor
@@ -592,9 +592,8 @@ function renderizarComentarios(lista) {
   });
 }
 
-// Cargar comentarios del video activo
-async function cargarComentarios() {
-  const videoId = obtenerIdVideoActivo();
+// Cargar comentarios de un video específico
+async function cargarComentarios(videoId) {
   if (!videoId) return;
   try {
     const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}`);
@@ -604,6 +603,8 @@ async function cargarComentarios() {
     console.error("Error cargando comentarios:", err);
   }
 }
+
+
 
   // Enviar un nuevo comentario
   async function enviarComentario() {
@@ -1202,13 +1203,12 @@ function cleanupIframesExceptActive() {
 
         // --- FIN DE LA CORRECCIÓN ---
 
-   function updateFixedTitle(swiperInstance) {
+ function updateFixedTitle(swiperInstance) {
   const fixedBox = document.getElementById("video-title-fixed");
   if (!fixedBox || !swiperInstance) return;
 
   // Obtener el slide activo
   const activeSlide = swiperInstance.slides[swiperInstance.activeIndex] || document.querySelector('.swiper-slide-active');
-
   if (!activeSlide) return;
 
   const newTitle = activeSlide.dataset.title || "Video";
@@ -1231,20 +1231,16 @@ function cleanupIframesExceptActive() {
   setTimeout(() => {
       // Función genérica para manejar el truncamiento y expansión
       const setupExpandableText = (element, text) => {
-          // Eliminar contenido anterior para evitar duplicados
           element.innerHTML = `<span class="text-container">${text}</span>`;
           const container = element.querySelector('.text-container');
           
-          // Usar setTimeout para asegurar que la renderización está completa antes de medir
           setTimeout(() => {
-              // Comprobar si el contenido se desborda y necesita truncamiento
               if (container.scrollHeight > container.clientHeight) {
                   const toggleButton = document.createElement('span');
                   toggleButton.className = 'toggle-text';
                   toggleButton.textContent = '...más';
                   element.appendChild(toggleButton);
 
-                  // Añadir el listener para expandir/contraer
                   element.addEventListener('click', () => {
                       const isExpanded = container.classList.contains('expanded');
                       if (isExpanded) {
@@ -1256,28 +1252,28 @@ function cleanupIframesExceptActive() {
                       }
                   });
               } else {
-                  // Si no necesita truncamiento, limpiar el listener y el botón
                   const existingButton = element.querySelector('.toggle-text');
                   if (existingButton) existingButton.remove();
-                  // Importante: Eliminar el listener si no es necesario para evitar problemas
                   const clonedElement = element.cloneNode(true);
                   element.parentNode.replaceChild(clonedElement, element);
               }
           }, 50);
       };
 
-      // Aplicar la lógica al título y la descripción
+      // Aplicar al título y descripción
       setupExpandableText(titleEl, newTitle);
       setupExpandableText(descEl, newDesc);
 
-      // 🔥 Nuevo: cargar comentarios del video activo al actualizar título
+      // 🔥 Corregido: cargar comentarios del video activo
       const videoId = obtenerIdVideoActivo();
-      if (videoId) cargarComentarios();
+      if (videoId) cargarComentarios(videoId);
 
       // Mostrar el contenedor de nuevo
       fixedBox.style.opacity = 1;
   }, 120);
 }
+
+
         
 
 async function cargarVideos(checkNew = false) {
@@ -1345,14 +1341,16 @@ async function cargarVideos(checkNew = false) {
         on: {
           init() {
             updateFixedTitle(this);
+            // 🔥 Nuevo: cargar comentarios del primer video al iniciar
+            const firstId = obtenerIdVideoActivo();
+            if (firstId) cargarComentarios(firstId);
           },
-        slideChange() {
-  cleanupIframesExceptActive();
-  updateFixedTitle(this);
-  const videoId = obtenerIdVideoActivo();
-  if (videoId) cargarComentarios(videoId); // 👈 carga comentarios del video actual
-}
-,
+          slideChange() {
+            cleanupIframesExceptActive();
+            updateFixedTitle(this);
+            const videoId = obtenerIdVideoActivo();
+            if (videoId) cargarComentarios(videoId); // 👈 carga comentarios del video actual
+          },
           slideChangeTransitionEnd() {
             updateFixedTitle(this);
           }
@@ -1361,6 +1359,10 @@ async function cargarVideos(checkNew = false) {
 
       cleanupIframesExceptActive();
       updateFixedTitle(swiper);
+
+      // 🔥 Asegurar que al cargar todo se muestran comentarios del primero
+      const firstId = obtenerIdVideoActivo();
+      if (firstId) cargarComentarios(firstId);
     }
   } catch (e) {
     console.error("Error cargando videos:", e);
@@ -1381,5 +1383,6 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
