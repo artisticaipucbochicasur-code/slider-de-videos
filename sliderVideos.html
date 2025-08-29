@@ -596,24 +596,23 @@ function renderizarComentarios(lista) {
 async function cargarComentarios(videoId) {
   if (!videoId) return;
 
-  contenedorComentarios.innerHTML = "<p><em>Cargando comentarios...</em></p>";
-
   try {
     const res = await fetch(
       `${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}`
     );
     const data = await res.json();
 
-    // ⚡ Evitar que aparezcan en otro video por demora
+    // ⚡ Mostrar SOLO si aún estamos en ese video
     const currentId = obtenerIdVideoActivo();
     if (videoId !== currentId) return;
 
     renderizarComentarios(data.data || []);
   } catch (err) {
     console.error("Error cargando comentarios:", err);
-    contenedorComentarios.innerHTML = "<p>Error cargando comentarios.</p>";
+    contenedorComentarios.innerHTML = "<p>Error al cargar comentarios.</p>";
   }
 }
+
 
 async function enviarComentario() {
   const texto = entradaComentario.value.trim();
@@ -1370,16 +1369,15 @@ async function cargarVideos(checkNew = false) {
     init() {
       updateFixedTitle(this);
       const firstId = obtenerIdVideoActivo();
-      if (firstId) cargarComentarios(firstId); // ✅ carga solo comentarios del primer video
+      if (firstId) cargarComentarios(firstId); // ✅ carga comentarios del primer video
     },
     slideChange() {
       cleanupIframesExceptActive();
       updateFixedTitle(this);
+
+      // 🚀 cargar comentarios del video actual de inmediato
       const videoId = obtenerIdVideoActivo();
-      if (videoId) cargarComentarios(videoId); // ✅ carga comentarios del video actual
-    },
-    slideChangeTransitionEnd() {
-      updateFixedTitle(this);
+      if (videoId) cargarComentarios(videoId);
     }
   },
 });
@@ -1410,6 +1408,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
