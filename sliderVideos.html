@@ -1227,7 +1227,7 @@ function cleanupIframesExceptActive() {
 
         // --- FIN DE LA CORRECCIÓN ---
 
- function updateFixedTitle(swiperInstance) {
+function updateFixedTitle(swiperInstance) {
   const fixedBox = document.getElementById("video-title-fixed");
   if (!fixedBox || !swiperInstance) return;
 
@@ -1244,71 +1244,58 @@ function cleanupIframesExceptActive() {
   // Verificar si el contenido ya es el mismo para evitar parpadeos innecesarios
   const currentTitle = titleEl.querySelector('.text-container')?.textContent;
   const currentDesc = descEl.querySelector('.text-container')?.textContent;
-  
+
   if (currentTitle === newTitle && currentDesc === newDesc) {
-      return;
+    return;
   }
 
-  // Transición suave al cambiar de título
+  // ✅ Cargar comentarios inmediatamente al detectar el slide
+  const videoId = obtenerIdVideoActivo();
+  if (videoId) cargarComentarios(videoId);
+
+  // Transición suave al cambiar de título y descripción
   fixedBox.style.opacity = 0;
 
   setTimeout(() => {
-      // Función genérica para manejar el truncamiento y expansión
-      const setupExpandableText = (element, text) => {
-          element.innerHTML = `<span class="text-container">${text}</span>`;
-          const container = element.querySelector('.text-container');
-          
-          setTimeout(() => {
-              if (container.scrollHeight > container.clientHeight) {
-                  const toggleButton = document.createElement('span');
-                  toggleButton.className = 'toggle-text';
-                  toggleButton.textContent = '...más';
-                  element.appendChild(toggleButton);
+    // Función genérica para manejar el truncamiento y expansión
+    const setupExpandableText = (element, text) => {
+      element.innerHTML = `<span class="text-container">${text}</span>`;
+      const container = element.querySelector('.text-container');
 
-                  element.addEventListener('click', () => {
-                      const isExpanded = container.classList.contains('expanded');
-                      if (isExpanded) {
-                          container.classList.remove('expanded');
-                          toggleButton.textContent = '...más';
-                      } else {
-                          container.classList.add('expanded');
-                          toggleButton.textContent = 'mostrar menos';
-                      }
-                  });
-              } else {
-                  const existingButton = element.querySelector('.toggle-text');
-                  if (existingButton) existingButton.remove();
-                  const clonedElement = element.cloneNode(true);
-                  element.parentNode.replaceChild(clonedElement, element);
-              }
-          }, 50);
-      };
+      setTimeout(() => {
+        if (container.scrollHeight > container.clientHeight) {
+          const toggleButton = document.createElement('span');
+          toggleButton.className = 'toggle-text';
+          toggleButton.textContent = '...más';
+          element.appendChild(toggleButton);
 
-      // Aplicar al título y descripción
-      setupExpandableText(titleEl, newTitle);
-      setupExpandableText(descEl, newDesc);
+          element.addEventListener('click', () => {
+            const isExpanded = container.classList.contains('expanded');
+            if (isExpanded) {
+              container.classList.remove('expanded');
+              toggleButton.textContent = '...más';
+            } else {
+              container.classList.add('expanded');
+              toggleButton.textContent = 'mostrar menos';
+            }
+          });
+        } else {
+          const existingButton = element.querySelector('.toggle-text');
+          if (existingButton) existingButton.remove();
+          const clonedElement = element.cloneNode(true);
+          element.parentNode.replaceChild(clonedElement, element);
+        }
+      }, 50);
+    };
 
-      // 🔥 Cargar comentarios sincronizados al título y descripción
-      const videoId = obtenerIdVideoActivo();
-      if (videoId) {
-        console.log("📌 Actualizando comentarios junto con título y descripción:", videoId);
-        cargarComentarios(videoId);
-      }
+    // Aplicar al título y descripción
+    setupExpandableText(titleEl, newTitle);
+    setupExpandableText(descEl, newDesc);
 
-      // Mostrar el contenedor de nuevo
-      fixedBox.style.opacity = 1;
+    // Mostrar el contenedor de nuevo
+    fixedBox.style.opacity = 1;
   }, 120);
 }
-
-// 🌀 Sincronizar Swiper con título, descripción y comentarios
-let slideChangeTimeout = null;
-swiper.on("slideChange", () => {
-  if (slideChangeTimeout) clearTimeout(slideChangeTimeout);
-
-  slideChangeTimeout = setTimeout(() => {
-    updateFixedTitle(swiper); // ✅ ahora unifica todo: título + descripción + comentarios
-  }, 150);
-});
 
 
 
@@ -1421,6 +1408,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
