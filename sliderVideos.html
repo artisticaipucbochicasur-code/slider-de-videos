@@ -728,18 +728,19 @@ const comentariosPorVideo = {};
 // 🔥 cache local (usamos el mismo objeto que ya tienes)
 const comentariosPorVideo = {};
 
+// ---------------- COMENTARIOS ----------------
+
 async function cargarComentarios(videoId) {
   try {
-    // ✅ Siempre renderiza lo que haya en cache (aunque esté vacío) primero
+    // Si ya hay algo en cache, lo mostramos inmediato
     renderComentarios(videoId);
 
-    // 🔥 Luego pide al servidor (esto actualiza cuando llegan datos nuevos)
     const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}`);
     const data = await res.json();
 
-    comentariosPorVideo[videoId] = [];
+    comentariosCache[videoId] = [];
     if (Array.isArray(data.data) && data.data.length > 0) {
-      comentariosPorVideo[videoId] = data.data.map(c => ({
+      comentariosCache[videoId] = data.data.map(c => ({
         autor: c[2] || "Anónimo",
         comentario: c[1] || "",
         fecha: c[4] || "",
@@ -747,20 +748,19 @@ async function cargarComentarios(videoId) {
       }));
     }
 
-    renderComentarios(videoId); // 🔥 refresca con lo nuevo
+    renderComentarios(videoId); // refresca con lo nuevo
   } catch (e) {
-    comentariosPorVideo[videoId] = [];
+    comentariosCache[videoId] = [];
     renderComentarios(videoId);
   }
 }
 
 function renderComentarios(videoId) {
   if (!videoId) return;
-  const lista = comentariosPorVideo[videoId] || [];
+  const lista = comentariosCache[videoId] || [];
   commentsList.innerHTML = '';
 
   if (lista.length === 0) {
-    // ✅ Mostrar "Sé el primero..." solo si realmente no hay nada
     const li = document.createElement('li');
     li.textContent = "Sé el primero en comentar...";
     commentsList.appendChild(li);
@@ -780,7 +780,6 @@ function renderComentarios(videoId) {
     li.dataset.correo = c.correo;
     li.dataset.texto = c.comentario;
 
-    // 🔥 Botón borrar solo si el comentario es del usuario actual
     if (normalizeText(c.correo) === normalizeText(usuarioCorreo)) {
       const deleteBtnContainer = document.createElement('div');
       deleteBtnContainer.className = 'delete-btn-container';
@@ -1548,7 +1547,7 @@ async function cargarVideos(checkNew = false) {
       });
     }
 
-    // 🔥 Corregido: ahora también notifica si es el primer video
+    // 🔥 Notificaciones cuando hay videos nuevos
     if (checkNew) {
       newVideos.forEach(v => {
         if (!lastVideos.find(old => old.link === v.link)) {
@@ -1583,10 +1582,10 @@ async function cargarVideos(checkNew = false) {
             if (videoId) {
               if (comentariosCache[videoId]) {
                 // Mostrar directamente desde cache
-                renderComentarios(comentariosCache[videoId]);
+                renderComentarios(videoId);
               } else {
-                // Si no hay en cache, primero limpia y luego fetch
-                commentsList.innerHTML = "";
+                // Si no hay en cache, muestra mensaje de carga y luego fetch
+                commentsList.innerHTML = "<li>Cargando comentarios...</li>";
                 commentCountValue.textContent = "0";
                 cargarComentarios(videoId);
               }
@@ -1609,7 +1608,6 @@ async function cargarVideos(checkNew = false) {
 
 
 
-
 // === AUTO REFRESCO EN SEGUNDO PLANO ===
 setInterval(() => {
   cargarVideos(true); // solo refresca notificaciones, no toca el slider
@@ -1619,6 +1617,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
