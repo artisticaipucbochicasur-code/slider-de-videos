@@ -570,9 +570,12 @@ const botonEnviarComentario = document.getElementById("comment-send");
 
 // === Obtener ID del video activo ===
 function obtenerIdVideoActivo() {
-  const slideActivo = document.querySelector(".swiper-slide-active .player-card");
-  if (!slideActivo) return null;
-  return slideActivo.dataset.id;
+  if (!swiper) return null;
+  const realIndex = swiper.realIndex !== undefined ? swiper.realIndex : swiper.activeIndex;
+  const realSlide = swiper.slides[realIndex];
+  if (!realSlide) return null;
+  const playerCard = realSlide.querySelector('.player-card');
+  return playerCard ? playerCard.dataset.id : null;
 }
 
 // === Renderizar comentarios desde memoria ===
@@ -606,23 +609,26 @@ function mostrarComentariosDelActivo() {
 
 // === Recargar comentarios de un video específico (se guarda en cache) ===
 async function cargarComentarios(videoId) {
-  if (!videoId) return;
+  if (!videoId) return; // Si no hay videoId, salimos de la función.
   try {
+    // Realiza la petición para obtener los comentarios del video.
     const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}`);
     const data = await res.json();
+
+    // Guarda los comentarios en el objeto global comentariosPorVideo.
     comentariosPorVideo[videoId] = data.data || [];
 
-    // ⚡ Solo renderiza si ese video sigue activo
+    // ⚡ Solo renderiza si ese video sigue activo (el usuario no cambió de video mientras se cargaban los comentarios)
     const currentId = obtenerIdVideoActivo();
     if (videoId === currentId) {
-      renderizarComentarios(comentariosPorVideo[videoId]);
+      renderizarComentarios(comentariosPorVideo[videoId]); // Muestra los comentarios en pantalla.
     }
   } catch (err) {
+    // Si ocurre un error, lo mostramos en consola y en la interfaz.
     console.error("Error cargando comentarios:", err);
     contenedorComentarios.innerHTML = "<p>Error al cargar comentarios.</p>";
   }
 }
-
 // === Verificar en segundo plano si hubo cambios en comentarios ===
 async function verificarComentarios() {
   try {
@@ -1436,6 +1442,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
