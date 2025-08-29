@@ -555,66 +555,94 @@
         const SCRIPT_URL =
             "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
 
-  const autor = "NombreUsuario"; // 👈 cambia dinámicamente desde tu app si quieres
-  const correo = "correo@ejemplo.com"; // 👈 idem
+<script>
+  // Variables de usuario obtenidas desde la URL
+  let usuarioAutor = "";
+  let usuarioCorreo = "";
 
-  const commentInput = document.getElementById("comment-input");
-  const commentSend = document.getElementById("comment-send");
-  const commentsContainer = document.getElementById("comments-container");
+  function obtenerUsuarioDesdeUrl() {
+    const params = new URLSearchParams(window.location.search);
+    usuarioAutor = params.get("name") || "";
+    usuarioCorreo = params.get("email") || "";
+  }
 
-  // Renderizar lista de comentarios
-  function renderComments(lista) {
-    commentsContainer.innerHTML = "";
-    lista.forEach(row => {
+  document.addEventListener("DOMContentLoaded", obtenerUsuarioDesdeUrl);
+
+  // Elementos de la interfaz de comentarios
+  const entradaComentario = document.getElementById("comment-input");
+  const botonEnviarComentario = document.getElementById("comment-send");
+  const contenedorComentarios = document.getElementById("comments-container");
+
+  // Renderizar lista de comentarios en el contenedor
+  function renderizarComentarios(lista) {
+    contenedorComentarios.innerHTML = "";
+    lista.forEach(fila => {
       const div = document.createElement("div");
-      div.className = "comment";
-      div.textContent = row[1] + " — " + row[2]; // Comentario — Autor
-      commentsContainer.appendChild(div);
+      div.className = "comentario";
+      // fila = [ID_Video, Comentario, Autor, Correo, Fecha]
+      div.textContent = fila[1] + " — " + fila[2]; 
+      contenedorComentarios.appendChild(div);
     });
   }
 
-  // Cargar comentarios de video activo
-  async function loadComments() {
-    const activeSlide = document.querySelector(".swiper-slide-active .player-card");
-    if (!activeSlide) return;
+  // Obtener el ID único del video activo
+  function obtenerIdVideoActivo() {
+    const slideActivo = document.querySelector(".swiper-slide-active .player-card");
+    if (!slideActivo) return null;
+    return slideActivo.dataset.id; // ⬅️ ID único del video
+  }
 
-    const videoId = activeSlide.dataset.id; // ⬅️ ahora se usa el ID único
+  // Cargar comentarios del video activo
+  async function cargarComentarios() {
+    const videoId = obtenerIdVideoActivo();
+    if (!videoId) return;
     try {
       const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}`);
       const data = await res.json();
-      renderComments(data.data || []);
+      renderizarComentarios(data.data || []);
     } catch (err) {
       console.error("Error cargando comentarios:", err);
     }
   }
 
-  // Enviar comentario
-  async function sendComment() {
-    const text = commentInput.value.trim();
-    if (!text) return;
+  // Enviar un nuevo comentario
+  async function enviarComentario() {
+    const texto = entradaComentario.value.trim();
+    if (!texto) return;
 
-    const activeSlide = document.querySelector(".swiper-slide-active .player-card");
-    if (!activeSlide) return;
-    const videoId = activeSlide.dataset.id; // ⬅️ ID único
+    const videoId = obtenerIdVideoActivo();
+    if (!videoId) return;
 
     try {
-      await fetch(`${SCRIPT_URL}?accion=agregarComentarioVideo&videoId=${encodeURIComponent(videoId)}&comentario=${encodeURIComponent(text)}&autor=${encodeURIComponent(autor)}&correo=${encodeURIComponent(correo)}`);
-      commentInput.value = "";
-      loadComments(); // recargar después de guardar
+      await fetch(SCRIPT_URL, {
+        method: "POST",
+        body: new URLSearchParams({
+          accion: "agregarComentarioVideo",
+          videoId: videoId,
+          comentario: texto,
+          autor: usuarioAutor,   // autor real desde la URL
+          correo: usuarioCorreo  // correo real desde la URL
+        })
+      });
+      entradaComentario.value = "";
+      cargarComentarios(); // recargar lista después de guardar
     } catch (err) {
       console.error("Error guardando comentario:", err);
     }
   }
 
-  commentSend.onclick = sendComment;
+  // Asignar evento al botón
+  botonEnviarComentario.onclick = enviarComentario;
 
   // Cuando cambie de video en swiper, actualizar comentarios
   document.addEventListener("DOMContentLoaded", () => {
     if (typeof swiper !== "undefined") {
-      swiper.on("slideChange", loadComments);
+      swiper.on("slideChange", cargarComentarios);
     }
-    loadComments(); // cargar los del primer video
+    cargarComentarios(); // cargar los del primer video
   });
+</script>
+
 
         
 // === NOTIFICACIONES ===
@@ -1347,3 +1375,4 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
