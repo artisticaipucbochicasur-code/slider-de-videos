@@ -625,34 +625,30 @@ async function cargarComentarios(videoId) {
 }
 
 // Enviar un nuevo comentario
-async function enviarComentario() {
-  const texto = comment-input.value.trim();
-  if (!texto) return;
+  async function enviarComentario() {
+    const texto = entradaComentario.value.trim();
+    if (!texto) return;
 
-  const videoId = obtenerIdVideoActivo();
-  if (!videoId) return;
+    const videoId = obtenerIdVideoActivo();
+    if (!videoId) return;
 
-  try {
-    await fetch(SCRIPT_URL, {
-      method: "POST",
-      body: new URLSearchParams({
-        accion: "agregarComentarioVideo",
-        videoId: videoId,
-        comentario: texto,
-        autor: usuarioAutor,   // autor real desde la URL
-        correo: usuarioCorreo  // correo real desde la URL
-      })
-    });
-
-    comment-input.value = "";
-
-    // 🔥 recargar los comentarios del video actual de inmediato
-    cargarComentarios(videoId);
-
-  } catch (err) {
-    console.error("Error guardando comentario:", err);
+    try {
+      await fetch(SCRIPT_URL, {
+        method: "POST",
+        body: new URLSearchParams({
+          accion: "agregarComentarioVideo",
+          videoId: videoId,
+          comentario: texto,
+          autor: usuarioAutor,   // autor real desde la URL
+          correo: usuarioCorreo  // correo real desde la URL
+        })
+      });
+      entradaComentario.value = "";
+      cargarComentarios(); // recargar lista después de guardar
+    } catch (err) {
+      console.error("Error guardando comentario:", err);
+    }
   }
-}
 
 
 // Asignar evento al botón
@@ -1408,6 +1404,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
