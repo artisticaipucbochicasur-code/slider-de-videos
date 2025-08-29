@@ -499,6 +499,7 @@
   <input type="text" id="comment-input" placeholder="Escribe un comentario..." />
   <button id="comment-send"><i class="fas fa-paper-plane"></i></button>
 </div>
+
     
 <!-- Notificaciones -->
 <div id="notification-wrapper">
@@ -557,41 +558,36 @@
             "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
 
 
-// Elementos de la interfaz de comentarios
+// === Referencias de interfaz de comentarios ===
+const contenedorComentarios = document.getElementById("comments-container");
 const entradaComentario = document.getElementById("comment-input");
 const botonEnviarComentario = document.getElementById("comment-send");
-const contenedorComentarios = document.getElementById("comments-container");
 
-// Obtener el ID único del video activo 
+// Obtener el ID del video activo
 function obtenerIdVideoActivo() {
   const slideActivo = document.querySelector(".swiper-slide-active .player-card");
   if (!slideActivo) return null;
-  return slideActivo.dataset.id; // ID único del video
+  return slideActivo.dataset.id;
 }
 
 // Renderizar comentarios en el contenedor
 function renderizarComentarios(lista) {
-  const comentariosBox = contenedorComentarios; // ✅ usar el contenedor real (#comments-container)
-  if (!comentariosBox) return;
+  contenedorComentarios.innerHTML = "";
 
-  comentariosBox.innerHTML = "";
-
-  if (lista.length === 0) {
-    comentariosBox.innerHTML = "<p>No hay comentarios aún.</p>";
+  if (!lista || lista.length === 0) {
+    contenedorComentarios.innerHTML = "<p>No hay comentarios aún.</p>";
     return;
   }
 
   lista.forEach(row => {
-    // Estructura que devuelve tu Apps Script:
-    // [0]=ID_Video, [1]=Comentario, [2]=Autor, [3]=Correo, [4]=Fecha
     const comentario = row[1] || "";
     const autor = row[2] || "Anónimo";
     const fecha = row[4] || "";
 
     const div = document.createElement("div");
-    div.className = "comentario";
+    div.className = "comment"; // ✅ mismo nombre que en tu CSS
     div.innerHTML = `<strong>${autor}:</strong> ${comentario} <br><small>${fecha}</small>`;
-    comentariosBox.appendChild(div);
+    contenedorComentarios.appendChild(div);
   });
 }
 
@@ -599,69 +595,95 @@ function renderizarComentarios(lista) {
 async function cargarComentarios(videoId) {
   if (!videoId) return;
 
-  const comentariosBox = document.getElementById("comentariosBox");
-  if (comentariosBox) {
-    comentariosBox.innerHTML = "<p><em>Cargando comentarios...</em></p>";
-  }
+  contenedorComentarios.innerHTML = "<p><em>Cargando comentarios...</em></p>";
 
   try {
-    const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}`);
+    const res = await fetch(
+      `${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}`
+    );
     const data = await res.json();
 
-    // ⚡ Verificar si todavía estamos en el mismo video activo
+    // ⚡ Solo mostrar si seguimos en el mismo video
     const currentId = obtenerIdVideoActivo();
-    if (videoId !== currentId) {
-      console.log("Respuesta descartada, ya cambió el video");
-      return;
-    }
+    if (videoId !== currentId) return;
 
     renderizarComentarios(data.data || []);
   } catch (err) {
     console.error("Error cargando comentarios:", err);
-    if (comentariosBox) {
-      comentariosBox.innerHTML = "<p>Error cargando comentarios.</p>";
-    }
+    contenedorComentarios.innerHTML = "<p>Error cargando comentarios.</p>";
   }
 }
 
-// Enviar un nuevo comentario
-  async function enviarComentario() {
-    const texto = entradaComentario.value.trim();
-    if (!texto) return;
+// Enviar un comentario
+async function enviarComentario() {
+  const texto = entradaComentario.value.trim();
+  if (!texto) return;
 
-    const videoId = obtenerIdVideoActivo();
-    if (!videoId) return;
+  const videoId = obtenerIdVideoActivo();
+  if (!videoId) return;
 
-    try {
-      await fetch(SCRIPT_URL, {
-        method: "POST",
-        body: new URLSearchParams({
-          accion: "agregarComentarioVideo",
-          videoId: videoId,
-          comentario: texto,
-          autor: usuarioAutor,   // autor real desde la URL
-          correo: usuarioCorreo  // correo real desde la URL
-        })
-      });
-      entradaComentario.value = "";
-      cargarComentarios(); // recargar lista después de guardar
-    } catch (err) {
-      console.error("Error guardando comentario:", err);
-    }
+  if (!usuarioAutor || !usuarioCorreo) {
+    showAlert("No se pudo obtener tu usuario. Asegúrate de estar logueado.");
+    return;
   }
 
+  try {
+    await fetch(SCRIPT_URL, {
+      method: "POST",
+      body: new URLSearchParams({
+        accion: "agregarComentarioVideo",
+        videoId,
+        comentario: texto,
+        autor: usuarioAutor,
+        correo: usuarioCorreo
+      })
+    });
 
-// Asignar evento al botón
+    entradaComentario.value = "";
+    cargarComentarios(videoId); // 🔥 recargar inmediatamente
+  } catch (err) {
+    console.error("Error guardando comentario:", err);
+  }
+}
+
 botonEnviarComentario.onclick = enviarComentario;
 
+// === Integración con swiper/updateFixedTitle ===
+function updateFixedTitle(swiperInstance) {
+  const fixedBox = document.getElementById("video-title-fixed");
+  if (!fixedBox || !swiperInstance) return;
 
-  // Cuando cambie de video en swiper, actualizar comentarios
-  document.addEventListener("DOMContentLoaded", () => {
-    if (typeof swiper !== "undefined") {
-      swiper.on("slideChange", cargarComentarios);
-    }
-    cargarComentarios(); // cargar los del primer video
-  });
+  const activeSlide =
+    swiperInstance.slides[swiperInstance.activeIndex] ||
+    document.querySelector(".swiper-slide-active");
+  if (!activeSlide) return;
+
+  const newTitle = activeSlide.dataset.title || "Video";
+  const newDesc = activeSlide.dataset.descripcion || "";
+
+  const titleEl = fixedBox.querySelector(".video-title");
+  const descEl = fixedBox.querySelector(".video-desc");
+
+  // actualizar títulos
+  titleEl.textContent = newTitle;
+  descEl.textContent = newDesc;
+
+  // 🔥 cargar comentarios de inmediato
+  const videoId = obtenerIdVideoActivo();
+  if (videoId) cargarComentarios(videoId);
+}
+
+// Cuando cambie de video en swiper
+document.addEventListener("DOMContentLoaded", () => {
+  if (typeof swiper !== "undefined") {
+    swiper.on("slideChange", () => {
+      updateFixedTitle(swiper);
+    });
+  }
+
+  // cargar del primer video
+  setTimeout(() => updateFixedTitle(swiper), 300);
+});
 
         
 // === NOTIFICACIONES ===
@@ -1404,6 +1426,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
