@@ -583,11 +583,13 @@ function renderizarComentarios(lista) {
   }
 
   lista.forEach(row => {
-    const autor = row[0] || "Anónimo";
-    const texto = row[1] || "";
+    const comentario = row[1] || ""; // Texto del comentario
+    const autor = row[2] || "Anónimo"; // Nombre del autor
+    const fecha = row[4] || ""; // Fecha
+
     const div = document.createElement("div");
     div.className = "comentario";
-    div.innerHTML = `<strong>${autor}:</strong> ${texto}`;
+    div.innerHTML = `<strong>${autor}:</strong> ${comentario} <br><small>${fecha}</small>`;
     comentariosBox.appendChild(div);
   });
 }
@@ -1383,6 +1385,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
