@@ -626,7 +626,7 @@ async function cargarComentarios(videoId) {
 
 // Enviar un nuevo comentario
 async function enviarComentario() {
-  const texto = entradaComentario.value.trim();
+  const texto = comment-input.value.trim();
   if (!texto) return;
 
   const videoId = obtenerIdVideoActivo();
@@ -644,7 +644,7 @@ async function enviarComentario() {
       })
     });
 
-    entradaComentario.value = "";
+    comment-input.value = "";
 
     // 🔥 recargar los comentarios del video actual de inmediato
     cargarComentarios(videoId);
@@ -1408,6 +1408,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
