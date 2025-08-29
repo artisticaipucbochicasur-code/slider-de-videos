@@ -556,17 +556,7 @@
     <script>
         const SCRIPT_URL =
             "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
-// Variables de usuario obtenidas desde la URL
-  let usuarioAutor2 = "";
-  let usuarioCorreo2 = "";
 
-  function obtenerUsuarioDesdeUrl() {
-    const params = new URLSearchParams(window.location.search);
-    usuarioAutor2 = params.get("name") || "";
-    usuarioCorreo2 = params.get("email") || "";
-  }
-
-  document.addEventListener("DOMContentLoaded", obtenerUsuarioDesdeUrl);
 
 
 // === Referencias de interfaz de comentarios ===
@@ -634,11 +624,11 @@ async function enviarComentario() {
   if (!videoId) return;
 
   // 🔄 Asegurar que tenemos los datos del usuario
-  if (!usuarioAutor2 || !usuarioCorreo2) {
+  if (!usuarioAutor || !usuarioCorreo) {
     getUsuarioDataFromUrl(); // intenta capturarlos de nuevo
   }
 
-  if (!usuarioAutor2 || !usuarioCorreo2) {
+  if (!usuarioAutor || !usuarioCorreo) {
     showAlert("⚠️ No se pudo obtener la información de tu usuario. Intenta recargar la página.");
     return;
   }
@@ -647,11 +637,11 @@ async function enviarComentario() {
     const response = await fetch(SCRIPT_URL, {
       method: "POST",
       body: new URLSearchParams({
-        accion: "comentar",
+        accion: "agregarComentarioVideo",
         videoId: videoId,
         comentario: texto,
-        autor: usuarioAutor2,
-        correo: usuarioCorreo2
+        autor: usuarioAutor,
+        correo: usuarioCorreo
       })
     });
 
@@ -667,6 +657,7 @@ async function enviarComentario() {
     showAlert("⚠️ Error de conexión al enviar el comentario.");
   }
 }
+
 
 
 botonEnviarComentario.onclick = enviarComentario;
@@ -1424,6 +1415,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
