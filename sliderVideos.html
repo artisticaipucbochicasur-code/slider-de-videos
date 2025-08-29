@@ -648,30 +648,7 @@ async function enviarComentario() {
 
 botonEnviarComentario.onclick = enviarComentario;
 
-// === Integración con swiper/updateFixedTitle ===
-function updateFixedTitle(swiperInstance) {
-  const fixedBox = document.getElementById("video-title-fixed");
-  if (!fixedBox || !swiperInstance) return;
 
-  const activeSlide =
-    swiperInstance.slides[swiperInstance.activeIndex] ||
-    document.querySelector(".swiper-slide-active");
-  if (!activeSlide) return;
-
-  const newTitle = activeSlide.dataset.title || "Video";
-  const newDesc = activeSlide.dataset.descripcion || "";
-
-  const titleEl = fixedBox.querySelector(".video-title");
-  const descEl = fixedBox.querySelector(".video-desc");
-
-  // actualizar títulos
-  titleEl.textContent = newTitle;
-  descEl.textContent = newDesc;
-
-  // 🔥 cargar comentarios de inmediato
-  const videoId = obtenerIdVideoActivo();
-  if (videoId) cargarComentarios(videoId);
-}
 
 // Cuando cambie de video en swiper
 document.addEventListener("DOMContentLoaded", () => {
@@ -1424,6 +1401,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
