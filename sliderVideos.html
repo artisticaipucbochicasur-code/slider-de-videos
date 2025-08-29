@@ -622,29 +622,41 @@ async function enviarComentario() {
   const videoId = obtenerIdVideoActivo();
   if (!videoId) return;
 
+  // 🔄 Asegurar que tenemos los datos del usuario
   if (!usuarioAutor || !usuarioCorreo) {
-    showAlert("No se pudo obtener tu usuario. Asegúrate de estar logueado.");
+    getUsuarioDataFromUrl(); // intenta capturarlos de nuevo
+  }
+
+  if (!usuarioAutor || !usuarioCorreo) {
+    showAlert("⚠️ No se pudo obtener la información de tu usuario. Intenta recargar la página.");
     return;
   }
 
   try {
-    await fetch(SCRIPT_URL, {
+    const response = await fetch(SCRIPT_URL, {
       method: "POST",
       body: new URLSearchParams({
-        accion: "agregarComentarioVideo",
-        videoId,
+        accion: "comentar",
+        videoId: videoId,
         comentario: texto,
         autor: usuarioAutor,
         correo: usuarioCorreo
       })
     });
 
-    entradaComentario.value = "";
-    cargarComentarios(videoId); // 🔥 recargar inmediatamente
+    const data = await response.json();
+
+    if (data.status === "success") {
+      entradaComentario.value = "";  // limpiar el campo
+      cargarComentarios(videoId);    // recargar los comentarios solo de ese video
+    } else {
+      showAlert("❌ Error al enviar comentario: " + (data.message || "Intenta de nuevo"));
+    }
   } catch (err) {
-    console.error("Error guardando comentario:", err);
+    showAlert("⚠️ Error de conexión al enviar el comentario.");
   }
 }
+
 
 botonEnviarComentario.onclick = enviarComentario;
 
@@ -1401,6 +1413,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
