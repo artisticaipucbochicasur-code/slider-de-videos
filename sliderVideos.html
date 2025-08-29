@@ -607,6 +607,40 @@ function mostrarComentariosDelActivo() {
   renderizarComentarios(lista);
 }
 
+// === NUEVO: Mostrar comentarios instantáneos y refrescar en background ===
+function mostrarYActualizarComentarios(videoId) {
+  // Mostrar inmediatamente desde caché (si hay)
+  renderizarComentarios(comentariosPorVideo[videoId] || []);
+  // Refrescar desde servidor (actualiza caché + UI si es el activo)
+  cargarComentariosSiNoEstan(videoId);
+}
+
+// === NUEVO: Cargar comentarios SOLO si no están en caché, y actualizar si es necesario ===
+async function cargarComentariosSiNoEstan(videoId) {
+  if (!videoId) return;
+
+  // Si ya están en memoria, no hagas fetch (ya se renderizó arriba).
+  if (comentariosPorVideo[videoId]) return;
+
+  // Loader opcional:
+  contenedorComentarios.innerHTML = "<p>Cargando comentarios...</p>";
+
+  try {
+    const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}`);
+    const data = await res.json();
+    comentariosPorVideo[videoId] = data.data || [];
+
+    // ⚡ Solo renderiza si ese video sigue activo
+    const currentId = obtenerIdVideoActivo();
+    if (videoId === currentId) {
+      renderizarComentarios(comentariosPorVideo[videoId]);
+    }
+  } catch (err) {
+    console.error("Error cargando comentarios:", err);
+    contenedorComentarios.innerHTML = "<p>Error al cargar comentarios.</p>";
+  }
+}
+
 // === Recargar comentarios de un video específico (se guarda en cache) ===
 async function cargarComentarios(videoId) {
   if (!videoId) return; // Si no hay videoId, salimos de la función.
@@ -629,6 +663,7 @@ async function cargarComentarios(videoId) {
     contenedorComentarios.innerHTML = "<p>Error al cargar comentarios.</p>";
   }
 }
+
 // === Verificar en segundo plano si hubo cambios en comentarios ===
 async function verificarComentarios() {
   try {
@@ -691,12 +726,9 @@ document.addEventListener("DOMContentLoaded", () => {
     swiper.on("slideChange", () => {
       updateFixedTitle(swiper);
 
-      // ⚡ mostrar comentarios desde cache inmediatamente
-      mostrarComentariosDelActivo();
-
-      // ⚡ refrescar en segundo plano desde servidor
+      // ⚡ mostrar y actualizar comentarios de forma instantánea
       const videoId = obtenerIdVideoActivo();
-      if (videoId) cargarComentarios(videoId);
+      if (videoId) mostrarYActualizarComentarios(videoId);
     });
   }
 
@@ -705,16 +737,13 @@ document.addEventListener("DOMContentLoaded", () => {
     updateFixedTitle(swiper);
     const videoId = obtenerIdVideoActivo();
     if (videoId) {
-      mostrarComentariosDelActivo();
-      cargarComentarios(videoId);
+      mostrarYActualizarComentarios(videoId);
     }
   }, 300);
 
   // 🔄 cada 5s verificar si hubo nuevos comentarios
   setInterval(verificarComentarios, 5000);
 });
-
-
 
         
 // === NOTIFICACIONES ===
@@ -1442,6 +1471,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
