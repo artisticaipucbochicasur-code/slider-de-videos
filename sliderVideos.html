@@ -558,12 +558,11 @@
 
 
 // Elementos de la interfaz de comentarios
-  const entradaComentario = document.getElementById("comment-input");
-  const botonEnviarComentario = document.getElementById("comment-send");
-  const contenedorComentarios = document.getElementById("comments-container");
+const entradaComentario = document.getElementById("comment-input");
+const botonEnviarComentario = document.getElementById("comment-send");
+const contenedorComentarios = document.getElementById("comments-container");
 
-  // Renderizar lista de comentarios en el contenedor
- // Obtener el ID único del video activo 
+// Obtener el ID único del video activo 
 function obtenerIdVideoActivo() {
   const slideActivo = document.querySelector(".swiper-slide-active .player-card");
   if (!slideActivo) return null;
@@ -572,7 +571,7 @@ function obtenerIdVideoActivo() {
 
 // Renderizar comentarios en el contenedor
 function renderizarComentarios(lista) {
-  const comentariosBox = document.getElementById("comentariosBox");
+  const comentariosBox = contenedorComentarios; // ✅ usar el contenedor real (#comments-container)
   if (!comentariosBox) return;
 
   comentariosBox.innerHTML = "";
@@ -583,9 +582,11 @@ function renderizarComentarios(lista) {
   }
 
   lista.forEach(row => {
-    const comentario = row[1] || ""; // Texto del comentario
-    const autor = row[2] || "Anónimo"; // Nombre del autor
-    const fecha = row[4] || ""; // Fecha
+    // Estructura que devuelve tu Apps Script:
+    // [0]=ID_Video, [1]=Comentario, [2]=Autor, [3]=Correo, [4]=Fecha
+    const comentario = row[1] || "";
+    const autor = row[2] || "Anónimo";
+    const fecha = row[4] || "";
 
     const div = document.createElement("div");
     div.className = "comentario";
@@ -606,36 +607,35 @@ async function cargarComentarios(videoId) {
   }
 }
 
+// Enviar un nuevo comentario
+async function enviarComentario() {
+  const texto = entradaComentario.value.trim();
+  if (!texto) return;
 
+  const videoId = obtenerIdVideoActivo();
+  if (!videoId) return;
 
-  // Enviar un nuevo comentario
-  async function enviarComentario() {
-    const texto = entradaComentario.value.trim();
-    if (!texto) return;
-
-    const videoId = obtenerIdVideoActivo();
-    if (!videoId) return;
-
-    try {
-      await fetch(SCRIPT_URL, {
-        method: "POST",
-        body: new URLSearchParams({
-          accion: "agregarComentarioVideo",
-          videoId: videoId,
-          comentario: texto,
-          autor: usuarioAutor,   // autor real desde la URL
-          correo: usuarioCorreo  // correo real desde la URL
-        })
-      });
-      entradaComentario.value = "";
-      cargarComentarios(); // recargar lista después de guardar
-    } catch (err) {
-      console.error("Error guardando comentario:", err);
-    }
+  try {
+    await fetch(SCRIPT_URL, {
+      method: "POST",
+      body: new URLSearchParams({
+        accion: "agregarComentarioVideo",
+        videoId: videoId,
+        comentario: texto,
+        autor: usuarioAutor,   // autor real desde la URL
+        correo: usuarioCorreo  // correo real desde la URL
+      })
+    });
+    entradaComentario.value = "";
+    cargarComentarios(videoId); // ✅ recargar los comentarios del video actual
+  } catch (err) {
+    console.error("Error guardando comentario:", err);
   }
+}
 
-  // Asignar evento al botón
-  botonEnviarComentario.onclick = enviarComentario;
+// Asignar evento al botón
+botonEnviarComentario.onclick = enviarComentario;
+
 
   // Cuando cambie de video en swiper, actualizar comentarios
   document.addEventListener("DOMContentLoaded", () => {
@@ -1385,6 +1385,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
