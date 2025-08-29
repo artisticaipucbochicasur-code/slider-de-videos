@@ -1536,27 +1536,23 @@ async function cargarVideos(checkNew = false) {
 
     if (!checkNew) {
       if (swiper) swiper.destroy(true, true);
-      swiper = new Swiper(".swiper", {
-        loop: true,
-        direction: "horizontal",
-        slidesPerView: 1,
-        spaceBetween: 10,
-        pagination: false,
-        on: {
-          init() {
-            updateFixedTitle(this);
-            refrescarComentariosSlide(); // ← AGREGA ESTO PARA CARGAR COMENTARIOS DEL PRIMER VIDEO
-          },
-          slideChange() {
-            cleanupIframesExceptActive();
-            updateFixedTitle(this);
-            refrescarComentariosSlide(); // ← AGREGA ESTO PARA CAMBIAR LOS COMENTARIOS AL CAMBIAR DE VIDEO
-          },
-          slideChangeTransitionEnd() {
-            updateFixedTitle(this);
-          }
-        },
-      });
+     swiper = new Swiper(".swiper", {
+  loop: true,
+  direction: "horizontal",
+  slidesPerView: 1,
+  spaceBetween: 10,
+  pagination: false,
+  on: {
+    init() {
+      updateFixedTitle(this);
+      refrescarComentariosSlide(); // para el primer video
+    },
+    slideChangeTransitionEnd() { // ← SOLO AQUÍ
+      updateFixedTitle(this);
+      refrescarComentariosSlide(); // ← Cambia comentarios justo cuando el cambio terminó
+    }
+  },
+});
 
       cleanupIframesExceptActive();
       updateFixedTitle(swiper);
@@ -1582,5 +1578,6 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
