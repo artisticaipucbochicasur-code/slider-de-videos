@@ -507,16 +507,18 @@
 #commentsList li {
   margin: 0;
   padding: 10px 15px;
-  border-bottom: 1px solid #efefef;
+  border-bottom: 1px solid #444;       /* Más oscuro */
   display: flex;
   align-items: center;
-  background: #fff;
+  background: transparent;              /* Fondo transparente */
   position: relative;
   overflow-x: hidden;
+  color: #fff;                         /* Letras blancas */
 }
 .comment-content {
   flex: 1;
   transition: transform 0.3s;
+  color: #fff;                         /* Letras blancas */
 }
 .delete-btn-container {
   position: absolute;
@@ -832,7 +834,7 @@ commentInput.addEventListener('blur', () => {
   document.body.style.transform = `translateY(0)`;
 });
 
-// --- Refresca comentarios al cambiar de video ---
+// --- Refresca los comentarios según el video activo ---
 function refrescarComentariosSlide() {
   const videoId = getActiveVideoId();
   if (videoId) cargarComentarios(videoId);
@@ -1094,7 +1096,7 @@ deleteConfirm.onclick = async () => {
             return { type: "other", embedSrc: link, poster: "" };
         }
 
-      function createSlide(titulo, link, descripcion, id) {
+  function createSlide(titulo, link, descripcion, id) {
     const { embedSrc, poster } = getEmbedInfo(link);
     const slide = document.createElement("div");
     slide.className = "swiper-slide";
@@ -1120,7 +1122,6 @@ deleteConfirm.onclick = async () => {
     });
 
     card.appendChild(posterEl);
-
     slide.appendChild(card);
 
     return slide;
@@ -1494,17 +1495,17 @@ async function cargarVideos(checkNew = false) {
 
     let newVideos = [];
     if (Array.isArray(data.data)) {
-  data.data.forEach((row) => {
-    const titulo = row[0];
-    const link = row[1];
-    const descripcion = row[4] || "";
-    const id = row[5]; // ← ASEGÚRATE DE EXTRAER EL ID DE LA FILA
-    if (!checkNew) {
-      wrapper.appendChild(createSlide(titulo, link, descripcion, id)); // ← PASA EL ID AQUÍ
+      data.data.forEach((row) => {
+        const titulo = row[0];
+        const link = row[1];
+        const descripcion = row[4] || "";
+        const id = row[5]; // ← ASEGÚRATE DE EXTRAER EL ID DE LA FILA
+        if (!checkNew) {
+          wrapper.appendChild(createSlide(titulo, link, descripcion, id)); // ← PASA EL ID AQUÍ
+        }
+        newVideos.push({ title: titulo, link, desc: descripcion, id }); // ← GUARDA EL ID POR SI LO NECESITAS
+      });
     }
-    newVideos.push({ title: titulo, link, desc: descripcion, id }); // ← GUARDA EL ID POR SI LO NECESITAS
-  });
-}
 
     // 🔥 Eliminación silenciosa (solo en modo checkNew para no afectar carga inicial)
     if (checkNew) {
@@ -1544,10 +1545,12 @@ async function cargarVideos(checkNew = false) {
         on: {
           init() {
             updateFixedTitle(this);
+            refrescarComentariosSlide(); // ← AGREGA ESTO PARA CARGAR COMENTARIOS DEL PRIMER VIDEO
           },
           slideChange() {
             cleanupIframesExceptActive();
             updateFixedTitle(this);
+            refrescarComentariosSlide(); // ← AGREGA ESTO PARA CAMBIAR LOS COMENTARIOS AL CAMBIAR DE VIDEO
           },
           slideChangeTransitionEnd() {
             updateFixedTitle(this);
@@ -1557,6 +1560,7 @@ async function cargarVideos(checkNew = false) {
 
       cleanupIframesExceptActive();
       updateFixedTitle(swiper);
+      refrescarComentariosSlide(); // ← LLAMA ESTO AL FINAL PARA CARGAR COMENTARIOS INICIALES
     }
   } catch (e) {
     console.error("Error cargando videos:", e);
@@ -1578,4 +1582,5 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
