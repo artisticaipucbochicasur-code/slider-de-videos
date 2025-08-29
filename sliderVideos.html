@@ -725,15 +725,15 @@ function getActiveVideoId() {
 // 🔥 cache local (usamos el mismo objeto que ya tienes)
 const comentariosPorVideo = {};
 
+// 🔥 cache local (usamos el mismo objeto que ya tienes)
+const comentariosPorVideo = {};
+
 async function cargarComentarios(videoId) {
   try {
-    // ✅ Si ya hay comentarios en cache → renderiza al instante y no esperes el fetch
-    if (comentariosPorVideo[videoId] && comentariosPorVideo[videoId].length > 0) {
-      renderComentarios(videoId);
-      return; // no pedimos de nuevo
-    }
+    // ✅ Siempre renderiza lo que haya en cache (aunque esté vacío) primero
+    renderComentarios(videoId);
 
-    // 🔥 Si no hay cache → pedimos al servidor
+    // 🔥 Luego pide al servidor (esto actualiza cuando llegan datos nuevos)
     const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}`);
     const data = await res.json();
 
@@ -747,7 +747,7 @@ async function cargarComentarios(videoId) {
       }));
     }
 
-    renderComentarios(videoId);
+    renderComentarios(videoId); // 🔥 refresca con lo nuevo
   } catch (e) {
     comentariosPorVideo[videoId] = [];
     renderComentarios(videoId);
@@ -760,7 +760,7 @@ function renderComentarios(videoId) {
   commentsList.innerHTML = '';
 
   if (lista.length === 0) {
-    // ✅ Mostrar "Sé el primero..." solo si nunca hay comentarios
+    // ✅ Mostrar "Sé el primero..." solo si realmente no hay nada
     const li = document.createElement('li');
     li.textContent = "Sé el primero en comentar...";
     commentsList.appendChild(li);
@@ -803,6 +803,7 @@ function renderComentarios(videoId) {
 
   commentCountValue.textContent = lista.length;
 }
+
 
 
 async function enviarComentario() {
@@ -1618,6 +1619,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
