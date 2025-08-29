@@ -1250,7 +1250,9 @@ function updateFixedTitle(swiperInstance) {
   if (!fixedBox || !swiperInstance) return;
 
   // Obtener el slide activo
-  const activeSlide = swiperInstance.slides[swiperInstance.activeIndex] || document.querySelector('.swiper-slide-active');
+  const activeSlide =
+    swiperInstance.slides[swiperInstance.activeIndex] ||
+    document.querySelector(".swiper-slide-active");
   if (!activeSlide) return;
 
   const newTitle = activeSlide.dataset.title || "Video";
@@ -1260,45 +1262,41 @@ function updateFixedTitle(swiperInstance) {
   const descEl = fixedBox.querySelector(".video-desc");
 
   // Verificar si el contenido ya es el mismo para evitar parpadeos innecesarios
-  const currentTitle = titleEl.querySelector('.text-container')?.textContent;
-  const currentDesc = descEl.querySelector('.text-container')?.textContent;
+  const currentTitle = titleEl.querySelector(".text-container")?.textContent;
+  const currentDesc = descEl.querySelector(".text-container")?.textContent;
 
   if (currentTitle === newTitle && currentDesc === newDesc) {
     return;
   }
 
-  // ✅ Cargar comentarios inmediatamente al detectar el slide
-  const videoId = obtenerIdVideoActivo();
-  if (videoId) cargarComentarios(videoId);
-
-  // Transición suave al cambiar de título y descripción
+  // Transición suave al cambiar de título
   fixedBox.style.opacity = 0;
 
   setTimeout(() => {
     // Función genérica para manejar el truncamiento y expansión
     const setupExpandableText = (element, text) => {
-      element.innerHTML = `<span class="text-container">${text}</span>`;
-      const container = element.querySelector('.text-container');
+      element.innerHTML = <span class="text-container">${text}</span>;
+      const container = element.querySelector(".text-container");
 
       setTimeout(() => {
         if (container.scrollHeight > container.clientHeight) {
-          const toggleButton = document.createElement('span');
-          toggleButton.className = 'toggle-text';
-          toggleButton.textContent = '...más';
+          const toggleButton = document.createElement("span");
+          toggleButton.className = "toggle-text";
+          toggleButton.textContent = "...más";
           element.appendChild(toggleButton);
 
-          element.addEventListener('click', () => {
-            const isExpanded = container.classList.contains('expanded');
+          element.addEventListener("click", () => {
+            const isExpanded = container.classList.contains("expanded");
             if (isExpanded) {
-              container.classList.remove('expanded');
-              toggleButton.textContent = '...más';
+              container.classList.remove("expanded");
+              toggleButton.textContent = "...más";
             } else {
-              container.classList.add('expanded');
-              toggleButton.textContent = 'mostrar menos';
+              container.classList.add("expanded");
+              toggleButton.textContent = "mostrar menos";
             }
           });
         } else {
-          const existingButton = element.querySelector('.toggle-text');
+          const existingButton = element.querySelector(".toggle-text");
           if (existingButton) existingButton.remove();
           const clonedElement = element.cloneNode(true);
           element.parentNode.replaceChild(clonedElement, element);
@@ -1310,12 +1308,14 @@ function updateFixedTitle(swiperInstance) {
     setupExpandableText(titleEl, newTitle);
     setupExpandableText(descEl, newDesc);
 
+    // 🔥 Corregido: cargar comentarios del video activo
+    const videoId = obtenerIdVideoActivo();
+    if (videoId) cargarComentarios(videoId);
+
     // Mostrar el contenedor de nuevo
     fixedBox.style.opacity = 1;
   }, 120);
 }
-
-
 
         
 
@@ -1426,6 +1426,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
