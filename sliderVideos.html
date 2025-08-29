@@ -435,7 +435,7 @@
             color: #fff;
         }
 
-/* Contenedor de comentarios */
+  /* Contenedor de comentarios */
   #comments-container {
     position: absolute;
     bottom: 70px; /* arriba de la caja para escribir */
@@ -486,6 +486,7 @@
     font-size: 18px;
     cursor: pointer;
   }
+
         
     </style>
 </head>
@@ -555,20 +556,8 @@
         const SCRIPT_URL =
             "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
 
-<script>
-  // Variables de usuario obtenidas desde la URL
-  let usuarioAutor = "";
-  let usuarioCorreo = "";
 
-  function obtenerUsuarioDesdeUrl() {
-    const params = new URLSearchParams(window.location.search);
-    usuarioAutor = params.get("name") || "";
-    usuarioCorreo = params.get("email") || "";
-  }
-
-  document.addEventListener("DOMContentLoaded", obtenerUsuarioDesdeUrl);
-
-  // Elementos de la interfaz de comentarios
+// Elementos de la interfaz de comentarios
   const entradaComentario = document.getElementById("comment-input");
   const botonEnviarComentario = document.getElementById("comment-send");
   const contenedorComentarios = document.getElementById("comments-container");
@@ -641,8 +630,6 @@
     }
     cargarComentarios(); // cargar los del primer video
   });
-</script>
-
 
         
 // === NOTIFICACIONES ===
@@ -1375,4 +1362,3 @@ setInterval(() => {
     </script>
 </body>
 </html>
-
