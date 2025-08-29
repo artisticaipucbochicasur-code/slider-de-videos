@@ -616,27 +616,39 @@ async function cargarComentarios(videoId) {
 }
 
 async function enviarComentario() {
-  const texto = commentInput.value.trim();
-  const videoId = getActiveVideoId();
+  const texto = entradaComentario.value.trim();
+  const videoId = obtenerIdVideoActivo();
   if (!texto || !videoId) return;
-  sendCommentBtn.disabled = true;
+
+  botonEnviarComentario.disabled = true;
+
   try {
-    await fetch(SCRIPT_URL, {
+    const response = await fetch(SCRIPT_URL, {
       method: "POST",
       body: new URLSearchParams({
-        accion: "agregarComentarioVideo",
+        accion: "agregarComentarioVideo", // 👈 coincide con tu Apps Script
         videoId,
         comentario: texto,
-        autor: usuarioAutor,   // 👈 el autor real
-        correo: usuarioCorreo, // 👈 el correo real
+        autor: usuarioAutor,
+        correo: usuarioCorreo,
       })
     });
-    commentInput.value = "";
-    await cargarComentarios(videoId);
+
+    const data = await response.json();
+
+    if (data.status === "success") {
+      entradaComentario.value = "";
+      await cargarComentarios(videoId); // recargar comentarios de ese video
+    } else {
+      showAlert("❌ Error al guardar: " + (data.message || "Intenta de nuevo"));
+    }
+  } catch (err) {
+    showAlert("⚠️ Error de conexión al enviar el comentario.");
   } finally {
-    sendCommentBtn.disabled = false;
+    botonEnviarComentario.disabled = false;
   }
 }
+
 
 
 
@@ -1397,6 +1409,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
