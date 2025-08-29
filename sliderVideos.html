@@ -559,19 +559,23 @@
 
 
 
-// === Referencias de interfaz de comentarios ===
+// === Variables de comentarios en memoria ===
+let comentariosPorVideo = {};       // { videoId: [comentarios] }
+let contadorComentariosAnterior = -1;
+
+// === Referencias de interfaz ===
 const contenedorComentarios = document.getElementById("comments-container");
 const entradaComentario = document.getElementById("comment-input");
 const botonEnviarComentario = document.getElementById("comment-send");
 
-// === Obtener el ID del video activo ===
+// === Obtener ID del video activo ===
 function obtenerIdVideoActivo() {
   const slideActivo = document.querySelector(".swiper-slide-active .player-card");
   if (!slideActivo) return null;
   return slideActivo.dataset.id;
 }
 
-// === Renderizar comentarios ===
+// === Renderizar comentarios desde memoria ===
 function renderizarComentarios(lista) {
   contenedorComentarios.innerHTML = "";
 
@@ -592,52 +596,77 @@ function renderizarComentarios(lista) {
   });
 }
 
-// === Cargar comentarios de un video específico ===
+// === Mostrar comentarios del video activo desde cache ===
+function mostrarComentariosDelActivo() {
+  const videoId = obtenerIdVideoActivo();
+  if (!videoId) return;
+  const lista = comentariosPorVideo[videoId] || [];
+  renderizarComentarios(lista);
+}
+
+// === Recargar comentarios de un video específico (se guarda en cache) ===
 async function cargarComentarios(videoId) {
   if (!videoId) return;
-
   try {
-    const res = await fetch(
-      `${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}`
-    );
+    const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}`);
     const data = await res.json();
+    comentariosPorVideo[videoId] = data.data || [];
 
-    // ⚡ Mostrar SOLO si aún estamos en ese video
+    // ⚡ Solo renderiza si ese video sigue activo
     const currentId = obtenerIdVideoActivo();
-    if (videoId !== currentId) return;
-
-    renderizarComentarios(data.data || []);
+    if (videoId === currentId) {
+      renderizarComentarios(comentariosPorVideo[videoId]);
+    }
   } catch (err) {
     console.error("Error cargando comentarios:", err);
     contenedorComentarios.innerHTML = "<p>Error al cargar comentarios.</p>";
   }
 }
 
+// === Verificar en segundo plano si hubo cambios en comentarios ===
+async function verificarComentarios() {
+  try {
+    const res = await fetch(`${SCRIPT_URL}?accion=obtenerContadorComentarios`);
+    const data = await res.json();
+    const totalComentariosActual = data.contadorComentarios || 0;
 
+    if (contadorComentariosAnterior === -1) {
+      contadorComentariosAnterior = totalComentariosActual;
+    } else if (totalComentariosActual !== contadorComentariosAnterior) {
+      contadorComentariosAnterior = totalComentariosActual;
+
+      // 🚀 recargar solo el video activo
+      const videoId = obtenerIdVideoActivo();
+      if (videoId) cargarComentarios(videoId);
+    }
+  } catch (err) {
+    console.error("Error verificando comentarios:", err);
+  }
+}
+
+// === Enviar comentario y refrescar cache ===
 async function enviarComentario() {
   const texto = entradaComentario.value.trim();
   const videoId = obtenerIdVideoActivo();
   if (!texto || !videoId) return;
 
   botonEnviarComentario.disabled = true;
-
   try {
     const response = await fetch(SCRIPT_URL, {
       method: "POST",
       body: new URLSearchParams({
-        accion: "agregarComentarioVideo", // 👈 coincide con tu Apps Script
+        accion: "agregarComentarioVideo",
         videoId,
         comentario: texto,
         autor: usuarioAutor,
         correo: usuarioCorreo,
       })
     });
-
     const data = await response.json();
 
     if (data.status === "success") {
       entradaComentario.value = "";
-      await cargarComentarios(videoId); // recargar comentarios de ese video
+      await cargarComentarios(videoId); // recarga cache + UI
     } else {
       showAlert("❌ Error al guardar: " + (data.message || "Intenta de nuevo"));
     }
@@ -648,37 +677,35 @@ async function enviarComentario() {
   }
 }
 
-
-
-
-
-
 botonEnviarComentario.onclick = enviarComentario;
 
-
-
-// Cuando cambie de video en swiper
+// === Eventos Swiper ===
 document.addEventListener("DOMContentLoaded", () => {
   if (typeof swiper !== "undefined") {
     swiper.on("slideChange", () => {
       updateFixedTitle(swiper);
 
-      // 🚀 cargar comentarios del video actual
+      // ⚡ mostrar comentarios desde cache inmediatamente
+      mostrarComentariosDelActivo();
+
+      // ⚡ refrescar en segundo plano
       const videoId = obtenerIdVideoActivo();
-      if (videoId) {
-        cargarComentarios(videoId);
-      }
+      if (videoId) cargarComentarios(videoId);
     });
   }
 
-  // 🚀 cargar comentarios del primer video apenas abre
+  // Primer video al cargar
   setTimeout(() => {
     updateFixedTitle(swiper);
     const videoId = obtenerIdVideoActivo();
     if (videoId) {
+      mostrarComentariosDelActivo();
       cargarComentarios(videoId);
     }
   }, 300);
+
+  // 🔄 cada 5s verificar si hubo nuevos comentarios
+  setInterval(verificarComentarios, 5000);
 });
 
 
@@ -1408,6 +1435,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
