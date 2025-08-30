@@ -721,26 +721,44 @@ function getActiveVideoId() {
 }
 
 
-async function cargarComentarios(videoId) {
+async function cargarComentarios(videoId, silent = false) {
+  // Si ya está en videosData, usa eso
+  const video = videosData.find(v => v.id === videoId);
+  if (video && video.comentarios && !silent) {
+    renderComentarios(videoId);
+    return video.comentarios;
+  }
+
   try {
     const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}`);
     const data = await res.json();
-    comentariosPorVideo[videoId] = [];
-    if (Array.isArray(data.data) && data.data.length > 0) {
-      comentariosPorVideo[videoId] = data.data.map(c => ({
-        autor: c[2] || "Anónimo",
-        comentario: c[1] || "",
-        fecha: c[4] || "",
-        correo: c[3] || ""
-      }));
+    const comentarios = Array.isArray(data.data) ? data.data.map(c => ({
+      autor: c[2] || "Anónimo",
+      comentario: c[1] || "",
+      fecha: c[4] || "",
+      correo: c[3] || ""
+    })) : [];
+
+    // Actualizar videosData
+    if (video) {
+      video.comentarios = comentarios;
+    } else {
+      comentariosPorVideo[videoId] = comentarios; // Fallback si no está en videosData
     }
-    renderComentarios(videoId);
+
+    if (!silent) {
+      renderComentarios(videoId);
+    }
+    return comentarios;
   } catch (e) {
-    comentariosPorVideo[videoId] = [];
-    renderComentarios(videoId);
+    if (!silent) {
+      commentsList.innerHTML = '<li>Error al cargar comentarios. Intenta de nuevo.</li>';
+      commentCountValue.textContent = '0';
+    }
+    console.error('Error cargando comentarios:', e);
+    return [];
   }
 }
-
 function renderComentarios(videoId) {
   if (!videoId) return;
   const lista = comentariosPorVideo[videoId] || [];
@@ -797,9 +815,12 @@ async function enviarComentario() {
       })
     });
     commentInput.value = "";
-    await cargarComentarios(videoId);
+    const comentarios = await cargarComentarios(videoId, true); // Actualiza comentarios
+    const video = videosData.find(v => v.id === videoId);
+    if (video) video.comentarios = comentarios; // Actualiza videosData
+    updateCommentsOverlay(swiper.realIndex); // Re-renderiza
   } catch (e) {
-    // Puedes mostrar un alert personalizado aquí si quieres
+    console.error("Error al enviar comentario:", e);
   } finally {
     sendCommentBtn.disabled = false;
   }
@@ -817,8 +838,13 @@ async function eliminarComentario(videoId, comentario, correo) {
         correo
       })
     });
-    await cargarComentarios(videoId);
-  } catch (e) {}
+    const comentarios = await cargarComentarios(videoId, true); // Actualiza comentarios
+    const video = videosData.find(v => v.id === videoId);
+    if (video) video.comentarios = comentarios; // Actualiza videosData
+    updateCommentsOverlay(swiper.realIndex); // Re-renderiza
+  } catch (e) {
+    console.error("Error al eliminar comentario:", e);
+  }
 }
 
 // Input UX
@@ -841,14 +867,60 @@ function refrescarComentariosSlide() {
 if (window.swiper) {
   swiper.on('slideChange', refrescarComentariosSlide);
 }
-document.addEventListener('DOMContentLoaded', refrescarComentariosSlide);
+document.addEventListener('DOMContentLoaded', () => {
+  cargarVideos();
+  verificarComentariosVideos();
+});
 
 // --- Utilidad para normalizar texto/correos ---
 function normalizeText(text) {
   return (text || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
 }
 
+let contadorComentariosAnterior = -1;
 
+async function verificarComentariosVideos() {
+  try {
+    const res = await fetch(`${SCRIPT_URL}?accion=obtenerContadorComentarios`);
+    const data = await res.json();
+    const totalComentariosActual = data.contadorComentarios || 0;
+
+    if (data.comentarios) {
+      comentariosPorVideo = data.comentarios;
+      // Actualizar videosData con nuevos comentarios
+      Object.keys(comentariosPorVideo).forEach(videoId => {
+        const video = videosData.find(v => v.id === videoId);
+        if (video) {
+          video.comentarios = normalizarComentarios(comentariosPorVideo[videoId]);
+        }
+      });
+    }
+
+    if (contadorComentariosAnterior !== -1 && totalComentariosActual !== contadorComentariosAnterior) {
+      console.log("💬 Cambio detectado en comentarios, actualizando...");
+      const activeIndex = swiper.realIndex;
+      updateCommentsOverlay(activeIndex); // Actualiza solo el slide actual
+    }
+    contadorComentariosAnterior = totalComentariosActual;
+  } catch (e) {
+    console.error("Error al verificar comentarios:", e);
+  }
+}
+
+setInterval(verificarComentariosVideos, 5000); // Cada 5 segundos
+
+
+function normalizarComentarios(lista) {
+  if (!Array.isArray(lista)) return [];
+  return lista.reverse().map(c => ({
+    autor: c.autor || c[2] || "Anónimo",
+    comentario: c.comentario || c[1] || "",
+    fecha: c.fecha || c[4] || "",
+    correo: c.correo || c[3] || ""
+  })).filter(c => c.autor || c.comentario || c.fecha);
+}
+
+        
 
         
 // === NOTIFICACIONES ===
@@ -1097,36 +1169,7 @@ deleteConfirm.onclick = async () => {
             return { type: "other", embedSrc: link, poster: "" };
         }
 
-    function createSlide(titulo, link, descripcion, id) {
-    const { embedSrc, poster } = getEmbedInfo(link);
-    const slide = document.createElement("div");
-    slide.className = "swiper-slide";
-    slide.dataset.title = titulo || "Video";
-    slide.dataset.descripcion = descripcion || "";
-    slide.dataset.videoid = id || ""; // ← AGREGA EL ID ÚNICO AQUÍ
-
-    const card = document.createElement("div");
-    card.className = "player-card";
-    card.dataset.embed = embedSrc;
-
-    const posterEl = document.createElement("div");
-    posterEl.className = "poster";
-    if (poster) posterEl.style.backgroundImage = `url("${poster}")`;
-
-    const playBtn = document.createElement("div");
-    playBtn.className = "play-btn";
-    playBtn.innerHTML = '<i class="fas fa-play"></i>';
-    posterEl.appendChild(playBtn);
-
-    posterEl.addEventListener("click", () => {
-        mountIframe(card);
-    });
-
-    card.appendChild(posterEl);
-    slide.appendChild(card);
-
-    return slide;
-}
+  
 
 
 
@@ -1408,6 +1451,39 @@ function cleanupIframesExceptActive() {
     });
 }
 
+
+  function createSlide(titulo, link, descripcion, id) {
+    const { embedSrc, poster } = getEmbedInfo(link);
+    const slide = document.createElement("div");
+    slide.className = "swiper-slide";
+    slide.dataset.title = titulo || "Video";
+    slide.dataset.descripcion = descripcion || "";
+    slide.dataset.videoid = id || ""; // ← AGREGA EL ID ÚNICO AQUÍ
+
+    const card = document.createElement("div");
+    card.className = "player-card";
+    card.dataset.embed = embedSrc;
+
+    const posterEl = document.createElement("div");
+    posterEl.className = "poster";
+    if (poster) posterEl.style.backgroundImage = `url("${poster}")`;
+
+    const playBtn = document.createElement("div");
+    playBtn.className = "play-btn";
+    playBtn.innerHTML = '<i class="fas fa-play"></i>';
+    posterEl.appendChild(playBtn);
+
+    posterEl.addEventListener("click", () => {
+        mountIframe(card);
+    });
+
+    card.appendChild(posterEl);
+    slide.appendChild(card);
+
+    return slide;
+}
+
+        
         // --- FIN DE LA CORRECCIÓN ---
 
      function updateFixedTitle(swiperInstance) {
@@ -1483,6 +1559,54 @@ function cleanupIframesExceptActive() {
     }, 120);
 }
 
+
+
+function updateCommentsOverlay(index) {
+  if (videosData.length <= index) return;
+
+  const video = videosData[index];
+  commentsList.innerHTML = '';
+  commentsOverlay.classList.remove('expanded');
+
+  if (video.comentarios && video.comentarios.length > 0) {
+    video.comentarios.forEach(c => {
+      const li = document.createElement('li');
+      li.classList.add('deletable');
+      const commentContent = document.createElement('div');
+      commentContent.className = 'comment-content';
+      commentContent.textContent = `${c.autor} (${c.fecha}) - ${c.comentario}`;
+      li.appendChild(commentContent);
+      li.dataset.correo = c.correo;
+      li.dataset.texto = c.comentario;
+
+      if (normalizeText(c.correo) === normalizeText(usuarioCorreo)) {
+        const deleteBtnContainer = document.createElement('div');
+        deleteBtnContainer.className = 'delete-btn-container';
+        const deleteBtn = document.createElement('div');
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.textContent = 'Borrar';
+        deleteBtnContainer.appendChild(deleteBtn);
+        li.appendChild(deleteBtnContainer);
+        deleteBtn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          eliminarComentario(video.id, c.comentario, c.correo);
+        });
+      }
+      commentsList.appendChild(li);
+    });
+    commentCountValue.textContent = video.comentarios.length;
+  } else {
+    const li = document.createElement('li');
+    li.textContent = "Sé el primero en comentar...";
+    commentsList.appendChild(li);
+    commentCountValue.textContent = "0";
+  }
+}
+
+
+        
+
+  let videosData = []; // [{ id, titulo, link, descripcion, comentarios: [{ autor, comentario, fecha, correo }] }]
         
 
 async function cargarVideos(checkNew = false) {
@@ -1491,30 +1615,33 @@ async function cargarVideos(checkNew = false) {
   try {
     const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
     const data = await res.json();
-
     const wrapper = document.getElementById("slides");
-    if (!checkNew) {
-      wrapper.innerHTML = "";
-    }
+    if (!checkNew) wrapper.innerHTML = "";
 
     let newVideos = [];
     if (Array.isArray(data.data)) {
-      data.data.forEach((row) => {
+      for (const row of data.data) {
         const titulo = row[0];
         const link = row[1];
         const descripcion = row[4] || "";
-        const id = row[5]; // ← ASEGÚRATE DE EXTRAER EL ID DE LA FILA
+        const id = row[5];
+        
+        // Cargar comentarios para este video (en background, no bloquea)
+        const comentarios = await cargarComentarios(id, true); // true para no renderizar aún
+        newVideos.push({ id, titulo, link, descripcion, comentarios });
+
         if (!checkNew) {
-          wrapper.appendChild(createSlide(titulo, link, descripcion, id)); // ← PASA EL ID AQUÍ
+          wrapper.appendChild(createSlide(titulo, link, descripcion, id));
         }
-        newVideos.push({ title: titulo, link, desc: descripcion, id }); // ← GUARDA EL ID POR SI LO NECESITAS
-      });
+      }
     }
 
-    // 🔥 Eliminación silenciosa (solo en modo checkNew para no afectar carga inicial)
+    // Actualizar videosData
+    videosData = newVideos;
+
+    // Lógica de eliminación silenciosa y notificaciones (sin cambios)
     if (checkNew) {
       const linksActivos = newVideos.map(v => v.link);
-
       Array.from(wrapper.children).forEach(slide => {
         const card = slide.querySelector(".player-card");
         if (card && !linksActivos.includes(card.dataset.embed)) {
@@ -1522,18 +1649,13 @@ async function cargarVideos(checkNew = false) {
           if (swiper) swiper.update();
         }
       });
-    }
 
-    // 🔥 Corregido: ahora también notifica si es el primer video
-    if (checkNew) {
       newVideos.forEach(v => {
         if (!lastVideos.find(old => old.link === v.link)) {
-          notifications.unshift(v); // acumula notificación
+          notifications.unshift(v);
         }
       });
-      if (notifications.length > 0) {
-        renderNotifications();
-      }
+      if (notifications.length > 0) renderNotifications();
     }
 
     lastVideos = newVideos;
@@ -1549,12 +1671,12 @@ async function cargarVideos(checkNew = false) {
         on: {
           init() {
             updateFixedTitle(this);
-            refrescarComentariosSlide(); // ← AGREGA ESTO PARA CARGAR COMENTARIOS DEL PRIMER VIDEO
+            updateCommentsOverlay(this.realIndex); // Reemplaza refrescarComentariosSlide
           },
           slideChange() {
             cleanupIframesExceptActive();
             updateFixedTitle(this);
-            refrescarComentariosSlide(); // ← AGREGA ESTO PARA CAMBIAR LOS COMENTARIOS AL CAMBIAR DE VIDEO
+            updateCommentsOverlay(this.realIndex); // Renderiza comentarios desde videosData
           },
           slideChangeTransitionEnd() {
             updateFixedTitle(this);
@@ -1564,7 +1686,7 @@ async function cargarVideos(checkNew = false) {
 
       cleanupIframesExceptActive();
       updateFixedTitle(swiper);
-      refrescarComentariosSlide(); // ← LLAMA ESTO AL FINAL PARA CARGAR COMENTARIOS INICIALES
+      updateCommentsOverlay(swiper.realIndex); // Render inicial
     }
   } catch (e) {
     console.error("Error cargando videos:", e);
@@ -1592,4 +1714,5 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
