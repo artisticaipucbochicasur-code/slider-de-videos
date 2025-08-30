@@ -617,19 +617,6 @@
         const SCRIPT_URL =
             "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
 
-// Variables para almacenar los datos del usuario, obtenidos de la URL
-let usuarioAutor = "";
-let usuarioCorreo = "";
-
-// Función para obtener los parámetros 'name' y 'email' de la URL
-function getUsuarioDataFromUrl() {
-    const params = new URLSearchParams(window.location.search);
-    usuarioAutor = params.get("name") || "";
-    usuarioCorreo = params.get("email") || "";
-}
-
-// Llamar a la función al cargar la página para obtener los datos
-document.addEventListener("DOMContentLoaded", getUsuarioDataFromUrl);
 
 
 // === Comentarios móviles ===
@@ -701,7 +688,7 @@ commentsList.addEventListener('touchend', (e) => {
   let deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
   commentContent.style.transition = 'transform 0.3s ease';
   if (diffX > swipeThreshold) {
-   commentContent.style.transform = `translateX(100px)`;
+    commentContent.style.transform = translateX(100px);
     if (!deleteBtnContainer) {
       deleteBtnContainer = document.createElement('div');
       deleteBtnContainer.className = 'delete-btn-container';
@@ -737,7 +724,7 @@ function getActiveVideoId() {
 
 async function cargarComentarios(videoId) {
   try {
-    const res = await const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}`);
+    const res = await fetch(${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)});
     const data = await res.json();
     comentariosPorVideo[videoId] = [];
     if (Array.isArray(data.data) && data.data.length > 0) {
@@ -771,7 +758,7 @@ function renderComentarios(videoId) {
     li.classList.add('deletable');
     const commentContent = document.createElement('div');
     commentContent.className = 'comment-content';
-   commentContent.textContent = `${c.autor} (${c.fecha}) - ${c.comentario}`;
+    commentContent.textContent = ${c.autor} (${c.fecha}) - ${c.comentario};
     li.appendChild(commentContent);
     li.dataset.correo = c.correo;
     li.dataset.texto = c.comentario;
@@ -841,10 +828,10 @@ commentInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') enviarComentario();
 });
 commentInput.addEventListener('focus', () => {
- document.body.style.transform = "translateY(-40%)";
+  document.body.style.transform = translateY(-40%);
 });
 commentInput.addEventListener('blur', () => {
-  document.body.style.transform = "translateY(0)";
+  document.body.style.transform = translateY(0);
 });
 
 // --- Refresca los comentarios según el video activo ---
@@ -964,7 +951,19 @@ document.addEventListener("click", (e) => {
 
 // --- MANEJO DE ELIMINACIÓN ---
 
+// Variables para almacenar los datos del usuario, obtenidos de la URL
+let usuarioAutor = "";
+let usuarioCorreo = "";
 
+// Función para obtener los parámetros 'name' y 'email' de la URL
+function getUsuarioDataFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    usuarioAutor = params.get("name") || "";
+    usuarioCorreo = params.get("email") || "";
+}
+
+// Llamar a la función al cargar la página para obtener los datos
+document.addEventListener("DOMContentLoaded", getUsuarioDataFromUrl);
 
 // NUEVO: Variables para el modal de alerta personalizada
 const customAlertModal = document.getElementById("custom-alert-modal");
@@ -1111,7 +1110,7 @@ deleteConfirm.onclick = async () => {
 
     const posterEl = document.createElement("div");
     posterEl.className = "poster";
-    if (poster) posterEl.style.backgroundImage = `url("${poster}")`;
+    if (poster) posterEl.style.backgroundImage = url("${poster}");
 
     const playBtn = document.createElement("div");
     playBtn.className = "play-btn";
@@ -1382,7 +1381,7 @@ deleteConfirm.onclick = async () => {
                 const posterEl = document.createElement("div");
                 posterEl.className = "poster";
                 if (info.poster) {
-                    posterEl.style.backgroundImage = `url("${poster}")`;
+                    posterEl.style.backgroundImage = url("${info.poster}");
                 }
                 const playBtn = document.createElement("div");
                 playBtn.className = "play-btn";
@@ -1437,7 +1436,7 @@ function cleanupIframesExceptActive() {
         // Función genérica para manejar el truncamiento y expansión
         const setupExpandableText = (element, text) => {
             // Eliminar contenido anterior para evitar duplicados
-           element.innerHTML = `<span class="text-container">${text}</span>`;
+            element.innerHTML = <span class="text-container">${text}</span>;
             const container = element.querySelector('.text-container');
             
             // Usar setTimeout para asegurar que la renderización está completa antes de medir
@@ -1583,5 +1582,12 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
+
+
+
+
+
+
 
 
