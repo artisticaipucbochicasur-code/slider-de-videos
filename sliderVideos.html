@@ -561,6 +561,7 @@
 
 // === Variables de comentarios en memoria ===
 let comentariosPorVideo = {}; // { videoId: [comentarios] }
+let contadorComentariosAnterior = -1;
 
 // === Referencias de interfaz ===
 const contenedorComentarios = document.getElementById("comments-container");
@@ -570,9 +571,11 @@ const botonEnviarComentario = document.getElementById("comment-send");
 // === Obtener ID del video activo ===
 function obtenerIdVideoActivo() {
   if (!swiper) return null;
+
   const realIndex = swiper.realIndex !== undefined ? swiper.realIndex : swiper.activeIndex;
   const realSlide = swiper.slides[realIndex];
   if (!realSlide) return null;
+
   const playerCard = realSlide.querySelector('.player-card');
   return playerCard ? playerCard.dataset.id : null;
 }
@@ -598,12 +601,55 @@ function renderizarComentarios(lista) {
   });
 }
 
-// === Cargar comentarios para el video activo desde el servidor (y cachear) ===
-// Esta función unifica la lógica de las dos versiones de 'cargarComentariosSiNoEstan'
+// === Mostrar comentarios del video activo desde cache ===
+function mostrarComentariosDelActivo() {
+  const videoId = obtenerIdVideoActivo();
+  if (!videoId) return;
+
+  const lista = comentariosPorVideo[videoId] || [];
+  renderizarComentarios(lista);
+}
+
+// === Mostrar comentarios instantáneos y refrescar en background ===
+function mostrarYActualizarComentarios(videoId) {
+  // Mostrar inmediatamente desde caché (si hay)
+  renderizarComentarios(comentariosPorVideo[videoId] || []);
+
+  // Refrescar desde servidor (actualiza caché + UI si es el activo)
+  cargarComentariosSiNoEstan(videoId);
+}
+
+// === Cargar comentarios SOLO si no están en caché, y actualizar si es necesario ===
+async function cargarComentariosSiNoEstan(videoId) {
+  if (!videoId) return;
+
+  // Si ya están en memoria, no hagas fetch (ya se renderizó arriba).
+  if (comentariosPorVideo[videoId]) return;
+
+  // Loader opcional:
+  contenedorComentarios.innerHTML = "<p>Cargando comentarios...</p>";
+
+  try {
+    const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}`);
+    const data = await res.json();
+    comentariosPorVideo[videoId] = data.data || [];
+
+    // ⚡ Solo renderiza si ese video sigue activo
+    const currentId = obtenerIdVideoActivo();
+    if (videoId === currentId) {
+      renderizarComentarios(comentariosPorVideo[videoId]);
+    }
+  } catch (err) {
+    console.error("Error cargando comentarios:", err);
+    contenedorComentarios.innerHTML = "<p>Error al cargar comentarios.</p>";
+  }
+}
+
+// === Recargar comentarios de un video específico (se guarda en cache) ===
 async function cargarComentarios(videoId) {
   if (!videoId) return;
 
-  // ⚡ Mostrar comentarios de caché primero para una carga instantánea
+  // ⚡ Mostrar comentarios de caché primero
   renderizarComentarios(comentariosPorVideo[videoId] || []);
 
   try {
@@ -611,7 +657,7 @@ async function cargarComentarios(videoId) {
     const data = await res.json();
     comentariosPorVideo[videoId] = data.data || [];
 
-    // ⚡ Solo actualiza la UI si el video sigue siendo el activo
+    // ⚡ Solo actualiza UI si el video sigue siendo el activo
     const currentId = obtenerIdVideoActivo();
     if (videoId === currentId) {
       renderizarComentarios(comentariosPorVideo[videoId]);
@@ -621,6 +667,38 @@ async function cargarComentarios(videoId) {
     if (!comentariosPorVideo[videoId]) {
       contenedorComentarios.innerHTML = "<p>Error al cargar comentarios.</p>";
     }
+  }
+}
+
+// === Verificar en segundo plano si hubo cambios en comentarios ===
+async function verificarComentarios() {
+  try {
+    const response = await fetch(`${SCRIPT_URL}?accion=obtenerContadorComentarios`);
+    const data = await response.json();
+    const totalComentariosActual = data.contadorComentarios || 0;
+
+    if (data.comentarios) {
+      comentariosPorAnuncio = data.comentarios;
+    }
+
+    if (contadorComentariosAnterior === -1) {
+      contadorComentariosAnterior = totalComentariosActual;
+    } else if (totalComentariosActual !== contadorComentariosAnterior) {
+      contadorComentariosAnterior = totalComentariosActual;
+
+      // Solo recargar comentarios del anuncio actual
+      const activeIndex = swiperInstance?.realIndex ?? 0;
+      const anuncioActual = anunciosData[activeIndex];
+      if (anuncioActual) {
+        const nuevosComentarios = normalizarComentarios(
+          comentariosPorAnuncio[anuncioActual.id] || []
+        );
+        anuncioActual.comentarios = nuevosComentarios;
+        updateContentOverlay(activeIndex);
+      }
+    }
+  } catch (e) {
+    console.error("Error al verificar comentarios:", e);
   }
 }
 
@@ -642,12 +720,12 @@ async function enviarComentario() {
         correo: usuarioCorreo,
       })
     });
+
     const data = await response.json();
 
     if (data.status === "success") {
       entradaComentario.value = "";
-      // ✅ Llama a la función correcta para recargar los comentarios del video actual
-      await cargarComentarios(videoId);
+      await cargarComentarios(videoId); // recarga cache + UI
     } else {
       showAlert("❌ Error al guardar: " + (data.message || "Intenta de nuevo"));
     }
@@ -665,9 +743,10 @@ document.addEventListener("DOMContentLoaded", () => {
   if (typeof swiper !== "undefined") {
     swiper.on("slideChange", () => {
       updateFixedTitle(swiper);
-      // ✅ Carga los comentarios cada vez que el slide cambia
+
+      // ⚡ mostrar y actualizar comentarios de forma instantánea
       const videoId = obtenerIdVideoActivo();
-      if (videoId) cargarComentarios(videoId);
+      if (videoId) mostrarYActualizarComentarios(videoId);
     });
   }
 
@@ -676,13 +755,14 @@ document.addEventListener("DOMContentLoaded", () => {
     updateFixedTitle(swiper);
     const videoId = obtenerIdVideoActivo();
     if (videoId) {
-      cargarComentarios(videoId);
+      mostrarYActualizarComentarios(videoId);
     }
   }, 300);
 
-  // ❌ NOTA: Se elimina la función 'setInterval(verificarComentarios, 5000)'
-  // Esto elimina el comportamiento que causaba el desface en los comentarios.
+  // 🔄 cada 5s verificar si hubo nuevos comentarios
+  setInterval(verificarComentarios, 5000);
 });
+
         
 // === NOTIFICACIONES ===
 let notifications = [];
@@ -1410,5 +1490,6 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
