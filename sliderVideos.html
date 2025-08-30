@@ -536,12 +536,12 @@
     /* Estilos del nuevo contador de comentarios */
  .comments-counter {
     position: fixed;
-    bottom: 140px;
+    bottom: 135px;
     right: 10px;
     background: transparent;
     color: white;
     padding: 8px 12px;
-    border-radius: 50px;
+    border-radius: 60px;
     font-size: 14px;
     font-weight: bold;
     z-index: 999;
@@ -893,7 +893,7 @@ commentInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') enviarComentario();
 });
 commentInput.addEventListener('focus', () => {
-  document.body.style.transform = `translateY(-40%)`;
+  document.body.style.transform = `translateY(-60%)`;
 });
 commentInput.addEventListener('blur', () => {
   document.body.style.transform = `translateY(0)`;
@@ -1658,6 +1658,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
