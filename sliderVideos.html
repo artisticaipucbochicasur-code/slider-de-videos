@@ -632,19 +632,6 @@ let activeComment = null;
 let startX = 0;
 let isSwiping = false;
 
-
-        // === Comentarios móviles ===
-// Add a cache for comments in localStorage
-let comentariosCache = JSON.parse(localStorage.getItem('comentariosCache')) || {};
-
-// Debounce utility to limit fetch calls
-function debounce(func, wait) {
-  let timeout;
-  return function (...args) {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func.apply(this, args), wait);
-  };
-}
 // Mostrar/ocultar overlays al tocar el slider
 document.querySelector('.swiper').addEventListener('click', () => {
   const currentTime = new Date().getTime();
@@ -735,15 +722,6 @@ function getActiveVideoId() {
 
 
 async function cargarComentarios(videoId) {
-  if (!videoId) return;
-
-  // Check cache first
-  if (comentariosCache[videoId]) {
-    comentariosPorVideo[videoId] = comentariosCache[videoId];
-    renderComentarios(videoId);
-    return;
-  }
-
   try {
     const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}`);
     const data = await res.json();
@@ -755,9 +733,6 @@ async function cargarComentarios(videoId) {
         fecha: c[4] || "",
         correo: c[3] || ""
       }));
-      // Store in cache and localStorage
-      comentariosCache[videoId] = comentariosPorVideo[videoId];
-      localStorage.setItem('comentariosCache', JSON.stringify(comentariosCache));
     }
     renderComentarios(videoId);
   } catch (e) {
@@ -769,17 +744,6 @@ async function cargarComentarios(videoId) {
 function renderComentarios(videoId) {
   if (!videoId) return;
   const lista = comentariosPorVideo[videoId] || [];
-  const currentCommentCount = parseInt(commentCountValue.textContent) || 0;
-  const currentComments = Array.from(commentsList.children).map(li => li.dataset.texto || li.textContent);
-
-  // Avoid rendering if comments haven't changed
-  if (
-    lista.length === currentCommentCount &&
-    lista.every((c, i) => currentComments[i] === `${c.autor} (${c.fecha}) - ${c.comentario}`)
-  ) {
-    return;
-  }
-
   commentsList.innerHTML = '';
   if (lista.length === 0) {
     const li = document.createElement('li');
@@ -788,7 +752,6 @@ function renderComentarios(videoId) {
     commentCountValue.textContent = "0";
     return;
   }
-
   lista.forEach(c => {
     const li = document.createElement('li');
     li.classList.add('deletable');
@@ -799,6 +762,7 @@ function renderComentarios(videoId) {
     li.dataset.correo = c.correo;
     li.dataset.texto = c.comentario;
     if (normalizeText(c.correo) === normalizeText(usuarioCorreo)) {
+      // Eliminar solo si es del usuario actual
       const deleteBtnContainer = document.createElement('div');
       deleteBtnContainer.className = 'delete-btn-container';
       const deleteBtn = document.createElement('div');
@@ -816,7 +780,6 @@ function renderComentarios(videoId) {
   commentCountValue.textContent = lista.length;
 }
 
-// Modified enviarComentario to update cache
 async function enviarComentario() {
   const texto = commentInput.value.trim();
   const videoId = getActiveVideoId();
@@ -834,18 +797,14 @@ async function enviarComentario() {
       })
     });
     commentInput.value = "";
-    // Clear cache for this video to force refresh
-    delete comentariosCache[videoId];
-    localStorage.setItem('comentariosCache', JSON.stringify(comentariosCache));
     await cargarComentarios(videoId);
   } catch (e) {
-    showAlert("Error al enviar el comentario. Intenta de nuevo.");
+    // Puedes mostrar un alert personalizado aquí si quieres
   } finally {
     sendCommentBtn.disabled = false;
   }
 }
 
-// Modified eliminarComentario to update cache
 async function eliminarComentario(videoId, comentario, correo) {
   if (!videoId || !comentario || !correo) return;
   try {
@@ -858,49 +817,10 @@ async function eliminarComentario(videoId, comentario, correo) {
         correo
       })
     });
-    // Clear cache for this video to force refresh
-    delete comentariosCache[videoId];
-    localStorage.setItem('comentariosCache', JSON.stringify(comentariosCache));
     await cargarComentarios(videoId);
-  } catch (e) {
-    showAlert("Error al eliminar el comentario. Intenta de nuevo.");
-  }
+  } catch (e) {}
 }
 
-
-        // Preload comments for adjacent slides
-function preloadAdjacentComments() {
-  if (!swiper) return;
-  const currentIndex = swiper.activeIndex;
-  const videoIds = [
-    swiper.slides[currentIndex - 1]?.dataset.videoid,
-    swiper.slides[currentIndex + 1]?.dataset.videoid
-  ].filter(id => id && !comentariosCache[id]); // Only preload uncached videos
-
-  videoIds.forEach(videoId => {
-    if (videoId) cargarComentarios(videoId);
-  });
-}
-
-// Debounced version of refrescarComentariosSlide
-const debouncedRefrescarComentarios = debounce(() => {
-  const videoId = getActiveVideoId();
-  if (videoId) {
-    cargarComentarios(videoId);
-    preloadAdjacentComments(); // Preload comments for next/prev slides
-  }
-}, 300);
-
-// Update swiper slideChange event to use debounced function
-if (window.swiper) {
-  swiper.on('slideChange', debouncedRefrescarComentarios);
-}
-
-// Initialize comments and preload on DOM load
-document.addEventListener('DOMContentLoaded', () => {
-  debouncedRefrescarComentarios();
-  preloadAdjacentComments();
-});
 // Input UX
 sendCommentBtn.addEventListener('click', enviarComentario);
 commentInput.addEventListener('keydown', (e) => {
@@ -918,6 +838,10 @@ function refrescarComentariosSlide() {
   const videoId = getActiveVideoId();
   if (videoId) cargarComentarios(videoId);
 }
+if (window.swiper) {
+  swiper.on('slideChange', refrescarComentariosSlide);
+}
+document.addEventListener('DOMContentLoaded', refrescarComentariosSlide);
 
 // --- Utilidad para normalizar texto/correos ---
 function normalizeText(text) {
