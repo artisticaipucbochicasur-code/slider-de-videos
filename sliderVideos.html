@@ -425,148 +425,183 @@
     color: #fff;
 }
 
-/* Contenedor de comentarios flotantes */
-.comments-overlay-container {
+  /* Contenedor de comentarios (reducido por defecto) */
+   .comments-overlay-container {
     position: fixed;
-    bottom: 90px;
-    left: 0;
-    right: 60px; /* deja espacio para los iconos */
-    max-height: 40vh;
-    background: rgba(32, 32, 32, 0.65); /* ← Más transparente */
-    color: #fff;
-    box-shadow: 0 -2px 12px #0005;
+    bottom: 60px;
+    left: 10px;
+    width: calc(80% - 20px);
+    background: rgba(0, 0, 0, 0.6);
+    color: #eee;
+    padding: 10px;
+    border-radius: 5px;
+    box-sizing: border-box;
+    z-index: 998;
     overflow-y: auto;
-    z-index: 20;
-    border-radius: 14px 14px 0 0;
-    transition: max-height 0.25s;
-
-    /* --- texto multilínea --- */
-    white-space: normal;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
+    transition: opacity 0.3s ease, visibility 0.3s ease, max-height 0.3s ease;
+    max-height: 4em;
 }
 
-/* Cada comentario */
-#commentsList li {
-    padding: 8px 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-   position: relative;
-    word-wrap: break-word;      /* rompe palabras largas */
-    overflow-wrap: break-word;  /* compatibilidad */
-    white-space: normal;        /* permite multilínea */
-    line-height: 1.4;           /* legibilidad */
+
+    /* Estado expandido del contenedor de comentarios */
+    .comments-overlay-container.expanded {
+      max-height: 25vh;
+    }
+
+    /* Estilos para la lista de comentarios */
+    .comments-overlay-container ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    /* Estilos para cada comentario individual */
+    .comments-overlay-container li {
+        font-size: 0.8rem;
+        line-height: 1.2;
+        margin-bottom: 8px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 8px;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+    }
+
+    .comments-overlay-container li:last-child {
+      border-bottom: none;
+    }
+    
+    /* Estilo para los comentarios que se pueden borrar */
+    .comments-overlay-container li.deletable {
+        cursor: pointer;
+    }
+    
+    /* Contenedor del botón de borrado */
+    .delete-btn-container {
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 100px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #e74c3c;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        z-index: 0; 
+    }
+    
+    /* Botón de borrado en sí mismo */
+    .delete-btn {
+        color: white;
+        font-weight: bold;
+        padding: 10px;
+        cursor: pointer;
+        user-select: none;
+    }
+    
+    /* El comentario se desliza */
+    .comment-content {
+      width: 100%;
+      padding-left: 10px;
+      padding-right: 10px;
+      box-sizing: border-box;
+      transition: transform 0.3s ease;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .comment-content.swiped {
+      transform: translateX(100px);
+    }
+    
+    .delete-btn-container.visible {
+        transform: translateX(0);
+    }
+    
+    /* Clase para ocultar los overlays */
+.hidden-overlay {
+    opacity: 0;
+    visibility: hidden;
 }
 
-.comments-overlay-container.expanded {
-    max-height: 80vh;
-}
-.comments-overlay-container.hidden-overlay {
-    display: none;
-}
 
-/* === Contador de comentarios === */
-.comments-counter {
+
+    /* Estilos del nuevo contador de comentarios */
+ .comments-counter {
     position: fixed;
-    bottom: 70px;
-    right: 16px;
-    background: transparent;
-    border-radius: 16px;
-    padding: 10px 14px;
-    z-index: 21;
-    display: flex;
-    flex-direction: column; /* ✅ Número debajo del ícono */
-    align-items: center;
-    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.7);
-    cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-/* Efecto hover */
-.comments-counter:hover {
-    transform: scale(1.1);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8);
-}
-
-/* Ícono del contador */
-.comments-counter .icon {
-    font-size: 32px; /* ✅ Ícono más grande */
-    margin: 0;
-    color: #00aaff;
-}
-
-/* Número del contador */
-.comments-counter span {
+    bottom: 80px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 5px;
     font-size: 14px;
     font-weight: bold;
-    margin-top: 4px;
-    color: #fff;
-}
-
-/* === Input para escribir comentarios === */
-.comment-input-container {
-    position: fixed;
-    bottom: 20px;
-    left: 0;
-    right: 0;
-    z-index: 22;
+    z-index: 999;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
-}
-.comment-input-container input {
-    flex: 1;
-    padding: 10px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-    font-size: 16px;
-    margin-right: 8px;
-}
-.comment-input-container button {
-    background: #007bff;
-    color: #fff;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 8px;
-    font-size: 18px;
+    gap: 2px;
     cursor: pointer;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
-/* === Lista de comentarios === */
-#commentsList {
-    list-style: none;
-    padding: 0;
-    margin: 0;
+    
+    .comments-counter .icon {
+        font-size: 1.5rem;
+        line-height: 1;
+    }
+    
+    .comments-counter .count {
+        font-size: 0.9rem;
+    }
+
+    /* Nuevo: Estilos para la barra de entrada de comentarios */
+ .comment-input-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #1a1a1a;
+    padding: 10px 15px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 1000;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
-.comment-content {
-    flex: 1;
-    transition: transform 0.3s;
-    color: #fff;
+
+  .comment-input-container input {
+    flex-grow: 1;
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 25px; /* más redondeado */
+    padding: 12px 20px;  /* 🔥 más alto y largo */
+    color: white;
+    font-size: 1rem;
+    outline: none;
 }
 
-.delete-btn-container {
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 80px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #e74c3c;
-  color: #fff;
-  font-weight: bold;
-  border-radius: 0 12px 12px 0;
-  transition: transform 0.3s;
-  z-index: 1;
-}
-.delete-btn {
-  cursor: pointer;
-  padding: 6px 12px;
-  border-radius: 10px;
-  background: #c0392b;
-  color: #fff;
-  margin-left: 8px;
-}
 
+    .comment-input-container .send-comment-btn {
+        background: transparent;
+        color: white;
+        border: none;
+        padding: 12px 17px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 1.8rem;
+    }
+    
+    .comment-input-container .send-comment-btn:hover {
+        background: transparent;
+    }
 
         
     </style>
@@ -1618,6 +1653,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
