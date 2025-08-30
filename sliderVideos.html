@@ -670,23 +670,35 @@ async function cargarComentariosSiNoEstan(videoId) {
 // === Verificar en segundo plano si hubo cambios en comentarios ===
 async function verificarComentarios() {
   try {
-    const res = await fetch(`${SCRIPT_URL}?accion=obtenerContadorComentarios`);
-    const data = await res.json();
+    const response = await fetch(`${SCRIPT_URL}?accion=obtenerContadorComentarios`);
+    const data = await response.json();
     const totalComentariosActual = data.contadorComentarios || 0;
+
+    if (data.comentarios) {
+      comentariosPorAnuncio = data.comentarios;
+    }
 
     if (contadorComentariosAnterior === -1) {
       contadorComentariosAnterior = totalComentariosActual;
     } else if (totalComentariosActual !== contadorComentariosAnterior) {
       contadorComentariosAnterior = totalComentariosActual;
 
-      // 🚀 recargar solo el video activo
-      const videoId = obtenerIdVideoActivo();
-      if (videoId) cargarComentarios(videoId);
+      // Solo recargar comentarios del anuncio actual
+      const activeIndex = swiperInstance?.realIndex ?? 0;
+      const anuncioActual = anunciosData[activeIndex];
+      if (anuncioActual) {
+        const nuevosComentarios = normalizarComentarios(
+          comentariosPorAnuncio[anuncioActual.id] || []
+        );
+        anuncioActual.comentarios = nuevosComentarios;
+        updateContentOverlay(activeIndex);
+      }
     }
-  } catch (err) {
-    console.error("Error verificando comentarios:", err);
+  } catch (e) {
+    console.error("Error al verificar comentarios:", e);
   }
 }
+
 
 // === Enviar comentario y refrescar cache ===
 async function enviarComentario() {
@@ -1476,3 +1488,4 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
