@@ -1095,7 +1095,7 @@ deleteConfirm.onclick = async () => {
             return { type: "other", embedSrc: link, poster: "" };
         }
 
-  function createSlide(titulo, link, descripcion, id) {
+function createSlide(titulo, link, descripcion, id) {
     const { embedSrc, poster } = getEmbedInfo(link);
     const slide = document.createElement("div");
     slide.className = "swiper-slide";
@@ -1109,7 +1109,9 @@ deleteConfirm.onclick = async () => {
 
     const posterEl = document.createElement("div");
     posterEl.className = "poster";
-    if (poster) posterEl.style.backgroundImage = url("${poster}");
+    if (poster) {
+        posterEl.style.backgroundImage = `url("${poster}")`; // Usar backticks para interpolación de la URL
+    }
 
     const playBtn = document.createElement("div");
     playBtn.className = "play-btn";
@@ -1125,6 +1127,7 @@ deleteConfirm.onclick = async () => {
 
     return slide;
 }
+
         function mountIframe(cardEl) {
   // 🔥 Antes de montar, desmonta todo lo demás
   cleanupIframesExceptActive();
@@ -1579,6 +1582,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
