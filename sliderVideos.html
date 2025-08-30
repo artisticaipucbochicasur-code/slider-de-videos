@@ -717,10 +717,12 @@ async function cargarComentarios(videoId) {
   }
 }
 
+// Mejorar la función de renderización de comentarios
 function renderComentarios(videoId) {
   if (!videoId) return;
   const lista = comentariosPorVideo[videoId] || [];
-  commentsList.innerHTML = '';
+  commentsList.innerHTML = ''; // Vaciar la lista solo si es necesario
+  
   if (lista.length === 0) {
     const li = document.createElement('li');
     li.textContent = "Sé el primero en comentar...";
@@ -728,6 +730,9 @@ function renderComentarios(videoId) {
     commentCountValue.textContent = "0";
     return;
   }
+
+  // Crear todos los comentarios en un fragmento para evitar repintados innecesarios
+  const fragment = document.createDocumentFragment();
   lista.forEach(c => {
     const li = document.createElement('li');
     li.classList.add('deletable');
@@ -737,8 +742,9 @@ function renderComentarios(videoId) {
     li.appendChild(commentContent);
     li.dataset.correo = c.correo;
     li.dataset.texto = c.comentario;
+
+    // Añadir funcionalidad de eliminación solo si es del usuario actual
     if (normalizeText(c.correo) === normalizeText(usuarioCorreo)) {
-      // Eliminar solo si es del usuario actual
       const deleteBtnContainer = document.createElement('div');
       deleteBtnContainer.className = 'delete-btn-container';
       const deleteBtn = document.createElement('div');
@@ -751,8 +757,13 @@ function renderComentarios(videoId) {
         eliminarComentario(videoId, c.comentario, c.correo);
       });
     }
-    commentsList.appendChild(li);
+
+    // Añadir el comentario al fragmento
+    fragment.appendChild(li);
   });
+
+  // Insertar el fragmento al DOM de una vez
+  commentsList.appendChild(fragment);
   commentCountValue.textContent = lista.length;
 }
 
@@ -781,6 +792,7 @@ async function enviarComentario() {
   }
 }
 
+// Simplificar la llamada a la función para eliminar el comentario
 async function eliminarComentario(videoId, comentario, correo) {
   if (!videoId || !comentario || !correo) return;
   try {
@@ -794,9 +806,11 @@ async function eliminarComentario(videoId, comentario, correo) {
       })
     });
     await cargarComentarios(videoId);
-  } catch (e) {}
+  } catch (e) {
+    console.error("Error al eliminar comentario:", e);
+    alert('No se pudo eliminar el comentario. Intenta nuevamente.');
+  }
 }
-
 // Input UX
 sendCommentBtn.addEventListener('click', enviarComentario);
 commentInput.addEventListener('keydown', (e) => {
@@ -1556,6 +1570,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
