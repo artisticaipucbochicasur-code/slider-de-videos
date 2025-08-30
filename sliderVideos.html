@@ -22,6 +22,9 @@
 
         html, body {
             height: 100%;
+        }
+
+        body {
             margin: 0;
             padding: 0;
             background: linear-gradient(135deg, var(--bg1), var(--bg2));
@@ -30,77 +33,89 @@
             overflow: hidden;
         }
 
-        /* Botones flotantes */
-        .floating-buttons {
-            position: fixed;
-            bottom: 90px;
-            right: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            z-index: 2000;
-        }
-        .fab {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: none;
-            background: transparent;
-            color: white;
-            font-size: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-        }
+    /* Botones flotantes */
+    .floating-buttons {
+        position: fixed;
+        bottom: 90px;
+        right: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        z-index: 2000;
+    }
+    .fab {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: none;
+        background: transparent;
+        color: white;
+        font-size: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    }
+    .fab.danger {}
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+}
+.modal-actions button {
+    flex: 1;
+}
 
-        /* Modal */
-        .modal {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.6);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 3000;
-        }
-        .modal.hidden { display: none; }
-        .modal-content {
-            background: #111;
-            padding: 20px;
-            border-radius: 10px;
-            width: 300px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            color: #fff;
-        }
-        .modal-actions button {
-            flex: 1;
-        }
+        
 
-        /* Progreso flotante */
-        .progress-toast {
-            position: fixed;
-            top: 15px;
-            right: 15px;
-            background: rgba(0,0,0,0.8);
-            color: #fff;
-            padding: 10px 14px;
-            border-radius: 6px;
-            z-index: 4000;
-            width: 200px;
-        }
-        .progress-toast.hidden { display: none; }
-        .progress-toast .bar {
-            height: 4px;
-            background: #28a745;
-            width: 0%;
-            margin-bottom: 6px;
-            transition: width 0.3s ease;
-        }
+    /* Modal */
+    .modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 3000;
+    }
+    .modal.hidden { display: none; }
+    .modal-content {
+        background: #111;
+        padding: 20px;
+        border-radius: 10px;
+        width: 300px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        color: #fff;
+    }
+    .modal-content input { padding: 6px; }
 
+    /* Progreso flotante */
+    .progress-toast {
+        position: fixed;
+        top: 15px;
+        right: 15px;
+        background: rgba(0,0,0,0.8);
+        color: #fff;
+        padding: 10px 14px;
+        border-radius: 6px;
+        z-index: 4000;
+        width: 200px;
+    }
+    .progress-toast.hidden { display: none; }
+    .progress-toast .bar {
+        height: 4px;
+        background: #28a745;
+        width: 0%;
+        margin-bottom: 6px;
+        transition: width 0.3s ease;
+    }
+
+
+        
         .swiper {
             width: 100vw;
             height: 100vh;
@@ -137,6 +152,8 @@
             background-position: center center;
             cursor: pointer;
             user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
         }
 
         .play-btn {
@@ -148,6 +165,7 @@
             background: rgba(0, 0, 0, 0.55);
             backdrop-filter: blur(2px);
             font-size: 28px;
+            line-height: 1;
             border: 2px solid #fff;
         }
 
@@ -160,129 +178,140 @@
             background: #000;
         }
 
-        /* Truncamiento para el contenedor del título y la descripción */
-        #video-title-fixed .text-container {
-            overflow: hidden;
-            display: -webkit-box;
-            -webkit-box-orient: vertical;
-            -webkit-line-clamp: 2; /* Truncar a 2 líneas por defecto */
-            transition: -webkit-line-clamp 0.3s ease;
-            cursor: pointer;
-            position: relative;
-            max-height: 4em;
-            line-height: 1.2;
-        }
+/* Truncamiento para el contenedor del título y la descripción */
+#video-title-fixed .text-container {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2; /* Truncar a 2 líneas por defecto */
+    transition: -webkit-line-clamp 0.3s ease;
+    cursor: pointer; /* Cursor de puntero para indicar que es clicable */
+    position: relative;
+    max-height: 4em; /* Altura máxima cuando está truncado */
+    line-height: 1.2;
+}
 
-        #video-title-fixed .text-container.expanded {
-            -webkit-line-clamp: unset;
-            cursor: pointer;
-            overflow-y: auto;
-            max-height: 60vh;
-            padding-right: 15px;
-        }
+#video-title-fixed .text-container.expanded {
+    -webkit-line-clamp: unset;
+    cursor: pointer;
+    overflow-y: auto; /* Hacer que el contenedor sea scrollable si el contenido es muy largo */
+    max-height: 60vh; /* <<-- Ajuste: Altura máxima al expandir (50% de la altura de la ventana) */
+    padding-right: 15px; /* Espacio para la barra de desplazamiento */
+}
 
-        /* Estilo para el botón de 'más' o 'menos' */
-        #video-title-fixed .toggle-text {
-            color: #ccc;
-            font-size: 12px;
-            font-weight: bold;
-            position: absolute;
-            bottom: 0;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 2px 5px;
-            border-radius: 3px;
-        }
+/* Estilo para el botón de 'más' o 'menos' */
+#video-title-fixed .toggle-text {
+    color: #ccc;
+    font-size: 12px;
+    font-weight: bold;
+    user-select: none;
+    display: inline-block;
+    position: absolute; /* Colocar en la esquina para que siempre esté visible */
+    bottom: 0;
+    right: 20px; /* <<-- Ajuste: Separación del borde derecho */
+    background: rgba(0, 0, 0, 0.5); /* Fondo semitransparente para que sea legible */
+    padding: 2px 5px;
+    border-radius: 3px;
+    backdrop-filter: blur(2px);
+}
 
-        #video-title-fixed {
-            position: absolute;
-            top: 0;
-            left: 10px;
-            width: auto;
-            max-width: 80%;
-            z-index: 1000;
-            background: rgba(0,0,0,0.3);
-            transition: opacity 0.18s ease;
-            opacity: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            padding: 6px 10px;
-        }
+#video-title-fixed {
+    position: absolute;
+    top: 0;
+    left: 10px; /* Ajuste: Desplaza el contenedor 10px desde el borde izquierdo */
+    width: auto; /* Ajuste: El ancho se ajustará al contenido + márgenes */
+    max-width: 80%; /* Mantienes este ajuste para el ancho máximo */
+    z-index: 1000;
+    background: rgba(0,0,0,0.3);
+    transition: opacity 0.18s ease;
+    opacity: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 6px 10px;
+    margin: 0; /* Ajuste: Elimina el centrado para que 'left' funcione */
+    right: auto; /* Ajuste: Desactiva el valor de la derecha */
+}
 
-        #video-title-fixed .video-title {
-            font-size: 18px;
-            font-weight: 600;
-            text-align: left;
-            color: #f1f1f1;
-        }
+#video-title-fixed .video-title {
+    font-size: 18px;
+    font-weight: 600;
+    text-align: left;
+    color: #f1f1f1;
+}
 
-        #video-title-fixed .video-desc {
-            font-size: 14px;
-            opacity: 0.85;
-            text-align: left;
-            color: #ddd;
-        }
+#video-title-fixed .video-desc {
+    font-size: 14px;
+    opacity: 0.85;
+    text-align: left;
+    color: #ddd;
+}
+/* 🔔 Notificaciones */
+#notification-wrapper {
+  position: fixed;
+  right: 20px;
+  bottom: 140px; /* la subimos para que quede arriba del bote */
+  z-index: 5000;
+}
 
-        /* 🔔 Notificaciones */
-        #notification-wrapper {
-            position: fixed;
-            right: 20px;
-            bottom: 140px;
-            z-index: 5000;
-        }
+#notification-btn {
+  position: relative;
+  background: transparent;   /* 👈 Igual que el bote */
+  border: none;
+  border-radius: 50%;
+  width: 40px;              /* 👈 mismo tamaño que el fab */
+  height: 40px;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;            /* 👈 centra el icono */
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4); /* 👈 igual que el bote */
+}
 
-        #notification-btn {
-            position: relative;
-            background: transparent;
-            border: none;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-        }
 
-        #notification-count {
-            display: none;
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: red;
-            color: white;
-            font-size: 12px;
-            font-weight: bold;
-            padding: 2px 6px;
-            border-radius: 50%;
-        }
+#notification-count {
+  display: none; /* 👈 arranca escondido */
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: red;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 50%;
+}
 
-        #notification-list {
-            position: absolute;
-            top: 55px;
-            right: 0;
-            background: #222;
-            border: 1px solid #444;
-            border-radius: 10px;
-            width: 260px;
-            max-height: 320px;
-            overflow-y: auto;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
-        }
-        #notification-list.hidden { display: none; }
-        #notification-list div {
-            padding: 10px;
-            border-bottom: 1px solid #333;
-            cursor: pointer;
-            color: #ddd;
-        }
-        #notification-list div:hover {
-            background: #333;
-        }
+
+
+
+#notification-list {
+  position: absolute;
+  top: 55px;
+  right: 0;
+  background: #222;
+  border: 1px solid #444;
+  border-radius: 10px;
+  width: 260px;
+  max-height: 320px;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+}
+#notification-list.hidden { display: none; }
+#notification-list div {
+  padding: 10px;
+  border-bottom: 1px solid #333;
+  cursor: pointer;
+  color: #ddd;
+}
+#notification-list div:hover {
+  background: #333;
+}
+
+
+        
 
         #loader {
             position: fixed;
@@ -299,7 +328,6 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
-
         #loader .spinner {
             display: inline-block;
             animation: spin 1.1s linear infinite;
@@ -330,7 +358,7 @@
         .player-card:hover .controls-bar {
             opacity: 1;
         }
-
+        
         .center-play-pause-btn {
             position: absolute;
             top: 50%;
@@ -355,13 +383,20 @@
             opacity: 1;
         }
 
+        .play-pause-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
         .progress-bar {
             flex-grow: 1;
             height: 3px;
             background: rgba(255, 255, 255, 0.3);
             cursor: pointer;
         }
-
         .progress {
             height: 100%;
             width: 0%;
@@ -373,19 +408,16 @@
             align-items: center;
             gap: 5px;
         }
-
         .volume-control input[type="range"] {
             width: 60px;
             -webkit-appearance: none;
             background: transparent;
         }
-
         .volume-control input[type="range"]::-webkit-slider-runnable-track {
             height: 3px;
             background: rgba(255, 255, 255, 0.3);
             border-radius: 1.5px;
         }
-
         .volume-control input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
             height: 12px;
@@ -394,7 +426,6 @@
             background: #fff;
             margin-top: -4.5px;
         }
-
         .volume-icon {
             font-size: 20px;
         }
@@ -404,142 +435,72 @@
             color: #fff;
         }
 
-        .comments-overlay-container {
-            position: fixed;
-            bottom: 90px;
-            left: 0; right: 0;
-            max-height: 40vh;
-            background: rgba(32, 32, 32, 0.90);
-            color: #fff;
-            box-shadow: 0 -2px 12px #0005;
-            overflow-y: auto;
-            z-index: 20;
-            border-radius: 14px 14px 0 0;
-            transition: max-height 0.25s;
-        }
+  /* Contenedor de comentarios */
+  #comments-container {
+    position: absolute;
+    bottom: 70px; /* arriba de la caja para escribir */
+    left: 10px;
+    right: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+    background: rgba(0,0,0,0.4);
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 14px;
+    z-index: 1500;
+  }
+  #comments-container .comment {
+    text-align: left;
+    margin-bottom: 6px;
+    padding: 6px 8px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 6px;
+  }
 
-        .comments-overlay-container.expanded {
-            max-height: 80vh;
-        }
+  /* Caja para escribir */
+  #comment-box {
+    position: absolute;
+    bottom: 20px;
+    left: 10px;
+    right: 10px;
+    display: flex;
+    align-items: center;
+    background: rgba(0,0,0,0.6);
+    border-radius: 30px;
+    padding: 6px 10px;
+    z-index: 2000;
+  }
+  #comment-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: white;
+    font-size: 14px;
+    padding: 6px;
+  }
+  #comment-send {
+    background: none;
+    border: none;
+    color: #1e90ff;
+    font-size: 18px;
+    cursor: pointer;
+  }
 
-        .comments-overlay-container.hidden-overlay {
-            display: none;
-        }
-
-        .comments-counter {
-            position: fixed;
-            bottom: 70px;
-            right: 16px;
-            background: #fff;
-            border-radius: 24px;
-            box-shadow: 0 2px 8px #0002;
-            padding: 8px 14px;
-            font-size: 17px;
-            z-index: 21;
-            display: flex;
-            align-items: center;
-        }
-
-        .comments-counter .icon {
-            margin-right: 7px;
-        }
-
-        .comment-input-container {
-            position: fixed;
-            bottom: 20px;
-            left: 0; right: 0;
-            z-index: 22;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .comment-input-container input {
-            flex: 1;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            font-size: 16px;
-            margin-right: 8px;
-        }
-
-        .comment-input-container button {
-            background: #007bff;
-            color: #fff;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 8px;
-            font-size: 18px;
-            cursor: pointer;
-        }
-
-        #commentsList {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        #commentsList li {
-            margin: 0;
-            padding: 10px 15px;
-            border-bottom: 1px solid #444;
-            display: flex;
-            align-items: center;
-            background: transparent;
-            position: relative;
-            overflow-x: hidden;
-            color: #fff;
-        }
-
-        .comment-content {
-            flex: 1;
-            transition: transform 0.3s;
-            color: #fff;
-        }
-
-        .delete-btn-container {
-            position: absolute;
-            left: 0; top: 0; bottom: 0;
-            width: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #e74c3c;
-            color: #fff;
-            font-weight: bold;
-            border-radius: 0 12px 12px 0;
-            transition: transform 0.3s;
-            z-index: 1;
-        }
-
-        .delete-btn {
-            cursor: pointer;
-            padding: 6px 12px;
-            border-radius: 10px;
-            background: #c0392b;
-            color: #fff;
-            margin-left: 8px;
-        }
         
     </style>
 </head>
 <body>
 
-<!-- Overlay flotante para comentarios -->
-<div class="comments-overlay-container" id="commentsOverlay">
-  <ul id="commentsList"></ul>
+<!-- === ÁREA DE COMENTARIOS === -->
+<div id="comments-container"></div>
+
+<div id="comment-box">
+  <input type="text" id="comment-input" placeholder="Escribe un comentario..." />
+  <button id="comment-send"><i class="fas fa-paper-plane"></i></button>
 </div>
 
-<div class="comments-counter" id="commentsCounter">
-  <span class="icon">💬</span>
-  <span class="count" id="commentCountValue">0</span>
-</div>
-
-<div class="comment-input-container">
-  <input type="text" id="commentInput" placeholder="Escribe un comentario...">
-  <button class="send-comment-btn"><i class="fas fa-paper-plane"></i></button>
-</div>
-
+    
 <!-- Notificaciones -->
 <div id="notification-wrapper">
   <button id="notification-btn">
@@ -549,7 +510,7 @@
   <div id="notification-list" class="hidden"></div>
 </div>
 
-<!-- Modal de alerta -->
+    
 <div id="custom-alert-modal" class="modal hidden">
   <div class="modal-content">
     <h3>¡Atención!</h3>
@@ -559,7 +520,6 @@
     </div>
   </div>
 </div>
-
 <!-- Modal de eliminación -->
 <div id="delete-modal" class="modal hidden">
   <div class="modal-content">
@@ -572,12 +532,15 @@
   </div>
 </div>
 
-<!-- BOTONES flotantes -->
-<div class="floating-buttons">
+    
+        <!-- BOTONES flotantes -->
+   <div class="floating-buttons">
   <button id="btn-delete" class="fab danger"><i class="fas fa-trash"></i></button>
 </div>
 
-<div class="swiper">
+  
+
+  <div class="swiper">
   <div id="video-title-fixed">
     <div class="video-title"></div>
     <div class="video-desc"></div>
@@ -585,195 +548,169 @@
   <div class="swiper-wrapper" id="slides"></div>
 </div>
 
-<div id="loader"><span class="spinner">⏳</span></div>
 
-<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-<script src="https://www.youtube.com/iframe_api"></script>
-<script>
-    const SCRIPT_URL =
-        "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
-// === Comentarios móviles ===
-const commentsOverlay = document.getElementById('commentsOverlay');
-const commentsCounter = document.getElementById('commentsCounter');
-const commentCountValue = document.getElementById('commentCountValue');
-const commentsList = document.getElementById('commentsList');
-const commentInputContainer = document.querySelector('.comment-input-container');
-const commentInput = document.getElementById('commentInput');
-const sendCommentBtn = document.querySelector('.send-comment-btn');
+    <div id="loader"><span class="spinner">⏳</span></div>
 
-let comentariosPorVideo = {}; // videoId: [ {autor, correo, fecha, comentario} ]
-let lastTapTime = 0;
-let activeComment = null;
-let startX = 0;
-let isSwiping = false;
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script>
+        const SCRIPT_URL =
+            "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
 
-// Mostrar/ocultar overlays al tocar el slider
-document.querySelector('.swiper').addEventListener('click', () => {
-  const currentTime = new Date().getTime();
-  if (currentTime - lastTapTime > 300) {
-    commentsOverlay.classList.toggle('hidden-overlay');
-    commentsCounter.classList.toggle('hidden-overlay');
-    commentInputContainer.classList.toggle('hidden-overlay');
-  }
-  lastTapTime = currentTime;
-});
 
-// Expandir/colapsar comentarios
-commentsOverlay.addEventListener('click', (e) => {
-  if (!isSwiping) {
-    commentsOverlay.classList.toggle('expanded');
-  }
-  isSwiping = false;
-});
 
-// --- Swipe-to-delete en móviles ---
-commentsList.addEventListener('touchstart', (e) => {
-  const commentElement = e.target.closest('li');
-  if (!commentElement) return;
-  const commentData = commentElement.dataset;
-  if (normalizeText(commentData.correo) === normalizeText(usuarioCorreo)) {
-    startX = e.touches[0].clientX;
-    activeComment = commentElement;
-    activeComment.querySelector('.comment-content').style.transition = 'none';
-    isSwiping = false;
-  }
-});
+// === Variables de comentarios en memoria ===
+let comentariosPorVideo = {}; // { videoId: [comentarios] }
+let contadorComentariosAnterior = -1;
 
-commentsList.addEventListener('touchmove', (e) => {
-  if (!activeComment) return;
-  const currentX = e.touches[0].clientX;
-  const diffX = currentX - startX;
-  if (Math.abs(diffX) > 10) isSwiping = true;
-  if (diffX > 0) {
-    activeComment.querySelector('.comment-content').style.transform = `translateX(${diffX}px)`;
-    let deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
-    if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(0)`;
-  } else {
-    activeComment.querySelector('.comment-content').style.transform = `translateX(0)`;
-    let deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
-    if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
-  }
-});
+// === Referencias de interfaz ===
+const contenedorComentarios = document.getElementById("comments-container");
+const entradaComentario = document.getElementById("comment-input");
+const botonEnviarComentario = document.getElementById("comment-send");
 
-commentsList.addEventListener('touchend', (e) => {
-  if (!activeComment) return;
-  const swipeThreshold = 50;
-  const diffX = e.changedTouches[0].clientX - startX;
-  const commentContent = activeComment.querySelector('.comment-content');
-  let deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
-  commentContent.style.transition = 'transform 0.3s ease';
-  if (diffX > swipeThreshold) {
-    commentContent.style.transform = `translateX(100px)`;
-    if (!deleteBtnContainer) {
-      deleteBtnContainer = document.createElement('div');
-      deleteBtnContainer.className = 'delete-btn-container';
-      let deleteBtn = document.createElement('div');
-      deleteBtn.className = 'delete-btn';
-      deleteBtn.textContent = 'Borrar';
-      deleteBtnContainer.appendChild(deleteBtn);
-      activeComment.insertBefore(deleteBtnContainer, commentContent);
-      deleteBtnContainer.style.transform = `translateX(0)`;
-      deleteBtn.addEventListener('click', (ev) => {
-        ev.stopPropagation();
-        const commentData = activeComment.dataset;
-        eliminarComentario(getActiveVideoId(), commentData.texto, commentData.correo);
-      });
-    } else {
-      deleteBtnContainer.style.transform = `translateX(0)`;
-    }
-  } else {
-    commentContent.style.transform = `translateX(0)`;
-    if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
-  }
-  activeComment = null;
-  startX = 0;
-});
-
-// --- Lógica de comentarios por video ---
-function getActiveVideoId() {
+// === Obtener ID del video activo ===
+function obtenerIdVideoActivo() {
   if (!swiper) return null;
-  const activeSlide = swiper.slides[swiper.activeIndex];
-  if (!activeSlide) return null;
-  return activeSlide.dataset.videoid || null; // ← AHORA USA EL ID ÚNICO
+
+  const realIndex = swiper.realIndex !== undefined ? swiper.realIndex : swiper.activeIndex;
+  const realSlide = swiper.slides[realIndex];
+  if (!realSlide) return null;
+
+  const playerCard = realSlide.querySelector('.player-card');
+  return playerCard ? playerCard.dataset.id : null;
 }
 
-async function cargarComentarios(videoId) {
-  try {
-    const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}`);
-    const data = await res.json();
-    comentariosPorVideo[videoId] = [];
-    if (Array.isArray(data.data) && data.data.length > 0) {
-      comentariosPorVideo[videoId] = data.data.map(c => ({
-        autor: c[2] || "Anónimo",
-        comentario: c[1] || "",
-        fecha: c[4] || "",
-        correo: c[3] || ""
-      }));
-    }
-    renderComentarios(videoId);
-  } catch (e) {
-    comentariosPorVideo[videoId] = [];
-    renderComentarios(videoId);
-  }
-}
+// === Renderizar comentarios desde memoria ===
+function renderizarComentarios(lista) {
+  contenedorComentarios.innerHTML = "";
 
-// Mejorar la función de renderización de comentarios
-function renderComentarios(videoId) {
-  if (!videoId) return;
-  const lista = comentariosPorVideo[videoId] || [];
-  commentsList.innerHTML = ''; // Vaciar la lista solo si es necesario
-  
-  if (lista.length === 0) {
-    const li = document.createElement('li');
-    li.textContent = "Sé el primero en comentar...";
-    commentsList.appendChild(li);
-    commentCountValue.textContent = "0";
+  if (!lista || lista.length === 0) {
+    contenedorComentarios.innerHTML = "<p>No hay comentarios aún.</p>";
     return;
   }
 
-  // Crear todos los comentarios en un fragmento para evitar repintados innecesarios
-  const fragment = document.createDocumentFragment();
-  lista.forEach(c => {
-    const li = document.createElement('li');
-    li.classList.add('deletable');
-    const commentContent = document.createElement('div');
-    commentContent.className = 'comment-content';
-    commentContent.textContent = `${c.autor} (${c.fecha}) - ${c.comentario}`;
-    li.appendChild(commentContent);
-    li.dataset.correo = c.correo;
-    li.dataset.texto = c.comentario;
+  lista.forEach(row => {
+    const comentario = row[1] || "";
+    const autor = row[2] || "Anónimo";
+    const fecha = row[4] || "";
 
-    // Añadir funcionalidad de eliminación solo si es del usuario actual
-    if (normalizeText(c.correo) === normalizeText(usuarioCorreo)) {
-      const deleteBtnContainer = document.createElement('div');
-      deleteBtnContainer.className = 'delete-btn-container';
-      const deleteBtn = document.createElement('div');
-      deleteBtn.className = 'delete-btn';
-      deleteBtn.textContent = 'Borrar';
-      deleteBtnContainer.appendChild(deleteBtn);
-      li.appendChild(deleteBtnContainer);
-      deleteBtn.addEventListener('click', (ev) => {
-        ev.stopPropagation();
-        eliminarComentario(videoId, c.comentario, c.correo);
-      });
-    }
-
-    // Añadir el comentario al fragmento
-    fragment.appendChild(li);
+    const div = document.createElement("div");
+    div.className = "comment";
+    div.innerHTML = `<strong>${autor}:</strong> ${comentario} <br><small>${fecha}</small>`;
+    contenedorComentarios.appendChild(div);
   });
-
-  // Insertar el fragmento al DOM de una vez
-  commentsList.appendChild(fragment);
-  commentCountValue.textContent = lista.length;
 }
 
-async function enviarComentario() {
-  const texto = commentInput.value.trim();
-  const videoId = getActiveVideoId();
-  if (!texto || !videoId) return;
-  sendCommentBtn.disabled = true;
+// === Mostrar comentarios del video activo desde cache ===
+function mostrarComentariosDelActivo() {
+  const videoId = obtenerIdVideoActivo();
+  if (!videoId) return;
+
+  const lista = comentariosPorVideo[videoId] || [];
+  renderizarComentarios(lista);
+}
+
+// === Mostrar comentarios instantáneos y refrescar en background ===
+function mostrarYActualizarComentarios(videoId) {
+  // Mostrar inmediatamente desde caché (si hay)
+  renderizarComentarios(comentariosPorVideo[videoId] || []);
+
+  // Refrescar desde servidor (actualiza caché + UI si es el activo)
+  cargarComentariosSiNoEstan(videoId);
+}
+
+// === Cargar comentarios SOLO si no están en caché, y actualizar si es necesario ===
+async function cargarComentariosSiNoEstan(videoId) {
+  if (!videoId) return;
+
+  // Si ya están en memoria, no hagas fetch (ya se renderizó arriba).
+  if (comentariosPorVideo[videoId]) return;
+
+  // Loader opcional:
+  contenedorComentarios.innerHTML = "<p>Cargando comentarios...</p>";
+
   try {
-    await fetch(SCRIPT_URL, {
+    const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}`);
+    const data = await res.json();
+    comentariosPorVideo[videoId] = data.data || [];
+
+    // ⚡ Solo renderiza si ese video sigue activo
+    const currentId = obtenerIdVideoActivo();
+    if (videoId === currentId) {
+      renderizarComentarios(comentariosPorVideo[videoId]);
+    }
+  } catch (err) {
+    console.error("Error cargando comentarios:", err);
+    contenedorComentarios.innerHTML = "<p>Error al cargar comentarios.</p>";
+  }
+}
+
+// === Recargar comentarios de un video específico (se guarda en cache) ===
+async function cargarComentarios(videoId) {
+  if (!videoId) return;
+
+  // ⚡ Mostrar comentarios de caché primero
+  renderizarComentarios(comentariosPorVideo[videoId] || []);
+
+  try {
+    const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}`);
+    const data = await res.json();
+    comentariosPorVideo[videoId] = data.data || [];
+
+    // ⚡ Solo actualiza UI si el video sigue siendo el activo
+    const currentId = obtenerIdVideoActivo();
+    if (videoId === currentId) {
+      renderizarComentarios(comentariosPorVideo[videoId]);
+    }
+  } catch (err) {
+    console.error("Error cargando comentarios:", err);
+    if (!comentariosPorVideo[videoId]) {
+      contenedorComentarios.innerHTML = "<p>Error al cargar comentarios.</p>";
+    }
+  }
+}
+
+// === Verificar en segundo plano si hubo cambios en comentarios ===
+async function verificarComentarios() {
+  try {
+    const response = await fetch(`${SCRIPT_URL}?accion=obtenerContadorComentarios`);
+    const data = await response.json();
+    const totalComentariosActual = data.contadorComentarios || 0;
+
+    if (data.comentarios) {
+      comentariosPorAnuncio = data.comentarios;
+    }
+
+    if (contadorComentariosAnterior === -1) {
+      contadorComentariosAnterior = totalComentariosActual;
+    } else if (totalComentariosActual !== contadorComentariosAnterior) {
+      contadorComentariosAnterior = totalComentariosActual;
+
+      // Solo recargar comentarios del anuncio actual
+      const activeIndex = swiperInstance?.realIndex ?? 0;
+      const anuncioActual = anunciosData[activeIndex];
+      if (anuncioActual) {
+        const nuevosComentarios = normalizarComentarios(
+          comentariosPorAnuncio[anuncioActual.id] || []
+        );
+        anuncioActual.comentarios = nuevosComentarios;
+        updateContentOverlay(activeIndex);
+      }
+    }
+  } catch (e) {
+    console.error("Error al verificar comentarios:", e);
+  }
+}
+
+// === Enviar comentario y refrescar cache ===
+async function enviarComentario() {
+  const texto = entradaComentario.value.trim();
+  const videoId = obtenerIdVideoActivo();
+  if (!texto || !videoId) return;
+
+  botonEnviarComentario.disabled = true;
+  try {
+    const response = await fetch(SCRIPT_URL, {
       method: "POST",
       body: new URLSearchParams({
         accion: "agregarComentarioVideo",
@@ -783,58 +720,48 @@ async function enviarComentario() {
         correo: usuarioCorreo,
       })
     });
-    commentInput.value = "";
-    await cargarComentarios(videoId);
-  } catch (e) {
-    // Puedes mostrar un alert personalizado aquí si quieres
+
+    const data = await response.json();
+
+    if (data.status === "success") {
+      entradaComentario.value = "";
+      await cargarComentarios(videoId); // recarga cache + UI
+    } else {
+      showAlert("❌ Error al guardar: " + (data.message || "Intenta de nuevo"));
+    }
+  } catch (err) {
+    showAlert("⚠️ Error de conexión al enviar el comentario.");
   } finally {
-    sendCommentBtn.disabled = false;
+    botonEnviarComentario.disabled = false;
   }
 }
 
-// Simplificar la llamada a la función para eliminar el comentario
-async function eliminarComentario(videoId, comentario, correo) {
-  if (!videoId || !comentario || !correo) return;
-  try {
-    await fetch(SCRIPT_URL, {
-      method: "POST",
-      body: new URLSearchParams({
-        accion: "eliminarComentario",
-        videoId,
-        comentario,
-        correo
-      })
+botonEnviarComentario.onclick = enviarComentario;
+
+// === Eventos Swiper ===
+document.addEventListener("DOMContentLoaded", () => {
+  if (typeof swiper !== "undefined") {
+    swiper.on("slideChange", () => {
+      updateFixedTitle(swiper);
+
+      // ⚡ mostrar y actualizar comentarios de forma instantánea
+      const videoId = obtenerIdVideoActivo();
+      if (videoId) mostrarYActualizarComentarios(videoId);
     });
-    await cargarComentarios(videoId);
-  } catch (e) {
-    console.error("Error al eliminar comentario:", e);
-    alert('No se pudo eliminar el comentario. Intenta nuevamente.');
   }
-}
-// Input UX
-sendCommentBtn.addEventListener('click', enviarComentario);
-commentInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') enviarComentario();
-});
-commentInput.addEventListener('focus', () => {
-  document.body.style.transform = `translateY(-40%)`;
-});
-commentInput.addEventListener('blur', () => {
-  document.body.style.transform = `translateY(0)`;
-});
 
-// --- Refresca los comentarios según el video activo ---
-function refrescarComentariosSlide() {
-  const videoId = getActiveVideoId();
-  if (videoId) cargarComentarios(videoId);
-}
-if (window.swiper) {
-  swiper.on('slideChange', refrescarComentariosSlide);
-}
-document.addEventListener('DOMContentLoaded', refrescarComentariosSlide);
+  // Primer video al cargar
+  setTimeout(() => {
+    updateFixedTitle(swiper);
+    const videoId = obtenerIdVideoActivo();
+    if (videoId) {
+      mostrarYActualizarComentarios(videoId);
+    }
+  }, 300);
 
-// --- Utilidad para normalizar texto/correos ---
-const normalizeText = (text) => (text || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+  // 🔄 cada 5s verificar si hubo nuevos comentarios
+  setInterval(verificarComentarios, 5000);
+});
 
         
 // === NOTIFICACIONES ===
@@ -992,7 +919,7 @@ btnDelete.onclick = () => {
     }
 
     pendingDelete = { title, link };
-    deleteTitle.textContent = ¿Eliminar "${title}"?;
+    deleteTitle.textContent = `¿Eliminar "${title}"?`;
     deleteModal.classList.remove("hidden");
 };
 
@@ -1016,7 +943,7 @@ deleteConfirm.onclick = async () => {
         fileName = decodeURIComponent(archiveMatch[2]);
     }
     
-    const deleteUrl = ${SCRIPT_URL}?accion=eliminar&link=${encodeURIComponent(link)}&id=${encodeURIComponent(identifier)}&file=${encodeURIComponent(fileName)}&autor=${encodeURIComponent(usuarioAutor)}&correo=${encodeURIComponent(usuarioCorreo)};
+    const deleteUrl = `${SCRIPT_URL}?accion=eliminar&link=${encodeURIComponent(link)}&id=${encodeURIComponent(identifier)}&file=${encodeURIComponent(fileName)}&autor=${encodeURIComponent(usuarioAutor)}&correo=${encodeURIComponent(usuarioCorreo)}`;
 
     try {
         const response = await fetch(deleteUrl);
@@ -1063,7 +990,7 @@ deleteConfirm.onclick = async () => {
                     videoId = url.pathname.replace("/", "");
                 }
                 if (videoId) {
-                    const embedSrc = https://www.youtube.com/embed/${videoId}?rel=0&playsinline=1&controls=0&modestbranding=1;
+                    const embedSrc = `https://www.youtube.com/embed/${videoId}?rel=0&playsinline=1&controls=0&modestbranding=1`;
                     const poster = "https://img.youtube.com/vi/" + videoId + "/hqdefault.jpg";
                     return { type: "youtube", embedSrc, poster, videoId };
                 }
@@ -1074,7 +1001,7 @@ deleteConfirm.onclick = async () => {
                 if (m && m[1]) {
                     identifier = m[1];
                 }
-                const poster = identifier ? https://archive.org/services/img/${identifier} : "";
+                const poster = identifier ? `https://archive.org/services/img/${identifier}` : "";
                 return { type: "mp4", embedSrc: link, poster: poster };
             }
             if (url.pathname.endsWith(".mp4")) {
@@ -1083,23 +1010,21 @@ deleteConfirm.onclick = async () => {
             return { type: "other", embedSrc: link, poster: "" };
         }
 
-function createSlide(titulo, link, descripcion, id) {
+      function createSlide(titulo, link, descripcion, videoId) {
     const { embedSrc, poster } = getEmbedInfo(link);
     const slide = document.createElement("div");
     slide.className = "swiper-slide";
     slide.dataset.title = titulo || "Video";
     slide.dataset.descripcion = descripcion || "";
-    slide.dataset.videoid = id || ""; // ← AGREGA EL ID ÚNICO AQUÍ
 
     const card = document.createElement("div");
     card.className = "player-card";
     card.dataset.embed = embedSrc;
+    card.dataset.id = videoId || ""; // 👈 Guardar ID único aquí
 
     const posterEl = document.createElement("div");
     posterEl.className = "poster";
-    if (poster) {
-        posterEl.style.backgroundImage = `url("${poster}")`; // Usar backticks para interpolación de la URL
-    }
+    if (poster) posterEl.style.backgroundImage = `url("${poster}")`;
 
     const playBtn = document.createElement("div");
     playBtn.className = "play-btn";
@@ -1112,9 +1037,11 @@ function createSlide(titulo, link, descripcion, id) {
 
     card.appendChild(posterEl);
     slide.appendChild(card);
-
+   
     return slide;
 }
+
+
 
         function mountIframe(cardEl) {
   // 🔥 Antes de montar, desmonta todo lo demás
@@ -1294,8 +1221,8 @@ function createSlide(titulo, link, descripcion, id) {
                     currentTime = player.currentTime;
                 }
                 const progressPercentage = (currentTime / totalTime) * 100;
-                progress.style.width = ${progressPercentage}%;
-                timeDisplay.textContent = ${formatTime(currentTime)} / ${formatTime(totalTime)};
+                progress.style.width = `${progressPercentage}%`;
+                timeDisplay.textContent = `${formatTime(currentTime)} / ${formatTime(totalTime)}`;
             };
 
             const interval = setInterval(updateTime, 1000);
@@ -1371,7 +1298,7 @@ function createSlide(titulo, link, descripcion, id) {
                 const posterEl = document.createElement("div");
                 posterEl.className = "poster";
                 if (info.poster) {
-                    posterEl.style.backgroundImage = url("${info.poster}");
+                    posterEl.style.backgroundImage = `url("${info.poster}")`;
                 }
                 const playBtn = document.createElement("div");
                 playBtn.className = "play-btn";
@@ -1396,167 +1323,160 @@ function cleanupIframesExceptActive() {
 
         // --- FIN DE LA CORRECCIÓN ---
 
-    function updateFixedTitle(swiperInstance) {
-    const fixedBox = document.getElementById("video-title-fixed");
-    if (!fixedBox || !swiperInstance) return;
+function updateFixedTitle(swiperInstance) {
+  const fixedBox = document.getElementById("video-title-fixed");
+  if (!fixedBox || !swiperInstance) return;
 
-    // Obtener el slide activo
-    const activeSlide = swiperInstance.slides[swiperInstance.activeIndex] || document.querySelector('.swiper-slide-active');
-    if (!activeSlide) return;
+  const activeSlide = swiperInstance.slides[swiperInstance.activeIndex] || document.querySelector('.swiper-slide-active');
+  if (!activeSlide) return;
 
-    const newTitle = activeSlide.dataset.title || "Video";
-    const newDesc = activeSlide.dataset.descripcion || "";
+  const newTitle = activeSlide.dataset.title || "Video";
+  const newDesc = activeSlide.dataset.descripcion || "";
 
-    const titleEl = fixedBox.querySelector(".video-title");
-    const descEl = fixedBox.querySelector(".video-desc");
+  const titleEl = fixedBox.querySelector(".video-title");
+  const descEl = fixedBox.querySelector(".video-desc");
 
-    // Verificar si el contenido ya es el mismo para evitar parpadeos innecesarios
-    const currentTitle = titleEl.querySelector('.text-container')?.textContent;
-    const currentDesc = descEl.querySelector('.text-container')?.textContent;
+  const currentTitle = titleEl.querySelector('.text-container')?.textContent;
+  const currentDesc = descEl.querySelector('.text-container')?.textContent;
 
-    if (currentTitle === newTitle && currentDesc === newDesc) {
-        return;
-    }
+  if (currentTitle === newTitle && currentDesc === newDesc) {
+    return;
+  }
 
-    // Transición suave al cambiar de título
-    fixedBox.style.opacity = 0;
+  fixedBox.style.opacity = 0;
 
-    setTimeout(() => {
-        // Función genérica para manejar el truncamiento y expansión
-        const setupExpandableText = (element, text) => {
-            // Eliminar contenido anterior para evitar duplicados
-            element.innerHTML = `<span class="text-container">${text}</span>`;
-            const container = element.querySelector('.text-container');
+  setTimeout(() => {
+    const setupExpandableText = (element, text) => {
+      element.innerHTML = `<span class="text-container">${text}</span>`;
+      const container = element.querySelector('.text-container');
 
-            // Usar setTimeout para asegurar que la renderización está completa antes de medir
-            setTimeout(() => {
-                // Comprobar si el contenido se desborda y necesita truncamiento
-                if (container.scrollHeight > container.clientHeight) {
-                    const toggleButton = document.createElement('span');
-                    toggleButton.className = 'toggle-text';
-                    toggleButton.textContent = '...más';
-                    element.appendChild(toggleButton);
+      setTimeout(() => {
+        if (container.scrollHeight > container.clientHeight) {
+          const toggleButton = document.createElement('span');
+          toggleButton.className = 'toggle-text';
+          toggleButton.textContent = '...más';
+          element.appendChild(toggleButton);
 
-                    // Añadir el listener para expandir/contraer
-                    element.addEventListener('click', () => {
-                        const isExpanded = container.classList.contains('expanded');
-                        if (isExpanded) {
-                            container.classList.remove('expanded');
-                            toggleButton.textContent = '...más';
-                        } else {
-                            container.classList.add('expanded');
-                            toggleButton.textContent = 'mostrar menos';
-                        }
-                    });
-                } else {
-                    // Si no necesita truncamiento, limpiar el listener y el botón
-                    const existingButton = element.querySelector('.toggle-text');
-                    if (existingButton) existingButton.remove();
-                    // Importante: Eliminar el listener si no es necesario para evitar problemas
-                    const clonedElement = element.cloneNode(true);
-                    element.parentNode.replaceChild(clonedElement, element);
-                }
-            }, 50);
-        };
+          element.addEventListener('click', () => {
+            const isExpanded = container.classList.contains('expanded');
+            if (isExpanded) {
+              container.classList.remove('expanded');
+              toggleButton.textContent = '...más';
+            } else {
+              container.classList.add('expanded');
+              toggleButton.textContent = 'mostrar menos';
+            }
+          });
+        } else {
+          const existingButton = element.querySelector('.toggle-text');
+          if (existingButton) existingButton.remove();
+          const clonedElement = element.cloneNode(true);
+          element.parentNode.replaceChild(clonedElement, element);
+        }
+      }, 50);
+    };
 
-        // Aplicar la lógica al título y la descripción
-        setupExpandableText(titleEl, newTitle);
-        setupExpandableText(descEl, newDesc);
+    setupExpandableText(titleEl, newTitle);
+    setupExpandableText(descEl, newDesc);
 
-        // Mostrar el contenedor de nuevo
-        fixedBox.style.opacity = 1;
-    }, 120);
+    fixedBox.style.opacity = 1;
+  }, 120);
 }
-
         
 
 async function cargarVideos(checkNew = false) {
-    const loader = document.getElementById("loader");
-    if (!checkNew) loader.style.display = "flex";
-    try {
-        const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
-        const data = await res.json();
+  const loader = document.getElementById("loader");
+  if (!checkNew) loader.style.display = "flex";
+  try {
+    const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
+    const data = await res.json();
 
-        const wrapper = document.getElementById("slides");
-        if (!checkNew) {
-            wrapper.innerHTML = "";
-        }
-
-        let newVideos = [];
-        if (Array.isArray(data.data)) {
-            data.data.forEach((row) => {
-                const titulo = row[0];
-                const link = row[1];
-                const descripcion = row[4] || "";
-                const id = row[5]; // ← ASEGÚRATE DE EXTRAER EL ID DE LA FILA
-                if (!checkNew) {
-                    wrapper.appendChild(createSlide(titulo, link, descripcion, id)); // ← PASA EL ID AQUÍ
-                }
-                newVideos.push({ title: titulo, link, desc: descripcion, id }); // ← GUARDA EL ID POR SI LO NECESITAS
-            });
-        }
-
-        // 🔥 Eliminación silenciosa (solo en modo checkNew para no afectar carga inicial)
-        if (checkNew) {
-            const linksActivos = newVideos.map(v => v.link);
-
-            Array.from(wrapper.children).forEach(slide => {
-                const card = slide.querySelector(".player-card");
-                if (card && !linksActivos.includes(card.dataset.embed)) {
-                    wrapper.removeChild(slide);
-                    if (swiper) swiper.update();
-                }
-            });
-        }
-
-        // 🔥 Corregido: ahora también notifica si es el primer video
-        if (checkNew) {
-            newVideos.forEach(v => {
-                if (!lastVideos.find(old => old.link === v.link)) {
-                    notifications.unshift(v); // acumula notificación
-                }
-            });
-            if (notifications.length > 0) {
-                renderNotifications();
-            }
-        }
-
-        lastVideos = newVideos;
-
-        if (!checkNew) {
-            if (swiper) swiper.destroy(true, true);
-            swiper = new Swiper(".swiper", {
-                loop: true,
-                direction: "horizontal",
-                slidesPerView: 1,
-                spaceBetween: 10,
-                pagination: false,
-                on: {
-                    init() {
-                        updateFixedTitle(this);             // Título/desc al cargar
-                        refrescarComentariosSlide();        // Comentarios al cargar
-                    },
-                    slideChange() {
-                        updateFixedTitle(this);             // Título/desc instantáneo al cambiar
-                        // NO refrescarComentariosSlide aquí (para evitar fetch doble/lento)
-                    },
-                    slideChangeTransitionEnd() {
-                        refrescarComentariosSlide();        // Comentarios cuando la animación termina
-                    }
-                },
-            });
-            cleanupIframesExceptActive();
-            updateFixedTitle(swiper);
-            refrescarComentariosSlide(); // ← LLAMA ESTO AL FINAL PARA CARGAR COMENTARIOS INICIALES
-        }
-    } catch (e) {
-        console.error("Error cargando videos:", e);
-    } finally {
-        loader.style.display = "none";
+    const wrapper = document.getElementById("slides");
+    if (!checkNew) {
+      wrapper.innerHTML = "";
     }
+
+    let newVideos = [];
+    if (Array.isArray(data.data)) {
+      data.data.forEach((row) => {
+        const titulo = row[0];
+        const link = row[1];
+        const descripcion = row[4] || "";
+        const videoId = row[5] || ""; // 👈 Columna F: ID único del video
+
+        if (!checkNew) {
+          wrapper.appendChild(createSlide(titulo, link, descripcion, videoId));
+        }
+        newVideos.push({ title: titulo, link, desc: descripcion, id: videoId });
+      });
+    }
+
+    // 🔥 Eliminación silenciosa (solo en modo checkNew para no afectar carga inicial)
+    if (checkNew) {
+      const idsActivos = newVideos.map(v => v.id);
+
+      Array.from(wrapper.children).forEach(slide => {
+        const card = slide.querySelector(".player-card");
+        if (card && !idsActivos.includes(card.dataset.id)) {
+          wrapper.removeChild(slide);
+          if (swiper) swiper.update();
+        }
+      });
+    }
+
+    // 🔥 Corregido: ahora también notifica si es el primer video
+    if (checkNew) {
+      newVideos.forEach(v => {
+        if (!lastVideos.find(old => old.id === v.id)) {
+          notifications.unshift(v); // acumula notificación
+        }
+      });
+      if (notifications.length > 0) {
+        renderNotifications();
+      }
+    }
+
+    lastVideos = newVideos;
+
+    if (!checkNew) {
+      if (swiper) swiper.destroy(true, true);
+     swiper = new Swiper(".swiper", {
+  loop: true,
+  direction: "horizontal",
+  slidesPerView: 1,
+  spaceBetween: 10,
+  pagination: false,
+  on: {
+    init() {
+      updateFixedTitle(this);
+      const firstId = obtenerIdVideoActivo();
+      if (firstId) mostrarYActualizarComentarios(firstId); // ✅ mostrar rápido + actualizar en segundo plano
+    },
+    slideChange() {
+      cleanupIframesExceptActive();
+      updateFixedTitle(this);
+      
+      // ✅ mostrar y actualizar comentarios del video actual
+      const videoId = obtenerIdVideoActivo();
+      if (videoId) mostrarYActualizarComentarios(videoId);
+    }
+  },
+});
+
+
+      cleanupIframesExceptActive();
+      updateFixedTitle(swiper);
+
+      // 🔥 Asegurar que al cargar todo se muestran comentarios del primero
+      const firstId = obtenerIdVideoActivo();
+      if (firstId) cargarComentarios(firstId);
+    }
+  } catch (e) {
+    console.error("Error cargando videos:", e);
+  } finally {
+    loader.style.display = "none";
+  }
 }
-
-
 
 
 
@@ -1570,17 +1490,5 @@ setInterval(() => {
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
 
 
