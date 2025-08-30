@@ -1,159 +1,1246 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Videos y Comentarios</title>
-  <script>
-    // URL de tu servicio Apps Script (ajustar con la URL de tu script desplegado)
-    const url = 'https://script.google.com/macros/s/AKfycbwBDSHfHj6FXyGGEsDjjJH0FgHk_G8sdG7OSRtA/exec';
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    body {
+        margin: 0;
+        padding: 0;
+        background: #111;
+        font-family: Arial, sans-serif;
+        color: white;
+        transition: transform 0.3s ease;
+    }
+    .swiper { width: 100vw; height: 100vh; }
+    .swiper-slide { display: flex; justify-content: center; align-items: center; position: relative; background: #000; }
+    /* 🔹 AHORA videos, no imágenes */
+    .swiper-slide video { max-width: 100%; max-height: 100%; object-fit: contain; }
+    #loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 24px; text-align: center; z-index: 10; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    #loader .spinner { display: inline-block; animation: spin 1.5s linear infinite; }
 
-    // Función para listar videos
-    function listarVideos() {
-      fetch(url + '?accion=listarWeb', {
-        method: 'GET'
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.status === 'success') {
-            const container = document.getElementById('videos-container');
-            container.innerHTML = ''; // Limpiar contenedor
-            data.publicaciones.forEach(video => {
-              const div = document.createElement('div');
-              div.innerHTML = `<h3>${video.titulo}</h3><a href="${video.link}" target="_blank">Ver Video</a>`;
-              container.appendChild(div);
-            });
-          }
-        })
-        .catch(err => console.log('Error al listar videos:', err));
+    #lblContador {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(255, 0, 0, 0.8);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      z-index: 9999;
+      display: none;
+      cursor: pointer;
     }
 
-    // Función para agregar un comentario a un video
-    function agregarComentario() {
-      const videoId = document.getElementById('videoId').value;
-      const comentario = document.getElementById('comentario').value;
-      const autor = document.getElementById('autor').value;
-      const correo = document.getElementById('correo').value;
-
-      fetch(url + '?accion=agregarComentarioVideo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          videoId: videoId,
-          comentario: comentario,
-          autor: autor,
-          correo: correo
-        })
-      })
-        .then(response => response.json())
-        .then(data => {
-          alert(data.message);
-          listarComentarios(videoId); // Listar comentarios después de agregar uno
-        })
-        .catch(err => console.log('Error al agregar comentario:', err));
+    #customAlertOverlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85) !important;
+        z-index: 10000;
+        justify-content: center;
+        align-items: center;
     }
 
-    // Función para listar comentarios de un video
-    function listarComentarios(videoId) {
-      fetch(url + '?accion=listarComentarios&videoId=' + videoId, {
-        method: 'GET'
-      })
-        .then(response => response.json())
-        .then(data => {
-          const container = document.getElementById('comentarios-container');
-          container.innerHTML = ''; // Limpiar contenedor de comentarios
-          data.data.forEach(comentario => {
-            const div = document.createElement('div');
-            div.innerHTML = `<p><strong>${comentario.autor}</strong>: ${comentario.comentario}</p>`;
-            container.appendChild(div);
-          });
-        })
-        .catch(err => console.log('Error al listar comentarios:', err));
+    /* Botón de eliminar video */
+    .delete-announcement-btn {
+        position: fixed;
+        bottom: 130px;
+        right: 10px;
+        background: transparent;
+        border: none;
+        color: white;
+        padding: 8px 10px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1.8rem;
+        z-index: 9999;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+    }
+    .delete-announcement-btn.visible {
+      opacity: 1;
+      visibility: visible;
     }
 
-    // Función para eliminar un comentario
-    function eliminarComentario() {
-      const videoId = document.getElementById('videoId').value;
-      const comentario = document.getElementById('comentarioEliminar').value;
-      const correo = document.getElementById('correoEliminar').value;
+    /* Overlay búsqueda */
+    #searchOverlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      justify-content: center;
+      align-items: flex-start;
+      padding-top: 12px;
+      z-index: 9999;
+    }
+    #searchOverlay .custom-alert { width: 90%; max-width: 700px; }
+    #searchResults.titles-list { max-height: 60vh; overflow: auto; }
 
-      fetch(url + '?accion=eliminarComentario', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          videoId: videoId,
-          comentario: comentario,
-          correo: correo
-        })
-      })
-        .then(response => response.json())
-        .then(data => {
-          alert(data.message);
-          listarComentarios(videoId); // Listar comentarios después de eliminar uno
-        })
-        .catch(err => console.log('Error al eliminar comentario:', err));
+    .resultado-item {
+      padding: 8px;
+      border-bottom: 1px solid #ddd;
+    }
+    .resultado-item:hover { background: #f0f0f0; }
+
+    .highlight { background: #a7d8ff; transition: background 1s ease; }
+
+    .custom-alert {
+      background-color: #1e1e1e !important;
+      color: #fff !important;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.7);
+      max-width: 80%;
+      text-align: center;
+      border: 1px solid #333;
+      display: flex;
+      flex-direction: column;
+    }
+    .custom-alert.confirm-delete {
+      width: 300px;
+      text-align: center;
+    }
+    .custom-alert.confirm-delete .btn-group {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 15px;
+    }
+    .custom-alert h2 {
+      color: #fff !important;
+      margin-top: 0;
+      margin-bottom: 15px;
+      font-size: 1.5rem;
+    }
+    .custom-alert p {
+        margin: 0 0 20px;
+        white-space: pre-wrap;
+    }
+    .custom-alert button {
+      background-color: #2a2a2a !important;
+      color: #fff !important;
+      border: 1px solid #444;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+    .custom-alert button:hover {
+      background-color: #444 !important;
+      transform: scale(1.05);
     }
 
-    // Llamada inicial para listar los videos
-    window.onload = function() {
-      listarVideos();
-    };
-  </script>
+    .titles-list { list-style: none; padding: 0; margin: 0 0 20px; max-height: 200px; overflow-y: auto; text-align: left; }
+    .titles-list li { padding: 8px; background-color: #2a2a2a !important; border-bottom: 1px solid #333; cursor: pointer; color: #fff; }
+    .titles-list li:hover { background-color: #444 !important; }
+
+    /* Notificaciones emergentes */
+    .info-dialog {
+      background-color: #1e1e1e !important;
+      color: #fff !important;
+      border: 1px solid #333;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.8);
+    }
+    .info-dialog h2 { color: #fff !important; }
+
+    /* Overlay título + descripción */
+    .content-overlay {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      padding: 10px 15px;
+      border-radius: 5px;
+      text-align: left;
+      max-width: 80%;
+      box-sizing: border-box;
+      z-index: 999;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .content-overlay h3 {
+        margin-top: 0;
+        margin-bottom: 5px;
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+    .content-overlay p {
+        margin-top: 0;
+        font-size: 0.9rem;
+        line-height: 1.2;
+    }
+
+    /* Contenedor comentarios */
+    .comments-overlay-container {
+      position: fixed;
+      bottom: 60px;
+      left: 10px;
+      width: calc(80% - 20px);
+      background: rgba(0, 0, 0, 0.6);
+      color: #eee;
+      padding: 10px;
+      border-radius: 5px;
+      box-sizing: border-box;
+      z-index: 998;
+      overflow-y: auto;
+      transition: opacity 0.3s ease, visibility 0.3s ease, max-height 0.3s ease;
+      max-height: 4em;
+    }
+    .comments-overlay-container.expanded { max-height: 25vh; }
+
+    /* Contador comentarios */
+    .comments-counter {
+      position: fixed;
+      bottom: 80px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 5px;
+      font-size: 14px;
+      font-weight: bold;
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      cursor: pointer;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .comments-counter .icon { font-size: 1.5rem; line-height: 1; }
+    .comments-counter .count { font-size: 0.9rem; }
+
+    /* Entrada comentarios */
+    .comment-input-container {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: #1a1a1a;
+      padding: 10px 15px;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 1000;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .comment-input-container input {
+      flex-grow: 1;
+      background: #333;
+      border: 1px solid #555;
+      border-radius: 25px;
+      padding: 12px 20px;
+      color: white;
+      font-size: 1rem;
+      outline: none;
+    }
+    .comment-input-container .send-comment-btn {
+      background: transparent;
+      color: white;
+      border: none;
+      padding: 12px 17px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1.8rem;
+    }
+    .comment-input-container .send-comment-btn:hover { background: transparent; }
+  </style>
 </head>
+
 <body>
-
-  <h1>Videos y Comentarios</h1>
-
-  <!-- Contenedor de videos -->
-  <div id="videos-container">
-    <h2>Videos:</h2>
-    <!-- Los videos se listarán aquí -->
+  <div class="swiper"><div class="swiper-wrapper"></div></div>
+  <div id="loader"><span class="spinner">⏳</span></div>
+  <div id="lblContador"></div>
+  <div id="customAlertOverlay">
+      <div class="custom-alert">
+          <h2 id="alertTitle"></h2>
+          <div class="titles-list" id="alertMessage"></div>
+      </div>
   </div>
 
-  <hr>
-
-  <!-- Formulario para agregar comentario -->
-  <h2>Agregar Comentario a un Video</h2>
-  <form onsubmit="agregarComentario(); return false;">
-    <label for="videoId">ID del Video:</label>
-    <input type="text" id="videoId" required><br><br>
-
-    <label for="comentario">Comentario:</label>
-    <textarea id="comentario" required></textarea><br><br>
-
-    <label for="autor">Autor:</label>
-    <input type="text" id="autor" required><br><br>
-
-    <label for="correo">Correo:</label>
-    <input type="email" id="correo" required><br><br>
-
-    <button type="submit">Agregar Comentario</button>
-  </form>
-
-  <hr>
-
-  <!-- Formulario para eliminar comentario -->
-  <h2>Eliminar Comentario de un Video</h2>
-  <form onsubmit="eliminarComentario(); return false;">
-    <label for="videoId">ID del Video:</label>
-    <input type="text" id="videoIdEliminar" required><br><br>
-
-    <label for="comentarioEliminar">Comentario a Eliminar:</label>
-    <input type="text" id="comentarioEliminar" required><br><br>
-
-    <label for="correoEliminar">Correo del Autor:</label>
-    <input type="email" id="correoEliminar" required><br><br>
-
-    <button type="submit">Eliminar Comentario</button>
-  </form>
-
-  <hr>
-
-  <!-- Contenedor de comentarios -->
-  <div id="comentarios-container">
-    <h2>Comentarios:</h2>
-    <!-- Los comentarios de un video se listarán aquí -->
+  <!-- 🔍 Overlay de búsqueda -->
+  <div id="searchOverlay" class="custom-alert-overlay" style="display:none;">
+    <div class="custom-alert">
+      <h2>Buscar video</h2>
+      <input type="text" id="searchInput" placeholder="Escribe para buscar..." style="width:100%; padding:8px; margin:10px 0;">
+      <div id="searchResults" class="titles-list"></div>
+      <button onclick="cerrarBusqueda()">Cerrar</button>
+    </div>
   </div>
 
+  <div class="content-overlay" id="contentOverlay">
+    <h3 id="currentTitle"></h3>
+    <p id="currentDescription"></p>
+  </div>
+  <div class="comments-overlay-container" id="commentsOverlay">
+    <ul id="commentsList"></ul>
+  </div>
+  <div class="comments-counter" id="commentsCounter">
+      <span class="icon">💬</span>
+      <span class="count" id="commentCountValue">0</span>
+  </div>
+  
+  <div class="comment-input-container">
+      <input type="text" id="commentInput" placeholder="Escribe un comentario...">
+      <button class="send-comment-btn"><i class="fas fa-paper-plane"></i></button>
+  </div>
+
+  <!-- Botón fijo para eliminar video -->
+  <button id="deleteAnnouncementBtn" class="delete-announcement-btn">
+    <i class="fas fa-trash"></i>
+  </button>
+
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+  <!-- 🔹 CAMBIO: apuntamos al script que maneja videos -->
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
+   // === VARIABLES PRINCIPALES ===
+let videosData = [];
+let indiceBusqueda = []; // [{ i, key, titulo }]
+
+let swiperInstance = null;
+let contadorTotalAnterior = -1;
+let contadorAcumulado = 0;
+let nuevosTitulos = [];
+const loader = document.getElementById('loader');
+const lblContador = document.getElementById("lblContador");
+
+const contentOverlay = document.getElementById('contentOverlay');
+const commentsOverlay = document.getElementById('commentsOverlay');
+const commentsCounter = document.getElementById('commentsCounter');
+const commentCountValue = document.getElementById('commentCountValue');
+const commentsList = document.getElementById('commentsList');
+const currentTitle = document.getElementById('currentTitle');
+const currentDescription = document.getElementById('currentDescription');
+const commentInputContainer = document.querySelector('.comment-input-container');
+const commentInput = document.getElementById('commentInput');
+const sendCommentBtn = document.querySelector('.send-comment-btn');
+
+let contadorComentariosAnterior = -1;
+let comentariosPorVideo = {};
+let lastTapTime = 0;
+
+let currentAuthorEmail = "deimer.herrera91@gmail.com";
+let currentAuthorName = "AnónimoDH";
+
+// Variables para el swipe
+let startX = 0;
+let activeComment = null;
+let isSwiping = false;
+
+// ==========================================================
+// 🔹 Reconstruir índice para búsqueda de videos
+// ==========================================================
+function reconstruirIndiceBusqueda() {
+  indiceBusqueda = videosData.map((v, i) => {
+    const titulo = v?.titulo || "";
+    const descripcion = v?.descripcion || "";
+    const key = normalizar(`${titulo} ${descripcion}`);
+    return { i, key, titulo: titulo || "(Sin título)" };
+  });
+}
+
+// 🔹 Normalizar texto (ignora tildes, mayúsculas y espacios de más)
+function normalizar(txt) {
+  return txt
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // quita acentos
+    .replace(/\s+/g, " ") // unifica espacios
+    .trim();
+}
+
+// ==========================================================
+// 🔹 Buscador de videos
+// ==========================================================
+function abrirBusqueda() {
+  document.getElementById("searchOverlay").style.display = "flex";
+  document.getElementById("searchInput").value = "";
+  document.getElementById("searchResults").innerHTML = "";
+  document.getElementById("searchInput").focus();
+}
+
+function cerrarBusqueda() {
+  document.getElementById("searchOverlay").style.display = "none";
+}
+
+document.getElementById("searchInput").addEventListener("input", function () {
+  const query = normalizar(this.value);
+  const resultadosDiv = document.getElementById("searchResults");
+  resultadosDiv.innerHTML = "";
+
+  if (query.length < 2) return;
+
+  if (!Array.isArray(indiceBusqueda) || indiceBusqueda.length === 0) {
+    resultadosDiv.innerHTML = "<p>Todavía no se han cargado videos</p>";
+    return;
+  }
+
+  const coincidencias = indiceBusqueda.filter(item => item.key.includes(query));
+
+  coincidencias.forEach(item => {
+    const li = document.createElement("div");
+    li.textContent = item.titulo;
+    li.classList.add("resultado-item");
+    li.onclick = () => {
+      cerrarBusqueda();
+      if (swiperInstance) {
+        swiperInstance.slideToLoop(item.i, 500);
+        setTimeout(() => {
+          currentTitle.classList.add("highlight");
+          setTimeout(() => currentTitle.classList.remove("highlight"), 2000);
+        }, 400);
+      }
+    };
+    resultadosDiv.appendChild(li);
+  });
+
+  if (!resultadosDiv.hasChildNodes()) {
+    resultadosDiv.innerHTML = "<p>No se encontraron coincidencias</p>";
+  }
+});
+
+// ==========================================================
+// 🔹 Escuchar comandos de App Inventor
+// ==========================================================
+setInterval(() => {
+  if (window.AppInventor && window.AppInventor.getWebViewString) {
+    let command = window.AppInventor.getWebViewString();
+    if (command === "buscar") {
+      abrirBusqueda();
+      window.AppInventor.setWebViewString(""); // limpiar
+    }
+  }
+}, 1000);
+
+// ==========================================================
+// 🔹 Mostrar títulos y descripciones
+// ==========================================================
+function updateInfo(title, description) {
+  currentTitle.setAttribute("data-full", title);
+  currentDescription.setAttribute("data-full", description);
+
+  const shortTitle = title.length > 50
+    ? title.substring(0, 50) + ` <span class="more-link">...más</span>`
+    : title;
+
+  const shortDescription = description.length > 80
+    ? description.substring(0, 80) + ` <span class="more-link">...más</span>`
+    : description;
+
+  currentTitle.setAttribute("data-short", shortTitle);
+  currentDescription.setAttribute("data-short", shortDescription);
+
+  currentTitle.innerHTML = shortTitle;
+  currentDescription.innerHTML = shortDescription;
+
+  currentTitle.classList.remove("expanded");
+  currentDescription.classList.remove("expanded");
+}
+
+currentTitle.addEventListener("click", function () {
+  if (this.classList.contains("expanded")) {
+    this.innerHTML = this.getAttribute("data-short");
+    this.classList.remove("expanded");
+  } else {
+    this.innerHTML = this.getAttribute("data-full") + ` <span class="more-link">Mostrar menos</span>`;
+    this.classList.add("expanded");
+  }
+});
+
+currentDescription.addEventListener("click", function () {
+  if (this.classList.contains("expanded")) {
+    this.innerHTML = this.getAttribute("data-short");
+    this.classList.remove("expanded");
+  } else {
+    this.innerHTML = this.getAttribute("data-full") + ` <span class="more-link">Mostrar menos</span>`;
+    this.classList.add("expanded");
+  }
+});
+
+// ==========================================================
+// 🔹 Swipe para eliminar comentarios de videos
+// ==========================================================
+function normalizeText(text) {
+  if (!text) return "";
+  return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+}
+
+document.querySelector('.swiper').addEventListener('click', () => {
+  const currentTime = new Date().getTime();
+  if (currentTime - lastTapTime > 300) {
+    contentOverlay.classList.toggle('hidden-overlay');
+    commentsOverlay.classList.toggle('hidden-overlay');
+    commentsCounter.classList.toggle('hidden-overlay');
+    commentInputContainer.classList.toggle('hidden-overlay');
+  }
+  lastTapTime = currentTime;
+});
+
+commentsOverlay.addEventListener('click', (e) => {
+  if (!isSwiping) {
+    commentsOverlay.classList.toggle('expanded');
+  }
+  isSwiping = false;
+});
+
+commentsList.addEventListener('touchstart', (e) => {
+  const commentElement = e.target.closest('li');
+  if (!commentElement) return;
+
+  const commentData = commentElement.dataset;
+  const autorCorreo = commentData.correo;
+
+  if (normalizeText(autorCorreo) === normalizeText(currentAuthorEmail)) {
+    startX = e.touches[0].clientX;
+    activeComment = commentElement;
+    activeComment.querySelector('.comment-content').style.transition = 'none';
+    isSwiping = false;
+  }
+});
+
+commentsList.addEventListener('touchmove', (e) => {
+  if (!activeComment) return;
+
+  const currentX = e.touches[0].clientX;
+  const diffX = currentX - startX;
+
+  if (Math.abs(diffX) > 10) {
+    isSwiping = true;
+  }
+
+  if (diffX > 0) {
+    activeComment.querySelector('.comment-content').style.transform = `translateX(${diffX}px)`;
+    let deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
+    if (deleteBtnContainer) {
+      deleteBtnContainer.style.transform = `translateX(0)`;
+    }
+  } else {
+    activeComment.querySelector('.comment-content').style.transform = `translateX(0)`;
+    let deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
+    if (deleteBtnContainer) {
+      deleteBtnContainer.style.transform = `translateX(-100%)`;
+    }
+  }
+});
+
+commentsList.addEventListener('touchend', (e) => {
+  if (!activeComment) return;
+
+  const swipeThreshold = 50;
+  const diffX = e.changedTouches[0].clientX - startX;
+
+  const commentContent = activeComment.querySelector('.comment-content');
+  let deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
+
+  commentContent.style.transition = 'transform 0.3s ease';
+
+  if (diffX > swipeThreshold) {
+    commentContent.style.transform = `translateX(100px)`;
+
+    if (!deleteBtnContainer) {
+      deleteBtnContainer = document.createElement('div');
+      deleteBtnContainer.className = 'delete-btn-container';
+
+      let deleteBtn = document.createElement('div');
+      deleteBtn.className = 'delete-btn';
+      deleteBtn.textContent = 'Borrar';
+      deleteBtnContainer.appendChild(deleteBtn);
+
+      activeComment.insertBefore(deleteBtnContainer, commentContent);
+      deleteBtnContainer.style.transform = `translateX(0)`;
+
+      deleteBtn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const commentData = activeComment.dataset;
+        const comentario = commentData.texto;
+        const autorCorreo = commentData.correo;
+
+        showConfirmationDialog("¿Estás seguro de que quieres borrar este comentario?", () => {
+          const activeIndex = swiperInstance.realIndex;
+          const currentVideo = videosData[activeIndex];
+          if (currentVideo) {
+            eliminarComentario(currentVideo.id, comentario, autorCorreo);
+          }
+        });
+      });
+    } else {
+      deleteBtnContainer.style.transform = `translateX(0)`;
+    }
+  } else {
+    commentContent.style.transform = `translateX(0)`;
+    if (deleteBtnContainer) {
+      deleteBtnContainer.style.transform = `translateX(-100%)`;
+    }
+  }
+
+  activeComment = null;
+  startX = 0;
+});
+
+   async function eliminarComentario(videoId, comentarioTexto, autorCorreo) {
+    loader.style.display = 'block';
+    try {
+        const formData = new FormData();
+        formData.append('accion', 'eliminarComentarioVideo'); // Cambié la acción para comentarios de videos
+        formData.append('idVideo', videoId); // Cambio de 'idAnuncio' a 'idVideo'
+        formData.append('textoComentario', comentarioTexto);
+        formData.append('correoAutor', autorCorreo);
+        
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+        if (result.status === "✅ success") {
+            console.log("Comentario eliminado con éxito.");
+            await verificarComentarios(); 
+        } else {
+            console.error("Error al eliminar el comentario:", result.message);
+            showInfoDialog("Error", `No se pudo eliminar el comentario. ${result.message}`);
+        }
+    } catch (error) {
+        console.error("Error de red al eliminar el comentario:", error);
+        showInfoDialog("Error", "Ocurrió un error al intentar eliminar el comentario.");
+    } finally {
+        loader.style.display = 'none';
+    }
+}
+
+  async function enviarComentario() {
+    const comentarioTexto = commentInput.value.trim();
+    const activeIndex = swiperInstance.realIndex;
+    const currentVideo = videosData[activeIndex]; // Cambio de anunciosData a videosData
+
+    if (!comentarioTexto || !currentVideo) {
+        showInfoDialog("Error", "No puedes enviar un comentario vacío.");
+        return;
+    }
+
+    loader.style.display = 'block';
+    try {
+        const formData = new FormData();
+        formData.append('accion', 'agregarComentarioVideo'); // Cambio de 'agregarComentario' a 'agregarComentarioVideo'
+        formData.append('videoId', currentVideo.id); // Cambio de 'anuncioId' a 'videoId'
+        formData.append('comentario', comentarioTexto);
+        formData.append('autor', currentAuthorName);
+        formData.append('correo', currentAuthorEmail);
+
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+        if (result.status === "🗣️ success") {
+            console.log("Comentario agregado con éxito.");
+            commentInput.value = ''; // Limpiar el campo
+            await verificarComentarios(); 
+        } else {
+            console.error("Error al agregar el comentario:", result.message);
+            showInfoDialog("Error", `No se pudo agregar el comentario. ${result.message}`);
+        }
+    } catch (error) {
+        console.error("Error de red al agregar el comentario:", error);
+        showInfoDialog("Error", "Ocurrió un error al intentar agregar el comentario.");
+    } finally {
+        loader.style.display = 'none';
+    }
+}
+
+    sendCommentBtn.addEventListener('click', enviarComentario);
+    commentInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            enviarComentario();
+        }
+    });
+
+    // Lógica para subir la barra de comentarios
+    commentInput.addEventListener('focus', () => {
+        // Mueve el cuerpo del documento para que el input sea visible
+        document.body.style.transform = `translateY(-50%)`;
+    });
+
+    commentInput.addEventListener('blur', () => {
+        // Vuelve el cuerpo del documento a su posición original
+        document.body.style.transform = 'translateY(0)';
+    });
+
+   // === Función para normalizar comentarios de videos ===
+function normalizarComentarios(lista) {
+    if (!Array.isArray(lista)) return [];
+    return [...lista]
+        .reverse()
+        .map(c => {
+            try {
+                if (typeof c === "string") c = JSON.parse(c);
+            } catch (e) {}
+            const autor = c?.autor ?? "";
+            const fecha = c?.fecha ?? "";
+            const comentario = c?.comentario ?? "";
+            const correo = c?.correo ?? "";
+            if (autor || fecha || comentario) {
+                return {
+                    texto: `${autor} (${fecha}) - ${comentario}`,
+                    autorCorreo: correo,
+                    textoPuro: comentario
+                };
+            }
+            return null;
+        })
+        .filter(Boolean);
+}
+
+const INTERVALO_VERIFICACION = 5000;
+
+// === Evento para mostrar los títulos de nuevos videos ===
+lblContador.addEventListener("click", () => {
+    if (nuevosTitulos.length === 0) {
+        showCustomAlert("Nuevos videos", []);
+    } else {
+        showCustomAlert("Nuevos videos", nuevosTitulos);
+    }
+});
+
+// === Función para actualizar el contador de nuevos videos ===
+async function actualizarContador() {
+    try {
+        const response = await fetch(`${SCRIPT_URL}?accion=obtenerContadorVideos`); // 🔹 Cambié la acción para videos
+        const data = await response.json();
+        const totalActual = data.contador || 0;
+
+        if (contadorTotalAnterior === -1) {
+            contadorTotalAnterior = totalActual;
+        } else {
+            if (totalActual !== contadorTotalAnterior) {
+                const diferencia = totalActual - contadorTotalAnterior;
+
+                if (diferencia > 0) {
+                    // 🔹 Pedimos la lista de videos
+                    const responseVideos = await fetch(`${SCRIPT_URL}?accion=listarVideos`);
+                    const dataVideos = await responseVideos.json();
+
+                    // Guardar títulos nuevos detectados SIN duplicarlos
+                    const titulosNuevos = dataVideos.titulo.slice(-diferencia).reverse();
+                    nuevosTitulos = [...titulosNuevos, ...nuevosTitulos];
+
+                    // Eliminar duplicados conservando el orden
+                    nuevosTitulos = [...new Set(nuevosTitulos)];
+                    contadorAcumulado = nuevosTitulos.length;
+                } else if (diferencia < 0) {
+                    contadorAcumulado = 0;
+                    nuevosTitulos = [];
+                }
+
+                // 🔹 Mostrar o esconder el botón de notificaciones
+                if (lblContador) {
+                    if (contadorAcumulado > 0) {
+                        lblContador.textContent = `🔔 ${contadorAcumulado}`;
+                        lblContador.style.display = "block";
+                    } else {
+                        lblContador.textContent = "";
+                        lblContador.style.display = "none";
+                    }
+                }
+
+                contadorTotalAnterior = totalActual;
+                console.log("🔄 Cambio detectado: recargando videos...");
+                await cargarVideos(); // 🔹 Ahora cargamos videos, no anuncios
+            }
+        }
+    } catch (e) {
+        console.error("❌ Error al obtener contador:", e);
+    }
+}
+
+setInterval(actualizarContador, INTERVALO_VERIFICACION);
+
+// === Función para verificar comentarios de videos ===
+async function verificarComentarios() {
+    try {
+        const response = await fetch(`${SCRIPT_URL}?accion=obtenerContadorComentariosVideos`); 
+        const data = await response.json();
+        const totalComentariosActual = data.contadorComentarios || 0;
+
+        if (data.comentarios) {
+            comentariosPorVideo = data.comentarios; // 🔹 Ahora usamos comentariosPorVideo
+        }
+
+        if (contadorComentariosAnterior === -1) {
+            contadorComentariosAnterior = totalComentariosActual;
+        } else if (totalComentariosActual !== contadorComentariosAnterior) {
+            console.log("💬 Cambio detectado en comentarios de videos, recargando...");
+            contadorComentariosAnterior = totalComentariosActual;
+            recargarComentariosDelVideoActual(); // 🔹 Función para recargar comentarios del video actual
+        }
+    } catch (e) {
+        console.error("❌ Error al verificar comentarios:", e);
+    }
+}
+
+
+function recargarComentariosDelVideoActual() {
+    if (!swiperInstance || videosData.length === 0) return; // Cambio de anunciosData a videosData
+    const activeIndex = swiperInstance.realIndex;
+    const videoActual = videosData[activeIndex]; // Cambio de anuncioActual a videoActual
+    
+    if (videoActual) {
+        const comentarios = comentariosPorVideo[videoActual.id] || []; // Cambio de comentariosPorAnuncio a comentariosPorVideo
+        videoActual.comentarios = normalizarComentarios(comentarios);
+        updateContentOverlay(activeIndex);
+        
+        console.log(`📌 Comentarios actualizados para el video: ${videoActual.titulo}`);
+        
+        if (window.AppInventor) {
+            const payload = {
+                ...videoActual,
+                titulos: videosData.map(v => v.titulo), // Cambio de anunciosData a videosData
+                contador: contadorAcumulado
+            };
+            window.AppInventor.setWebViewString(JSON.stringify(payload));
+        }
+    }
+}
+
+
+async function cargarVideos() {
+    loader.style.display = 'block';
+    const currentIndex = swiperInstance ? swiperInstance.realIndex : 0;
+    const currentId = swiperInstance && videosData.length > 0 ? videosData[swiperInstance.realIndex].id : null; // Cambio de anunciosData a videosData
+
+    try {
+        const response = await fetch(`${SCRIPT_URL}?accion=listarVideos`); // Cambié la acción a 'listarVideos'
+        if(!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        let newVideosData = [];
+
+        if(data.url && data.url.length > 0) {
+            data.url.forEach((url, index) => {
+                const idVideo = data.id[index];
+                const comentarios = comentariosPorVideo[idVideo] || []; // Cambio de comentariosPorAnuncio a comentariosPorVideo
+                const comentariosFormateados = normalizarComentarios(comentarios);
+                newVideosData.push({
+                    titulo: data.titulo[index] || "",
+                    descripcion: data.descripcion[index] || "",
+                    comentarios: comentariosFormateados,
+                    url: url,
+                    deleteurl: data.deleteurl[index] || "",
+                    autor: data.autor[index] || "",
+                    correo: data.correo[index] || "",
+                    fecha: data.fecha[index] || "",
+                    id: idVideo || "" // Cambio de idAnuncio a idVideo
+                });
+            });
+        }
+
+        newVideosData.reverse();
+
+        const oldVideosIds = videosData.map(v => v.id); // Cambio de anunciosData a videosData
+        const newVideosIds = newVideosData.map(v => v.id); // Cambio de anunciosData a videosData
+        
+        if (JSON.stringify(oldVideosIds) === JSON.stringify(newVideosIds)) {
+            loader.style.display = 'none';
+            return;
+        }
+
+        const currentSlideId = currentId;
+        videosData = newVideosData; // Cambio de anunciosData a videosData
+
+        if (swiperInstance) {
+            swiperInstance.removeAllSlides();
+            
+            videosData.forEach(video => { // Cambio de anunciosData a videosData
+                const slide = document.createElement('div');
+                slide.classList.add('swiper-slide');
+                slide.dataset.id = video.id;
+
+                const zoomContainer = document.createElement('div');
+                zoomContainer.classList.add('swiper-zoom-container');
+
+                const img = document.createElement('img');
+                img.src = video.url;
+                img.alt = video.titulo;
+
+                zoomContainer.appendChild(img);
+                slide.appendChild(zoomContainer);
+
+                swiperInstance.appendSlide(slide);
+            });
+
+            let newIndex = videosData.findIndex(v => v.id === currentSlideId); // Cambio de anunciosData a videosData
+            if (newIndex !== -1) {
+                swiperInstance.slideToLoop(newIndex, 0, false);
+            } else {
+                if (currentIndex < videosData.length) { // Cambio de anunciosData a videosData
+                    swiperInstance.slideToLoop(currentIndex, 0, false); 
+                } else {
+                    swiperInstance.slideToLoop(videosData.length - 1, 0, false); // Cambio de anunciosData a videosData
+                }
+            }
+
+            swiperInstance.update();
+        }
+    } catch (error) {
+        console.error("Error al cargar los videos:", error);
+    } finally {
+        loader.style.display = 'none';
+    }
+}
+
+
+
+
+async function eliminarVideo(videoId, deleteUrl) {
+    loader.style.display = 'block';
+    try {
+        const formData = new FormData();
+        formData.append('accion', 'eliminarVideo'); // Cambio clave aquí
+        formData.append('id', videoId);
+        formData.append('correo', currentAuthorEmail);
+        formData.append('deleteurl', deleteUrl);
+
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+        if (result.status && result.status.toLowerCase().includes("success")) {
+            showInfoDialog("Éxito", "Video eliminado correctamente.");
+            await cargarVideos(); // Antes era cargarImagenes()
+        } else {
+            showInfoDialog("Error", result.message || "No se pudo eliminar el video.");
+        }
+    } catch (error) {
+        console.error("Error eliminando video:", error);
+        showInfoDialog("Error", "Ocurrió un problema al eliminar el video.");
+    } finally {
+        loader.style.display = 'none';
+    }
+}
+
+    
+  function updateContentOverlay(index) {
+    if (videosData.length > index) {
+        const video = videosData[index];
+
+        updateInfo(video.titulo, video.descripcion);
+
+        if (normalizeText(video.correo) === normalizeText(currentAuthorEmail)) {
+            deleteVideoBtn.classList.add("visible");
+            deleteVideoBtn.onclick = () => {
+                showConfirmationDialog(
+                    "¿Estás seguro de que quieres eliminar este video?",
+                    () => eliminarVideo(video.id, video.deleteurl)
+                );
+            };
+        } else {
+            deleteVideoBtn.classList.remove("visible");
+        }
+
+        commentsList.innerHTML = '';
+        commentsOverlay.classList.remove('expanded'); 
+
+        if (video.comentarios && video.comentarios.length > 0) {
+            video.comentarios.forEach(comentario => {
+                const li = document.createElement('li');
+                li.classList.add('deletable');
+
+                const commentContent = document.createElement('div');
+                commentContent.classList.add('comment-content');
+                commentContent.textContent = comentario.texto;
+                
+                const deleteBtnContainer = document.createElement('div');
+                deleteBtnContainer.className = 'delete-btn-container';
+                const deleteBtn = document.createElement('div');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.textContent = 'Borrar';
+                deleteBtnContainer.appendChild(deleteBtn);
+                
+                li.appendChild(deleteBtnContainer);
+                li.appendChild(commentContent);
+
+                li.dataset.id = comentario.id;
+                li.dataset.correo = comentario.autorCorreo;
+                li.dataset.texto = comentario.textoPuro;
+                
+                deleteBtn.addEventListener('click', (ev) => {
+                    ev.stopPropagation();
+                    const activeIndex = swiperInstance.realIndex;
+                    const currentVideo = videosData[activeIndex];
+                    if(currentVideo) {
+                        eliminarComentario(currentVideo.id, comentario.textoPuro, comentario.autorCorreo);
+                    }
+                });
+                
+                commentsList.appendChild(li);
+            });
+            commentCountValue.textContent = video.comentarios.length;
+        } else {
+            const li = document.createElement('li');
+            li.textContent = "No hay comentarios aún.";
+            commentsList.appendChild(li);
+            commentCountValue.textContent = 0;
+        }
+    }
+}
+
+
+
+
+   function initSwiper(initialIndex = 0) {
+    if (!swiperInstance) {
+        swiperInstance = new Swiper('.swiper', {
+            loop: true,
+            direction: 'vertical',
+            slidesPerView: 1,
+            spaceBetween: 10,
+            zoom: { maxRatio: 3, minRatio: 1 }
+        });
+
+        swiperInstance.on('slideChange', () => {
+            const activeIndex = swiperInstance.realIndex;
+            updateContentOverlay(activeIndex);
+
+            if (window.AppInventor && videosData.length > 0) {
+                const videoActual = videosData[activeIndex];
+                if (!videoActual) return;
+
+                const id = videoActual.id;
+                const hayServidor = Array.isArray(comentariosPorVideo[id]) && comentariosPorVideo[id].length > 0;
+                if (hayServidor) {
+                    videoActual.comentarios = normalizarComentarios(comentariosPorVideo[id]);
+                }
+                const listaTitulos = videosData.map(v => v.titulo);
+                const payload = { ...videoActual, titulos: listaTitulos, contador: contadorAcumulado };
+                window.AppInventor.setWebViewString(JSON.stringify(payload));
+            }
+        });
+    }
+
+    if (videosData.length > 0) {
+        const initialSlideIndex = Math.min(initialIndex, videosData.length - 1);
+        swiperInstance.slideToLoop(initialSlideIndex, 0, false);
+        updateContentOverlay(initialSlideIndex);
+        
+        if (window.AppInventor) {
+            const videoInicial = videosData[initialSlideIndex];
+            const id = videoInicial.id;
+            const hayServidor = Array.isArray(comentariosPorVideo[id]) && comentariosPorVideo[id].length > 0;
+            if (hayServidor) {
+                videoInicial.comentarios = normalizarComentarios(comentariosPorVideo[id]);
+            }
+            const listaTitulos = videosData.map(v => v.titulo);
+            const payload = { ...videoInicial, titulos: listaTitulos, contador: contadorAcumulado };
+            window.AppInventor.setWebViewString(JSON.stringify(payload));
+        }
+    }
+}
+
+
+function aplicarTruncado(element, maxLength = 80) {
+    const fullText = element.textContent.trim();
+
+    if (fullText.length > maxLength) {
+        const shortText = fullText.substring(0, maxLength);
+
+        // Mostrar texto truncado con "... más"
+        element.innerHTML = `${shortText} <span class="more-link">... más</span>`;
+
+        element.dataset.fullText = fullText;
+        element.dataset.shortText = shortText;
+        element.dataset.expanded = "false";
+
+        element.onclick = (e) => {
+            // Evita que solo el span sea clickeable, sino todo el elemento
+            e.stopPropagation();
+
+            const expanded = element.dataset.expanded === "true";
+            if (expanded) {
+                element.innerHTML = `${element.dataset.shortText} <span class="more-link">... más</span>`;
+                element.dataset.expanded = "false";
+            } else {
+                element.innerHTML = `${element.dataset.fullText} <span class="more-link">menos</span>`;
+                element.dataset.expanded = "true";
+            }
+        };
+    }
+}
+
+
+    
+   function showCustomAlert(title, titlesList) {
+    const overlay = document.getElementById('customAlertOverlay');
+    const alertDiv = overlay.querySelector('.custom-alert');
+    const alertTitle = document.getElementById('alertTitle');
+    const alertMessage = document.getElementById('alertMessage');
+    
+    alertDiv.className = 'custom-alert';
+    alertMessage.innerHTML = '';
+    alertTitle.textContent = title;
+    
+    if (titlesList.length > 0) {
+        const list = document.createElement('ul');
+        list.className = 'titles-list';
+        titlesList.forEach((titulo, index) => {
+            const li = document.createElement('li');
+            li.textContent = titulo;
+            li.dataset.index = index;
+            li.addEventListener('click', () => {
+                const selectedIndex = videosData.findIndex(v => v.titulo === titulo);
+                if (selectedIndex !== -1) {
+                    swiperInstance.slideToLoop(selectedIndex, 500);
+                    nuevosTitulos.splice(nuevosTitulos.indexOf(titulo), 1);
+                    contadorAcumulado = nuevosTitulos.length;
+                    if (contadorAcumulado > 0) {
+                        lblContador.textContent = `🔔 ${contadorAcumulado}`;
+                    } else {
+                        lblContador.style.display = 'none';
+                    }
+                    document.getElementById('customAlertOverlay').style.display = 'none';
+                }
+            });
+            list.appendChild(li);
+        });
+        alertMessage.appendChild(list);
+    } else {
+        const p = document.createElement('p');
+        p.textContent = "No hay videos nuevos.";
+        alertMessage.appendChild(p);
+    }
+
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = "Cerrar";
+    closeBtn.id = "closeAlertButton";
+    closeBtn.onclick = () => overlay.style.display = 'none';
+    alertMessage.appendChild(closeBtn);
+
+    overlay.style.display = 'flex';
+}
+
+    function showConfirmationDialog(message, onConfirm) {
+        const overlay = document.getElementById('customAlertOverlay');
+        const alertDiv = overlay.querySelector('.custom-alert');
+        const alertTitle = document.getElementById('alertTitle');
+        const alertMessage = document.getElementById('alertMessage');
+        
+        alertDiv.className = 'custom-alert confirm-delete';
+        alertTitle.textContent = "Confirmar eliminación";
+        alertMessage.innerHTML = `<p>${message}</p>`;
+
+        const buttonGroup = document.createElement('div');
+        buttonGroup.className = 'btn-group';
+
+        const confirmBtn = document.createElement('button');
+        confirmBtn.textContent = 'Sí, borrar';
+        confirmBtn.style.backgroundColor = '#e74c3c';
+        confirmBtn.onclick = () => {
+            onConfirm();
+            overlay.style.display = 'none';
+        };
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = 'Cancelar';
+        cancelBtn.onclick = () => {
+            overlay.style.display = 'none';
+        };
+
+        buttonGroup.appendChild(confirmBtn);
+        buttonGroup.appendChild(cancelBtn);
+        alertMessage.appendChild(buttonGroup);
+
+        overlay.style.display = 'flex';
+    }
+    
+    function showInfoDialog(title, message) {
+        const overlay = document.getElementById('customAlertOverlay');
+        const alertDiv = overlay.querySelector('.custom-alert');
+        const alertTitle = document.getElementById('alertTitle');
+        const alertMessage = document.getElementById('alertMessage');
+        
+        alertDiv.className = 'custom-alert';
+        alertTitle.textContent = title;
+        alertMessage.innerHTML = `<p>${message}</p>`;
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = 'Aceptar';
+        closeBtn.onclick = () => overlay.style.display = 'none';
+        alertMessage.appendChild(closeBtn);
+        
+        overlay.style.display = 'flex';
+    }
+
+    setInterval(actualizarContador, 5000);
+    setInterval(verificarComentarios, 5000);
+
+    verificarComentarios().then(() => {
+        cargarImagenes();
+    });
+
+    if (lblContador) {
+        lblContador.addEventListener('click', () => {
+            showCustomAlert("DECOM BOCHICA SUR", nuevosTitulos);
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      if(window.AppInventor) {
+        setInterval(() => {
+          const comando = window.AppInventor.getWebViewString?.();
+          if(comando) {
+            try {
+              const data = JSON.parse(comando);
+             if(data.action === "updateUserData") {
+  currentAuthorEmail = data.email;
+  currentAuthorName = data.name;
+
+  // Guardar en localStorage para que el HTML de subir videos también los pueda usar
+  localStorage.setItem("autor", currentAuthorName || "");
+  localStorage.setItem("correo", currentAuthorEmail || "");
+
+  console.log(`Datos de usuario actualizados. Nombre: ${currentAuthorName}, Correo: ${currentAuthorEmail}`);
+}
+
+            } catch (e) {
+              if(comando === "https://artisticaipucbochicasur-code.github.io/Slider-de-fotos/slider.html") {
+                console.log("Reiniciando contador y cargando anuncios.");
+                contadorAcumulado = 0;
+                contadorTotalAnterior = -1;
+                verificarComentarios().then(() => cargarImagenes());
+              }
+              if(comando.startsWith("irATitulo:")) {
+                const tituloBuscado = comando.replace("irATitulo:", "").trim();
+                const normalizar = txt => (txt || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+                const tituloNormalizado = normalizar(tituloBuscado);
+                const index = anunciosData.findIndex(a => normalizar(a.titulo) === tituloNormalizado);
+                if(index >= 0 && swiperInstance) swiperInstance.slideToLoop(index, 0, false);
+              }
+              if(comando.startsWith("irAIndice:")) {
+                const indice = parseInt(comando.replace("irAIndice:", "").trim(), 10);
+                if(!isNaN(indice) && indice >= 0 && indice < anunciosData.length && swiperInstance) swiperInstance.slideToLoop(indice, 0, false);
+              }
+            }
+          }
+        }, 500);
+      }
+    });
+
+    function recargarDatos() {
+      verificarComentarios().then(() => cargarImagenes());
+      console.log("Datos recargados por solicitud externa.");
+    }
+  </script>
 </body>
 </html>
+
