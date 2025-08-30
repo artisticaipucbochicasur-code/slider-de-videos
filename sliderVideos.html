@@ -816,20 +816,25 @@ function recargarComentariosDelVideoActual() {
 
 async function cargarVideos() {
     loader.style.display = 'block';
+
+    // Guardar el índice actual y el ID del video en visualización
     const currentIndex = swiperInstance ? swiperInstance.realIndex : 0;
-    const currentId = swiperInstance && videosData.length > 0 ? videosData[swiperInstance.realIndex].id : null; // Cambio de anunciosData a videosData
+    const currentId = swiperInstance && videosData.length > 0 ? videosData[swiperInstance.realIndex].id : null;
 
     try {
-        const response = await fetch(`${SCRIPT_URL}?accion=listarVideos`); // Cambié la acción a 'listarVideos'
-        if(!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        // Obtener datos de la hoja "videos"
+        const response = await fetch(`${SCRIPT_URL}?accion=listarVideos`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
         let newVideosData = [];
 
-        if(data.url && data.url.length > 0) {
+        // Armar el arreglo con todos los videos
+        if (data.url && data.url.length > 0) {
             data.url.forEach((url, index) => {
                 const idVideo = data.id[index];
-                const comentarios = comentariosPorVideo[idVideo] || []; // Cambio de comentariosPorAnuncio a comentariosPorVideo
+                const comentarios = comentariosPorVideo[idVideo] || [];
                 const comentariosFormateados = normalizarComentarios(comentarios);
+
                 newVideosData.push({
                     titulo: data.titulo[index] || "",
                     descripcion: data.descripcion[index] || "",
@@ -839,28 +844,31 @@ async function cargarVideos() {
                     autor: data.autor[index] || "",
                     correo: data.correo[index] || "",
                     fecha: data.fecha[index] || "",
-                    id: idVideo || "" // Cambio de idAnuncio a idVideo
+                    id: idVideo || ""
                 });
             });
         }
 
+        // Mostrar los videos más recientes primero
         newVideosData.reverse();
 
-        const oldVideosIds = videosData.map(v => v.id); // Cambio de anunciosData a videosData
-        const newVideosIds = newVideosData.map(v => v.id); // Cambio de anunciosData a videosData
-        
+        // Evitar reconstruir el Swiper si los videos no cambiaron
+        const oldVideosIds = videosData.map(v => v.id);
+        const newVideosIds = newVideosData.map(v => v.id);
         if (JSON.stringify(oldVideosIds) === JSON.stringify(newVideosIds)) {
             loader.style.display = 'none';
             return;
         }
 
-        const currentSlideId = currentId;
-        videosData = newVideosData; // Cambio de anunciosData a videosData
+        // Actualizar la data global
+        videosData = newVideosData;
 
+        // Reconstruir el Swiper si ya existe
         if (swiperInstance) {
             swiperInstance.removeAllSlides();
-            
-            videosData.forEach(video => { // Cambio de anunciosData a videosData
+
+            // Crear dinámicamente cada slide con un <video>
+            videosData.forEach(video => {
                 const slide = document.createElement('div');
                 slide.classList.add('swiper-slide');
                 slide.dataset.id = video.id;
@@ -868,31 +876,35 @@ async function cargarVideos() {
                 const zoomContainer = document.createElement('div');
                 zoomContainer.classList.add('swiper-zoom-container');
 
-                const img = document.createElement('img');
-                img.src = video.url;
-                img.alt = video.titulo;
+                const videoElement = document.createElement('video');
+                videoElement.src = video.url;
+                videoElement.controls = true;
+                videoElement.playsInline = true;
+                videoElement.preload = "metadata";
+                videoElement.style.maxWidth = "100%";
+                videoElement.style.maxHeight = "100%";
 
-                zoomContainer.appendChild(img);
+                zoomContainer.appendChild(videoElement);
                 slide.appendChild(zoomContainer);
-
                 swiperInstance.appendSlide(slide);
             });
 
-            let newIndex = videosData.findIndex(v => v.id === currentSlideId); // Cambio de anunciosData a videosData
+            // Mantener la posición del video actual si existe
+            let newIndex = videosData.findIndex(v => v.id === currentId);
             if (newIndex !== -1) {
                 swiperInstance.slideToLoop(newIndex, 0, false);
             } else {
-                if (currentIndex < videosData.length) { // Cambio de anunciosData a videosData
-                    swiperInstance.slideToLoop(currentIndex, 0, false); 
+                if (currentIndex < videosData.length) {
+                    swiperInstance.slideToLoop(currentIndex, 0, false);
                 } else {
-                    swiperInstance.slideToLoop(videosData.length - 1, 0, false); // Cambio de anunciosData a videosData
+                    swiperInstance.slideToLoop(videosData.length - 1, 0, false);
                 }
             }
 
             swiperInstance.update();
         }
     } catch (error) {
-        console.error("Error al cargar los videos:", error);
+        console.error("❌ Error al cargar los videos:", error);
     } finally {
         loader.style.display = 'none';
     }
@@ -1243,4 +1255,5 @@ function aplicarTruncado(element, maxLength = 80) {
   </script>
 </body>
 </html>
+
 
