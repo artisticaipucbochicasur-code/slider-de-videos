@@ -814,99 +814,100 @@ function recargarComentariosDelVideoActual() {
 }
 
 
-async function cargarVideos(checkNew = false) {
-  const loader = document.getElementById("loader");
-  if (!checkNew) loader.style.display = "flex";
-  try {
-    const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
-    const data = await res.json();
+async function cargarVideos() {
+    loader.style.display = 'block';
 
-    const wrapper = document.getElementById("slides");
-    if (!checkNew) {
-      wrapper.innerHTML = "";
-    }
+    const currentIndex = swiperInstance ? swiperInstance.realIndex : 0;
+    const currentId = swiperInstance && videosData.length > 0
+        ? videosData[swiperInstance.realIndex].id
+        : null;
 
-    let newVideos = [];
-    if (Array.isArray(data.data)) {
-      data.data.forEach((row) => {
-        const titulo = row[0];
-        const link = row[1];
-        const descripcion = row[4] || "";
-        const videoId = row[5] || ""; // 👈 Columna F: ID único del video
+    try {
+        // 🔹 Acción unificada: listarVideos
+         const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
 
-        if (!checkNew) {
-          wrapper.appendChild(createSlide(titulo, link, descripcion, videoId));
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
+        const data = await response.json();
+        let newVideosData = [];
+
+        // 🔹 Crear el array de videos
+        if (data.url && data.url.length > 0) {
+            data.url.forEach((url, index) => {
+                const idVideo = data.id[index];
+                const comentarios = comentariosPorVideo[idVideo] || [];
+                const comentariosFormateados = normalizarComentarios(comentarios);
+
+                newVideosData.push({
+                    titulo: data.titulo[index] || "",
+                    descripcion: data.descripcion[index] || "",
+                    comentarios: comentariosFormateados,
+                    url: url,
+                    deleteurl: data.deleteurl[index] || "",
+                    autor: data.autor[index] || "",
+                    correo: data.correo[index] || "",
+                    fecha: data.fecha[index] || "",
+                    id: idVideo || ""
+                });
+            });
         }
-        newVideos.push({ title: titulo, link, desc: descripcion, id: videoId });
-      });
-    }
 
-    // 🔥 Eliminación silenciosa (solo en modo checkNew para no afectar carga inicial)
-    if (checkNew) {
-      const idsActivos = newVideos.map(v => v.id);
+        newVideosData.reverse();
 
-      Array.from(wrapper.children).forEach(slide => {
-        const card = slide.querySelector(".player-card");
-        if (card && !idsActivos.includes(card.dataset.id)) {
-          wrapper.removeChild(slide);
-          if (swiper) swiper.update();
+        const oldVideosIds = videosData.map(v => v.id);
+        const newVideosIds = newVideosData.map(v => v.id);
+        if (JSON.stringify(oldVideosIds) === JSON.stringify(newVideosIds)) {
+            loader.style.display = 'none';
+            return;
         }
-      });
-    }
 
-    // 🔥 Corregido: ahora también notifica si es el primer video
-    if (checkNew) {
-      newVideos.forEach(v => {
-        if (!lastVideos.find(old => old.id === v.id)) {
-          notifications.unshift(v); // acumula notificación
+        videosData = newVideosData;
+
+        if (swiperInstance) {
+            swiperInstance.removeAllSlides();
+
+            videosData.forEach(video => {
+                const slide = document.createElement('div');
+                slide.classList.add('swiper-slide');
+                slide.dataset.id = video.id;
+
+                const zoomContainer = document.createElement('div');
+                zoomContainer.classList.add('swiper-zoom-container');
+
+                const videoElement = document.createElement('video');
+                videoElement.src = video.url;
+                videoElement.controls = true;
+                videoElement.playsInline = true;
+                videoElement.preload = "metadata";
+                videoElement.style.maxWidth = "100%";
+                videoElement.style.maxHeight = "100%";
+
+                zoomContainer.appendChild(videoElement);
+                slide.appendChild(zoomContainer);
+                swiperInstance.appendSlide(slide);
+            });
+
+            // 🔹 Mantener el video actual visible
+            let newIndex = videosData.findIndex(v => v.id === currentId);
+            if (newIndex !== -1) {
+                swiperInstance.slideToLoop(newIndex, 0, false);
+            } else {
+                swiperInstance.slideToLoop(
+                    currentIndex < videosData.length ? currentIndex : videosData.length - 1,
+                    0,
+                    false
+                );
+            }
+
+            swiperInstance.update();
         }
-      });
-      if (notifications.length > 0) {
-        renderNotifications();
-      }
+    } catch (error) {
+        console.error("❌ Error al cargar los videos:", error);
+    } finally {
+        loader.style.display = 'none';
     }
-
-    lastVideos = newVideos;
-
-    if (!checkNew) {
-      if (swiper) swiper.destroy(true, true);
-     swiper = new Swiper(".swiper", {
-  loop: true,
-  direction: "horizontal",
-  slidesPerView: 1,
-  spaceBetween: 10,
-  pagination: false,
-  on: {
-    init() {
-      updateFixedTitle(this);
-      const firstId = obtenerIdVideoActivo();
-      if (firstId) mostrarYActualizarComentarios(firstId); // ✅ mostrar rápido + actualizar en segundo plano
-    },
-    slideChange() {
-      cleanupIframesExceptActive();
-      updateFixedTitle(this);
-      
-      // ✅ mostrar y actualizar comentarios del video actual
-      const videoId = obtenerIdVideoActivo();
-      if (videoId) mostrarYActualizarComentarios(videoId);
-    }
-  },
-});
-
-
-      cleanupIframesExceptActive();
-      updateFixedTitle(swiper);
-
-      // 🔥 Asegurar que al cargar todo se muestran comentarios del primero
-      const firstId = obtenerIdVideoActivo();
-      if (firstId) cargarComentarios(firstId);
-    }
-  } catch (e) {
-    console.error("Error cargando videos:", e);
-  } finally {
-    loader.style.display = "none";
-  }
 }
+
 
 
 
@@ -1254,6 +1255,7 @@ function aplicarTruncado(element, maxLength = 80) {
   </script>
 </body>
 </html>
+
 
 
 
