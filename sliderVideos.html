@@ -434,73 +434,9 @@
             font-size: 12px;
             color: #fff;
         }
-
-  /* Contenedor de comentarios */
-  #comments-container {
-    position: absolute;
-    bottom: 70px; /* arriba de la caja para escribir */
-    left: 10px;
-    right: 10px;
-    max-height: 200px;
-    overflow-y: auto;
-    background: rgba(0,0,0,0.4);
-    border-radius: 8px;
-    padding: 8px;
-    font-size: 14px;
-    z-index: 1500;
-  }
-  #comments-container .comment {
-    text-align: left;
-    margin-bottom: 6px;
-    padding: 6px 8px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 6px;
-  }
-
-  /* Caja para escribir */
-  #comment-box {
-    position: absolute;
-    bottom: 20px;
-    left: 10px;
-    right: 10px;
-    display: flex;
-    align-items: center;
-    background: rgba(0,0,0,0.6);
-    border-radius: 30px;
-    padding: 6px 10px;
-    z-index: 2000;
-  }
-  #comment-input {
-    flex: 1;
-    border: none;
-    outline: none;
-    background: transparent;
-    color: white;
-    font-size: 14px;
-    padding: 6px;
-  }
-  #comment-send {
-    background: none;
-    border: none;
-    color: #1e90ff;
-    font-size: 18px;
-    cursor: pointer;
-  }
-
-        
     </style>
 </head>
 <body>
-
-<!-- === ÁREA DE COMENTARIOS === -->
-<div id="comments-container"></div>
-
-<div id="comment-box">
-  <input type="text" id="comment-input" placeholder="Escribe un comentario..." />
-  <button id="comment-send"><i class="fas fa-paper-plane"></i></button>
-</div>
-
-    
 <!-- Notificaciones -->
 <div id="notification-wrapper">
   <button id="notification-btn">
@@ -557,213 +493,7 @@
         const SCRIPT_URL =
             "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
 
-
-
-// === Variables de comentarios en memoria ===
-let comentariosPorVideo = {}; // { videoId: [comentarios] }
-let contadorComentariosAnterior = -1;
-
-// === Referencias de interfaz ===
-const contenedorComentarios = document.getElementById("comments-container");
-const entradaComentario = document.getElementById("comment-input");
-const botonEnviarComentario = document.getElementById("comment-send");
-
-// === Obtener ID del video activo ===
-function obtenerIdVideoActivo() {
-  if (!swiper) return null;
-
-  const realIndex = swiper.realIndex !== undefined ? swiper.realIndex : swiper.activeIndex;
-  const realSlide = swiper.slides[realIndex];
-  if (!realSlide) return null;
-
-  const playerCard = realSlide.querySelector('.player-card');
-  return playerCard ? playerCard.dataset.id : null;
-}
-
-// === Renderizar comentarios desde memoria ===
-function renderizarComentarios(lista) {
-  contenedorComentarios.innerHTML = "";
-
-  if (!lista || lista.length === 0) {
-    contenedorComentarios.innerHTML = "<p>No hay comentarios aún.</p>";
-    return;
-  }
-
-  lista.forEach(row => {
-    const comentario = row[1] || "";
-    const autor = row[2] || "Anónimo";
-    const fecha = row[4] || "";
-
-    const div = document.createElement("div");
-    div.className = "comment";
-    div.innerHTML = `<strong>${autor}:</strong> ${comentario} <br><small>${fecha}</small>`;
-    contenedorComentarios.appendChild(div);
-  });
-}
-
-// === Mostrar comentarios del video activo desde cache ===
-function mostrarComentariosDelActivo() {
-  const videoId = obtenerIdVideoActivo();
-  if (!videoId) return;
-
-  const lista = comentariosPorVideo[videoId] || [];
-  renderizarComentarios(lista);
-}
-
-// === Mostrar comentarios instantáneos y refrescar en background ===
-function mostrarYActualizarComentarios(videoId) {
-  // Mostrar inmediatamente desde caché (si hay)
-  renderizarComentarios(comentariosPorVideo[videoId] || []);
-
-  // Refrescar desde servidor (actualiza caché + UI si es el activo)
-  cargarComentariosSiNoEstan(videoId);
-}
-
-// === Cargar comentarios SOLO si no están en caché, y actualizar si es necesario ===
-async function cargarComentariosSiNoEstan(videoId) {
-  if (!videoId) return;
-
-  // Si ya están en memoria, no hagas fetch (ya se renderizó arriba).
-  if (comentariosPorVideo[videoId]) return;
-
-  // Loader opcional:
-  contenedorComentarios.innerHTML = "<p>Cargando comentarios...</p>";
-
-  try {
-    const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}`);
-    const data = await res.json();
-    comentariosPorVideo[videoId] = data.data || [];
-
-    // ⚡ Solo renderiza si ese video sigue activo
-    const currentId = obtenerIdVideoActivo();
-    if (videoId === currentId) {
-      renderizarComentarios(comentariosPorVideo[videoId]);
-    }
-  } catch (err) {
-    console.error("Error cargando comentarios:", err);
-    contenedorComentarios.innerHTML = "<p>Error al cargar comentarios.</p>";
-  }
-}
-
-// === Recargar comentarios de un video específico (se guarda en cache) ===
-async function cargarComentarios(videoId) {
-  if (!videoId) return;
-
-  // ⚡ Mostrar comentarios de caché primero
-  renderizarComentarios(comentariosPorVideo[videoId] || []);
-
-  try {
-    const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}`);
-    const data = await res.json();
-    comentariosPorVideo[videoId] = data.data || [];
-
-    // ⚡ Solo actualiza UI si el video sigue siendo el activo
-    const currentId = obtenerIdVideoActivo();
-    if (videoId === currentId) {
-      renderizarComentarios(comentariosPorVideo[videoId]);
-    }
-  } catch (err) {
-    console.error("Error cargando comentarios:", err);
-    if (!comentariosPorVideo[videoId]) {
-      contenedorComentarios.innerHTML = "<p>Error al cargar comentarios.</p>";
-    }
-  }
-}
-
-// === Verificar en segundo plano si hubo cambios en comentarios ===
-async function verificarComentarios() {
-  try {
-    const response = await fetch(`${SCRIPT_URL}?accion=obtenerContadorComentarios`);
-    const data = await response.json();
-    const totalComentariosActual = data.contadorComentarios || 0;
-
-    if (data.comentarios) {
-      comentariosPorAnuncio = data.comentarios;
-    }
-
-    if (contadorComentariosAnterior === -1) {
-      contadorComentariosAnterior = totalComentariosActual;
-    } else if (totalComentariosActual !== contadorComentariosAnterior) {
-      contadorComentariosAnterior = totalComentariosActual;
-
-      // Solo recargar comentarios del anuncio actual
-      const activeIndex = swiperInstance?.realIndex ?? 0;
-      const anuncioActual = anunciosData[activeIndex];
-      if (anuncioActual) {
-        const nuevosComentarios = normalizarComentarios(
-          comentariosPorAnuncio[anuncioActual.id] || []
-        );
-        anuncioActual.comentarios = nuevosComentarios;
-        updateContentOverlay(activeIndex);
-      }
-    }
-  } catch (e) {
-    console.error("Error al verificar comentarios:", e);
-  }
-}
-
-// === Enviar comentario y refrescar cache ===
-async function enviarComentario() {
-  const texto = entradaComentario.value.trim();
-  const videoId = obtenerIdVideoActivo();
-  if (!texto || !videoId) return;
-
-  botonEnviarComentario.disabled = true;
-  try {
-    const response = await fetch(SCRIPT_URL, {
-      method: "POST",
-      body: new URLSearchParams({
-        accion: "agregarComentarioVideo",
-        videoId,
-        comentario: texto,
-        autor: usuarioAutor,
-        correo: usuarioCorreo,
-      })
-    });
-
-    const data = await response.json();
-
-    if (data.status === "success") {
-      entradaComentario.value = "";
-      await cargarComentarios(videoId); // recarga cache + UI
-    } else {
-      showAlert("❌ Error al guardar: " + (data.message || "Intenta de nuevo"));
-    }
-  } catch (err) {
-    showAlert("⚠️ Error de conexión al enviar el comentario.");
-  } finally {
-    botonEnviarComentario.disabled = false;
-  }
-}
-
-botonEnviarComentario.onclick = enviarComentario;
-
-// === Eventos Swiper ===
-document.addEventListener("DOMContentLoaded", () => {
-  if (typeof swiper !== "undefined") {
-    swiper.on("slideChange", () => {
-      updateFixedTitle(swiper);
-
-      // ⚡ mostrar y actualizar comentarios de forma instantánea
-      const videoId = obtenerIdVideoActivo();
-      if (videoId) mostrarYActualizarComentarios(videoId);
-    });
-  }
-
-  // Primer video al cargar
-  setTimeout(() => {
-    updateFixedTitle(swiper);
-    const videoId = obtenerIdVideoActivo();
-    if (videoId) {
-      mostrarYActualizarComentarios(videoId);
-    }
-  }, 300);
-
-  // 🔄 cada 5s verificar si hubo nuevos comentarios
-  setInterval(verificarComentarios, 5000);
-});
-
-        
+  
 // === NOTIFICACIONES ===
 let notifications = [];
 let lastVideos = [];
@@ -1010,7 +740,7 @@ deleteConfirm.onclick = async () => {
             return { type: "other", embedSrc: link, poster: "" };
         }
 
-      function createSlide(titulo, link, descripcion, videoId) {
+       function createSlide(titulo, link, descripcion) {
     const { embedSrc, poster } = getEmbedInfo(link);
     const slide = document.createElement("div");
     slide.className = "swiper-slide";
@@ -1020,7 +750,6 @@ deleteConfirm.onclick = async () => {
     const card = document.createElement("div");
     card.className = "player-card";
     card.dataset.embed = embedSrc;
-    card.dataset.id = videoId || ""; // 👈 Guardar ID único aquí
 
     const posterEl = document.createElement("div");
     posterEl.className = "poster";
@@ -1036,11 +765,11 @@ deleteConfirm.onclick = async () => {
     });
 
     card.appendChild(posterEl);
+
     slide.appendChild(card);
    
     return slide;
 }
-
 
 
         function mountIframe(cardEl) {
@@ -1323,65 +1052,79 @@ function cleanupIframesExceptActive() {
 
         // --- FIN DE LA CORRECCIÓN ---
 
-function updateFixedTitle(swiperInstance) {
-  const fixedBox = document.getElementById("video-title-fixed");
-  if (!fixedBox || !swiperInstance) return;
+     function updateFixedTitle(swiperInstance) {
+    const fixedBox = document.getElementById("video-title-fixed");
+    if (!fixedBox || !swiperInstance) return;
 
-  const activeSlide = swiperInstance.slides[swiperInstance.activeIndex] || document.querySelector('.swiper-slide-active');
-  if (!activeSlide) return;
+    // Obtener el slide activo
+    const activeSlide = swiperInstance.slides[swiperInstance.activeIndex] || document.querySelector('.swiper-slide-active');
 
-  const newTitle = activeSlide.dataset.title || "Video";
-  const newDesc = activeSlide.dataset.descripcion || "";
+    if (!activeSlide) return;
 
-  const titleEl = fixedBox.querySelector(".video-title");
-  const descEl = fixedBox.querySelector(".video-desc");
+    const newTitle = activeSlide.dataset.title || "Video";
+    const newDesc = activeSlide.dataset.descripcion || "";
 
-  const currentTitle = titleEl.querySelector('.text-container')?.textContent;
-  const currentDesc = descEl.querySelector('.text-container')?.textContent;
+    const titleEl = fixedBox.querySelector(".video-title");
+    const descEl = fixedBox.querySelector(".video-desc");
 
-  if (currentTitle === newTitle && currentDesc === newDesc) {
-    return;
-  }
+    // Verificar si el contenido ya es el mismo para evitar parpadeos innecesarios
+    const currentTitle = titleEl.querySelector('.text-container')?.textContent;
+    const currentDesc = descEl.querySelector('.text-container')?.textContent;
+    
+    if (currentTitle === newTitle && currentDesc === newDesc) {
+        return;
+    }
 
-  fixedBox.style.opacity = 0;
+    // Transición suave al cambiar de título
+    fixedBox.style.opacity = 0;
 
-  setTimeout(() => {
-    const setupExpandableText = (element, text) => {
-      element.innerHTML = `<span class="text-container">${text}</span>`;
-      const container = element.querySelector('.text-container');
+    setTimeout(() => {
+        // Función genérica para manejar el truncamiento y expansión
+        const setupExpandableText = (element, text) => {
+            // Eliminar contenido anterior para evitar duplicados
+            element.innerHTML = `<span class="text-container">${text}</span>`;
+            const container = element.querySelector('.text-container');
+            
+            // Usar setTimeout para asegurar que la renderización está completa antes de medir
+            setTimeout(() => {
+                // Comprobar si el contenido se desborda y necesita truncamiento
+                if (container.scrollHeight > container.clientHeight) {
+                    const toggleButton = document.createElement('span');
+                    toggleButton.className = 'toggle-text';
+                    toggleButton.textContent = '...más';
+                    element.appendChild(toggleButton);
 
-      setTimeout(() => {
-        if (container.scrollHeight > container.clientHeight) {
-          const toggleButton = document.createElement('span');
-          toggleButton.className = 'toggle-text';
-          toggleButton.textContent = '...más';
-          element.appendChild(toggleButton);
+                    // Añadir el listener para expandir/contraer
+                    element.addEventListener('click', () => {
+                        const isExpanded = container.classList.contains('expanded');
+                        if (isExpanded) {
+                            container.classList.remove('expanded');
+                            toggleButton.textContent = '...más';
+                        } else {
+                            container.classList.add('expanded');
+                            toggleButton.textContent = 'mostrar menos';
+                        }
+                    });
+                } else {
+                    // Si no necesita truncamiento, limpiar el listener y el botón
+                    const existingButton = element.querySelector('.toggle-text');
+                    if (existingButton) existingButton.remove();
+                    // Importante: Eliminar el listener si no es necesario para evitar problemas
+                    const clonedElement = element.cloneNode(true);
+                    element.parentNode.replaceChild(clonedElement, element);
+                }
+            }, 50);
+        };
 
-          element.addEventListener('click', () => {
-            const isExpanded = container.classList.contains('expanded');
-            if (isExpanded) {
-              container.classList.remove('expanded');
-              toggleButton.textContent = '...más';
-            } else {
-              container.classList.add('expanded');
-              toggleButton.textContent = 'mostrar menos';
-            }
-          });
-        } else {
-          const existingButton = element.querySelector('.toggle-text');
-          if (existingButton) existingButton.remove();
-          const clonedElement = element.cloneNode(true);
-          element.parentNode.replaceChild(clonedElement, element);
-        }
-      }, 50);
-    };
+        // Aplicar la lógica al título y la descripción
+        setupExpandableText(titleEl, newTitle);
+        setupExpandableText(descEl, newDesc);
 
-    setupExpandableText(titleEl, newTitle);
-    setupExpandableText(descEl, newDesc);
-
-    fixedBox.style.opacity = 1;
-  }, 120);
+        // Mostrar el contenedor de nuevo
+        fixedBox.style.opacity = 1;
+    }, 120);
 }
+
         
 
 async function cargarVideos(checkNew = false) {
@@ -1402,22 +1145,20 @@ async function cargarVideos(checkNew = false) {
         const titulo = row[0];
         const link = row[1];
         const descripcion = row[4] || "";
-        const videoId = row[5] || ""; // 👈 Columna F: ID único del video
-
         if (!checkNew) {
-          wrapper.appendChild(createSlide(titulo, link, descripcion, videoId));
+          wrapper.appendChild(createSlide(titulo, link, descripcion));
         }
-        newVideos.push({ title: titulo, link, desc: descripcion, id: videoId });
+        newVideos.push({ title: titulo, link, desc: descripcion });
       });
     }
 
     // 🔥 Eliminación silenciosa (solo en modo checkNew para no afectar carga inicial)
     if (checkNew) {
-      const idsActivos = newVideos.map(v => v.id);
+      const linksActivos = newVideos.map(v => v.link);
 
       Array.from(wrapper.children).forEach(slide => {
         const card = slide.querySelector(".player-card");
-        if (card && !idsActivos.includes(card.dataset.id)) {
+        if (card && !linksActivos.includes(card.dataset.embed)) {
           wrapper.removeChild(slide);
           if (swiper) swiper.update();
         }
@@ -1427,7 +1168,7 @@ async function cargarVideos(checkNew = false) {
     // 🔥 Corregido: ahora también notifica si es el primer video
     if (checkNew) {
       newVideos.forEach(v => {
-        if (!lastVideos.find(old => old.id === v.id)) {
+        if (!lastVideos.find(old => old.link === v.link)) {
           notifications.unshift(v); // acumula notificación
         }
       });
@@ -1440,36 +1181,28 @@ async function cargarVideos(checkNew = false) {
 
     if (!checkNew) {
       if (swiper) swiper.destroy(true, true);
-     swiper = new Swiper(".swiper", {
-  loop: true,
-  direction: "horizontal",
-  slidesPerView: 1,
-  spaceBetween: 10,
-  pagination: false,
-  on: {
-    init() {
-      updateFixedTitle(this);
-      const firstId = obtenerIdVideoActivo();
-      if (firstId) mostrarYActualizarComentarios(firstId); // ✅ mostrar rápido + actualizar en segundo plano
-    },
-    slideChange() {
-      cleanupIframesExceptActive();
-      updateFixedTitle(this);
-      
-      // ✅ mostrar y actualizar comentarios del video actual
-      const videoId = obtenerIdVideoActivo();
-      if (videoId) mostrarYActualizarComentarios(videoId);
-    }
-  },
-});
-
+      swiper = new Swiper(".swiper", {
+        loop: true,
+        direction: "horizontal",
+        slidesPerView: 1,
+        spaceBetween: 10,
+        pagination: false,
+        on: {
+          init() {
+            updateFixedTitle(this);
+          },
+          slideChange() {
+            cleanupIframesExceptActive();
+            updateFixedTitle(this);
+          },
+          slideChangeTransitionEnd() {
+            updateFixedTitle(this);
+          }
+        },
+      });
 
       cleanupIframesExceptActive();
       updateFixedTitle(swiper);
-
-      // 🔥 Asegurar que al cargar todo se muestran comentarios del primero
-      const firstId = obtenerIdVideoActivo();
-      if (firstId) cargarComentarios(firstId);
     }
   } catch (e) {
     console.error("Error cargando videos:", e);
@@ -1477,6 +1210,7 @@ async function cargarVideos(checkNew = false) {
     loader.style.display = "none";
   }
 }
+
 
 
 
@@ -1490,5 +1224,3 @@ setInterval(() => {
     </script>
 </body>
 </html>
-
-
