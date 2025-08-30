@@ -583,7 +583,7 @@
 
   .comment-input-container input {
     flex-grow: 1;
-    background: #333;
+    background: transparent;
     border: 1px solid #555;
     border-radius: 25px; /* más redondeado */
     padding: 12px 20px;  /* 🔥 más alto y largo */
@@ -893,7 +893,7 @@ commentInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') enviarComentario();
 });
 commentInput.addEventListener('focus', () => {
-  document.body.style.transform = `translateY(-60%)`;
+  document.body.style.transform = `translateY(-50%)`;
 });
 commentInput.addEventListener('blur', () => {
   document.body.style.transform = `translateY(0)`;
@@ -1658,6 +1658,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
