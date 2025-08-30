@@ -701,7 +701,7 @@ commentsList.addEventListener('touchend', (e) => {
   let deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
   commentContent.style.transition = 'transform 0.3s ease';
   if (diffX > swipeThreshold) {
-    commentContent.style.transform = translateX(100px);
+   commentContent.style.transform = `translateX(100px)`;
     if (!deleteBtnContainer) {
       deleteBtnContainer = document.createElement('div');
       deleteBtnContainer.className = 'delete-btn-container';
@@ -1437,7 +1437,7 @@ function cleanupIframesExceptActive() {
         // Función genérica para manejar el truncamiento y expansión
         const setupExpandableText = (element, text) => {
             // Eliminar contenido anterior para evitar duplicados
-            element.innerHTML = <span class="text-container">${text}</span>;
+           element.innerHTML = `<span class="text-container">${text}</span>`;
             const container = element.querySelector('.text-container');
             
             // Usar setTimeout para asegurar que la renderización está completa antes de medir
@@ -1583,4 +1583,5 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
