@@ -691,6 +691,7 @@ const commentsList = document.getElementById('commentsList');
 const commentInputContainer = document.querySelector('.comment-input-container');
 const commentInput = document.getElementById('commentInput');
 const sendCommentBtn = document.querySelector('.send-comment-btn');
+const notificationWrapper = document.getElementById('notification-wrapper');
 const notificationList = document.getElementById('notification-list');
 
 let comentariosPorVideo = {}; // videoId: [ {autor, correo, fecha, comentario} ]
@@ -707,13 +708,13 @@ document.querySelector('.swiper').addEventListener('click', () => {
     commentsCounter.classList.toggle('hidden-overlay');
     commentInputContainer.classList.toggle('hidden-overlay');
 
-    // 🔔 Ocultar notificaciones si están abiertas
-    if (!notificationList.classList.contains('hidden')) {
-      notificationList.classList.add('hidden');
-    }
+    // 🔔 Ocultar botón y lista de notificaciones
+    notificationWrapper.classList.toggle('hidden-overlay');
+    notificationList.classList.add('hidden'); // Cierra la lista si estaba abierta
   }
   lastTapTime = currentTime;
 });
+
 
 
 // Expandir/colapsar comentarios
@@ -1665,6 +1666,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
