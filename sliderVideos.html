@@ -935,18 +935,19 @@ commentInput.addEventListener('blur', () => {
 
 // === Refrescar comentarios cuando cambia el video ===
 function refrescarComentariosSlide() {
-  if (!swiper) return;
+  if (!swiper || !lastVideos || lastVideos.length === 0) return;
 
-  // ✅ Usamos el índice real para evitar problemas con clones
-  const slideActivo = swiper.slides[swiper.realIndex];
-  if (!slideActivo) return;
+  // ✅ Tomamos el índice REAL del slide, ignorando los clones
+  const indiceReal = swiper.realIndex;
 
-  const card = slideActivo.querySelector(".player-card");
-  if (!card) return;
+  // ✅ Buscamos el videoId desde lastVideos, que siempre está correcto
+  const videoActivo = lastVideos[indiceReal];
+  if (!videoActivo) return;
 
-  const videoId = card.dataset.id;
-  if (videoId) cargarComentarios(videoId);
+  // ✅ Cargar comentarios del video real
+  cargarComentarios(videoActivo.id);
 }
+
 
 
 
@@ -1710,5 +1711,6 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
