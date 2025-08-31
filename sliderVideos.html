@@ -717,7 +717,7 @@ document.querySelector('.swiper').addEventListener('click', () => {
 
 
 
-// === Expandir / Colapsar comentarios ===
+// Expandir/colapsar comentarios
 commentsOverlay.addEventListener('click', (e) => {
   if (!isSwiping) {
     commentsOverlay.classList.toggle('expanded');
@@ -725,12 +725,11 @@ commentsOverlay.addEventListener('click', (e) => {
   isSwiping = false;
 });
 
-// === Swipe-to-delete en móviles ===
+// --- Swipe-to-delete en móviles ---
 commentsList.addEventListener('touchstart', (e) => {
   const commentElement = e.target.closest('li');
   if (!commentElement) return;
   const commentData = commentElement.dataset;
-
   if (normalizeText(commentData.correo) === normalizeText(usuarioCorreo)) {
     startX = e.touches[0].clientX;
     activeComment = commentElement;
@@ -738,47 +737,39 @@ commentsList.addEventListener('touchstart', (e) => {
     isSwiping = false;
   }
 });
-
 commentsList.addEventListener('touchmove', (e) => {
   if (!activeComment) return;
   const currentX = e.touches[0].clientX;
   const diffX = currentX - startX;
-
   if (Math.abs(diffX) > 10) isSwiping = true;
-
-  const commentContent = activeComment.querySelector('.comment-content');
-  const deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
-
   if (diffX > 0) {
-    commentContent.style.transform = `translateX(${diffX}px)`;
+    activeComment.querySelector('.comment-content').style.transform = `translateX(${diffX}px)`;
+    let deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
     if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(0)`;
   } else {
-    commentContent.style.transform = `translateX(0)`;
+    activeComment.querySelector('.comment-content').style.transform = `translateX(0)`;
+    let deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
     if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
   }
 });
-
 commentsList.addEventListener('touchend', (e) => {
   if (!activeComment) return;
   const swipeThreshold = 50;
   const diffX = e.changedTouches[0].clientX - startX;
-
   const commentContent = activeComment.querySelector('.comment-content');
   let deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
   commentContent.style.transition = 'transform 0.3s ease';
-
   if (diffX > swipeThreshold) {
     commentContent.style.transform = `translateX(100px)`;
     if (!deleteBtnContainer) {
       deleteBtnContainer = document.createElement('div');
       deleteBtnContainer.className = 'delete-btn-container';
-      const deleteBtn = document.createElement('div');
+      let deleteBtn = document.createElement('div');
       deleteBtn.className = 'delete-btn';
       deleteBtn.textContent = 'Borrar';
       deleteBtnContainer.appendChild(deleteBtn);
       activeComment.insertBefore(deleteBtnContainer, commentContent);
       deleteBtnContainer.style.transform = `translateX(0)`;
-
       deleteBtn.addEventListener('click', (ev) => {
         ev.stopPropagation();
         const commentData = activeComment.dataset;
@@ -795,21 +786,20 @@ commentsList.addEventListener('touchend', (e) => {
   startX = 0;
 });
 
-// === Obtener el ID del video activo ===
-// 🔹 Usamos .swiper-slide-active para evitar problemas con loop:true
+// --- Lógica de comentarios por video ---
 function getActiveVideoId() {
-  const activeSlide = document.querySelector(".swiper-slide-active");
-  return activeSlide ? activeSlide.dataset.videoid : null;
+  if (!swiper) return null;
+  const activeSlide = swiper.slides[swiper.activeIndex];
+  if (!activeSlide) return null;
+  return activeSlide.dataset.videoid || null; // ← AHORA USA EL ID ÚNICO
 }
 
 
-// === Cargar comentarios desde Google Sheets ===
 async function cargarComentarios(videoId) {
   try {
     const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}`);
     const data = await res.json();
     comentariosPorVideo[videoId] = [];
-
     if (Array.isArray(data.data) && data.data.length > 0) {
       comentariosPorVideo[videoId] = data.data.map(c => ({
         autor: c[2] || "Anónimo",
@@ -825,13 +815,10 @@ async function cargarComentarios(videoId) {
   }
 }
 
-// === Renderizar comentarios en el DOM ===
 function renderComentarios(videoId) {
   if (!videoId) return;
-
   const lista = comentariosPorVideo[videoId] || [];
   commentsList.innerHTML = '';
-
   if (lista.length === 0) {
     const li = document.createElement('li');
     li.textContent = "Sé el primero en comentar...";
@@ -839,21 +826,17 @@ function renderComentarios(videoId) {
     commentCountValue.textContent = "0";
     return;
   }
-
   lista.forEach(c => {
     const li = document.createElement('li');
     li.classList.add('deletable');
-
     const commentContent = document.createElement('div');
     commentContent.className = 'comment-content';
     commentContent.textContent = `${c.autor} (${c.fecha}) - ${c.comentario}`;
     li.appendChild(commentContent);
-
     li.dataset.correo = c.correo;
     li.dataset.texto = c.comentario;
-
-    // Si es el comentario del usuario actual, permitir borrarlo
     if (normalizeText(c.correo) === normalizeText(usuarioCorreo)) {
+      // Eliminar solo si es del usuario actual
       const deleteBtnContainer = document.createElement('div');
       deleteBtnContainer.className = 'delete-btn-container';
       const deleteBtn = document.createElement('div');
@@ -861,7 +844,6 @@ function renderComentarios(videoId) {
       deleteBtn.textContent = 'Borrar';
       deleteBtnContainer.appendChild(deleteBtn);
       li.appendChild(deleteBtnContainer);
-
       deleteBtn.addEventListener('click', (ev) => {
         ev.stopPropagation();
         eliminarComentario(videoId, c.comentario, c.correo);
@@ -869,18 +851,14 @@ function renderComentarios(videoId) {
     }
     commentsList.appendChild(li);
   });
-
   commentCountValue.textContent = lista.length;
 }
 
-// === Enviar un nuevo comentario ===
 async function enviarComentario() {
   const texto = commentInput.value.trim();
   const videoId = getActiveVideoId();
   if (!texto || !videoId) return;
-
   sendCommentBtn.disabled = true;
-
   try {
     await fetch(SCRIPT_URL, {
       method: "POST",
@@ -890,23 +868,17 @@ async function enviarComentario() {
         comentario: texto,
         autor: usuarioAutor,
         correo: usuarioCorreo,
-      }),
+      })
     });
-
     commentInput.value = "";
     await cargarComentarios(videoId);
-
-    // 🔹 Refrescamos los comentarios inmediatamente
-    refrescarComentariosSlide();
   } catch (e) {
-    console.error("Error al enviar comentario:", e);
+    // Puedes mostrar un alert personalizado aquí si quieres
   } finally {
     sendCommentBtn.disabled = false;
   }
 }
 
-
-// === Eliminar comentario ===
 async function eliminarComentario(videoId, comentario, correo) {
   if (!videoId || !comentario || !correo) return;
   try {
@@ -920,12 +892,10 @@ async function eliminarComentario(videoId, comentario, correo) {
       })
     });
     await cargarComentarios(videoId);
-  } catch (e) {
-    console.error("Error al eliminar comentario:", e);
-  }
+  } catch (e) {}
 }
 
-// === Listeners del input ===
+// Input UX
 sendCommentBtn.addEventListener('click', enviarComentario);
 commentInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') enviarComentario();
@@ -937,51 +907,13 @@ commentInput.addEventListener('blur', () => {
   document.body.style.transform = `translateY(0)`;
 });
 
-// === Refrescar comentarios cuando cambia el video ===
-function refrescarComentariosSlide() {
-  const videoId = getActiveVideoId();
-  const lista = comentariosPorVideo[videoId] || [];
 
-  const commentsList = document.getElementById("commentsList");
-  const commentCountValue = document.getElementById("commentCountValue");
-
-  commentsList.innerHTML = "";
-
-  if (lista.length > 0) {
-    lista.forEach((c) => {
-      const li = document.createElement("li");
-      li.textContent = `${c.autor} (${c.fecha}) - ${c.comentario}`;
-      commentsList.appendChild(li);
-    });
-    commentCountValue.textContent = lista.length;
-  } else {
-    const li = document.createElement("li");
-    li.textContent = "No hay comentarios aún.";
-    commentsList.appendChild(li);
-    commentCountValue.textContent = 0;
-  }
+if (window.swiper) {
+  swiper.on('slideChange', refrescarComentariosSlide);
 }
+document.addEventListener('DOMContentLoaded', refrescarComentariosSlide);
 
-
-
-
-
-// === Cargar comentarios en tiempo real ===
-function iniciarComentariosTiempoReal() {
-  if (comentariosInterval) clearInterval(comentariosInterval);
-
-  const videoId = getActiveVideoId();
-  if (!videoId) return;
-
-  cargarComentarios(videoId);
-
-  comentariosInterval = setInterval(() => {
-    const idActual = getActiveVideoId();
-    if (idActual) cargarComentarios(idActual);
-  }, 3000);
-}
-
-// === Utilidad para normalizar texto/correos ===
+// --- Utilidad para normalizar texto/correos ---
 function normalizeText(text) {
   return (text || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
 }
@@ -1623,47 +1555,37 @@ function cleanupIframesExceptActive() {
 
         
 
-// === Cargar videos y comentarios ===
 async function cargarVideos(checkNew = false) {
   const loader = document.getElementById("loader");
   if (!checkNew) loader.style.display = "flex";
-
   try {
     const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
     const data = await res.json();
 
-    // 🟢 Guardamos todos los comentarios del servidor UNA SOLA VEZ
-    if (data.comentarios && typeof data.comentarios === "object") {
-      comentariosPorVideo = data.comentarios;
-    } else {
-      comentariosPorVideo = {};
+    const wrapper = document.getElementById("slides");
+    if (!checkNew) {
+      wrapper.innerHTML = "";
     }
 
-    const wrapper = document.getElementById("slides");
-    if (!checkNew) wrapper.innerHTML = "";
-
     let newVideos = [];
-    const fragment = document.createDocumentFragment();
-
     if (Array.isArray(data.data)) {
       data.data.forEach((row) => {
         const titulo = row[0];
         const link = row[1];
         const descripcion = row[4] || "";
-        const id = row[5];
-
-        const slide = createSlide(titulo, link, descripcion, id);
-        fragment.appendChild(slide);
-
-        newVideos.push({ title: titulo, link, desc: descripcion, id });
+        const id = row[5]; // ← ASEGÚRATE DE EXTRAER EL ID DE LA FILA
+        if (!checkNew) {
+          wrapper.appendChild(createSlide(titulo, link, descripcion, id)); // ← PASA EL ID AQUÍ
+        }
+        newVideos.push({ title: titulo, link, desc: descripcion, id }); // ← GUARDA EL ID POR SI LO NECESITAS
       });
     }
 
-    if (!checkNew) wrapper.appendChild(fragment);
-
+    // 🔥 Eliminación silenciosa (solo en modo checkNew para no afectar carga inicial)
     if (checkNew) {
-      const linksActivos = newVideos.map((v) => v.link);
-      Array.from(wrapper.children).forEach((slide) => {
+      const linksActivos = newVideos.map(v => v.link);
+
+      Array.from(wrapper.children).forEach(slide => {
         const card = slide.querySelector(".player-card");
         if (card && !linksActivos.includes(card.dataset.embed)) {
           wrapper.removeChild(slide);
@@ -1672,25 +1594,20 @@ async function cargarVideos(checkNew = false) {
       });
     }
 
+    // 🔥 Corregido: ahora también notifica si es el primer video
     if (checkNew) {
-      newVideos.forEach((v) => {
-        if (!lastVideos.find((old) => old.link === v.link)) {
-          notifications.unshift(v);
+      newVideos.forEach(v => {
+        if (!lastVideos.find(old => old.link === v.link)) {
+          notifications.unshift(v); // acumula notificación
         }
       });
-      if (notifications.length > 0) renderNotifications();
+      if (notifications.length > 0) {
+        renderNotifications();
+      }
     }
 
     lastVideos = newVideos;
 
-    // 🟢 Cargamos comentarios de TODOS los videos al inicio
-    for (const v of newVideos) {
-      if (!comentariosPorVideo[v.id]) {
-        await cargarComentarios(v.id);
-      }
-    }
-
-    // Swiper solo se reinicia una vez
     if (!checkNew) {
       if (swiper) swiper.destroy(true, true);
       swiper = new Swiper(".swiper", {
@@ -1702,25 +1619,34 @@ async function cargarVideos(checkNew = false) {
         on: {
           init() {
             updateFixedTitle(this);
-            refrescarComentariosSlide(); // ✅ Muestra comentarios del primer video
+            refrescarComentariosSlide(); // ← AGREGA ESTO PARA CARGAR COMENTARIOS DEL PRIMER VIDEO
           },
           slideChange() {
             cleanupIframesExceptActive();
             updateFixedTitle(this);
-            refrescarComentariosSlide(); // ✅ Cambia comentarios al deslizar
+            refrescarComentariosSlide(); // ← AGREGA ESTO PARA CAMBIAR LOS COMENTARIOS AL CAMBIAR DE VIDEO
           },
+          slideChangeTransitionEnd() {
+            updateFixedTitle(this);
+          }
         },
       });
 
       cleanupIframesExceptActive();
       updateFixedTitle(swiper);
-      refrescarComentariosSlide();
+      refrescarComentariosSlide(); // ← LLAMA ESTO AL FINAL PARA CARGAR COMENTARIOS INICIALES
     }
   } catch (e) {
     console.error("Error cargando videos:", e);
   } finally {
     loader.style.display = "none";
   }
+}
+
+// --- Refresca los comentarios según el video activo ---
+function refrescarComentariosSlide() {
+  const videoId = getActiveVideoId();
+  if (videoId) cargarComentarios(videoId);
 }
 
 
@@ -1736,15 +1662,3 @@ setInterval(() => {
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
