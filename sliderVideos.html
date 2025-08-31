@@ -1710,6 +1710,105 @@ async function cargarVideos(checkNew = false) {
     loader.style.display = "none";
   }
 }
+async function cargarVideos(checkNew = false) {
+  const loader = document.getElementById("loader");
+  if (!checkNew) loader.style.display = "flex";
+
+  try {
+    const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
+    const data = await res.json();
+
+    // 🟢 Guardamos todos los comentarios del servidor una sola vez si vienen precargados
+    if (data.comentarios) {
+      comentariosPorVideo = data.comentarios; 
+    }
+
+    const wrapper = document.getElementById("slides");
+    if (!checkNew) wrapper.innerHTML = "";
+
+    let newVideos = [];
+    const fragment = document.createDocumentFragment();
+
+    if (Array.isArray(data.data)) {
+      data.data.forEach((row) => {
+        const titulo = row[0];
+        const link = row[1];
+        const descripcion = row[4] || "";
+        const id = row[5];
+
+        const slide = createSlide(titulo, link, descripcion, id);
+        fragment.appendChild(slide);
+
+        newVideos.push({ title: titulo, link, desc: descripcion, id });
+      });
+    }
+
+    if (!checkNew) wrapper.appendChild(fragment);
+
+    if (checkNew) {
+      const linksActivos = newVideos.map(v => v.link);
+      Array.from(wrapper.children).forEach(slide => {
+        const card = slide.querySelector(".player-card");
+        if (card && !linksActivos.includes(card.dataset.embed)) {
+          wrapper.removeChild(slide);
+          if (swiper) swiper.update();
+        }
+      });
+    }
+
+    if (checkNew) {
+      newVideos.forEach(v => {
+        if (!lastVideos.find(old => old.link === v.link)) {
+          notifications.unshift(v);
+        }
+      });
+      if (notifications.length > 0) renderNotifications();
+    }
+
+    lastVideos = newVideos;
+
+    // 🔹 PRECARGAR COMENTARIOS DE TODOS LOS VIDEOS (solo en la primera carga)
+    if (!checkNew && Array.isArray(data.data)) {
+      for (const row of data.data) {
+        const id = row[5];
+        if (id) {
+          await cargarComentarios(id);
+        }
+      }
+    }
+
+    // Swiper solo se reinicia una vez
+    if (!checkNew) {
+      if (swiper) swiper.destroy(true, true);
+      swiper = new Swiper(".swiper", {
+        loop: true,
+        direction: "horizontal",
+        slidesPerView: 1,
+        spaceBetween: 10,
+        pagination: false,
+        on: {
+          init() {
+            updateFixedTitle(this);
+            refrescarComentariosSlide();
+          },
+          slideChange() {
+            cleanupIframesExceptActive();
+            updateFixedTitle(this);
+            refrescarComentariosSlide();
+          }
+        },
+      });
+
+      cleanupIframesExceptActive();
+      updateFixedTitle(swiper);
+      refrescarComentariosSlide();
+    }
+  } catch (e) {
+    console.error("Error cargando videos:", e);
+  } finally {
+    loader.style.display = "none";
+  }
+}
 
 
 
@@ -1725,3 +1824,4 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
