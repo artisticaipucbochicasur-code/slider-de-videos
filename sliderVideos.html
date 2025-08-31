@@ -936,26 +936,18 @@ commentInput.addEventListener('blur', () => {
 // === Refrescar comentarios cuando cambia el video ===
 function refrescarComentariosSlide() {
   const videoId = getActiveVideoId();
-  const lista = comentariosPorVideo[videoId] || [];
+  if (!videoId) return;
 
-  const commentsList = document.getElementById("commentsList");
-  const commentCountValue = document.getElementById("commentCountValue");
-
-  commentsList.innerHTML = "";
-
-  if (lista.length > 0) {
-    lista.forEach((c) => {
-      const li = document.createElement("li");
-      li.textContent = `${c.autor} (${c.fecha}) - ${c.comentario}`;
-      commentsList.appendChild(li);
-    });
-    commentCountValue.textContent = lista.length;
-  } else {
-    const li = document.createElement("li");
-    li.textContent = "No hay comentarios aún.";
-    commentsList.appendChild(li);
-    commentCountValue.textContent = 0;
+  // Si no tienes los comentarios cargados, pídelo al servidor
+  if (!comentariosPorVideo[videoId]) {
+    // Esto luego llamará a renderComentarios(videoId)
+    cargarComentarios(videoId);
+    // Puedes mostrar un loader aquí si quieres
+    return;
   }
+
+  // Si ya los tienes, simplemente los pinta
+  renderComentarios(videoId);
 }
 
 
@@ -1687,17 +1679,19 @@ async function cargarVideos(checkNew = false) {
         slidesPerView: 1,
         spaceBetween: 10,
         pagination: false,
-        on: {
-          init() {
-            updateFixedTitle(this);
-            refrescarComentariosSlide();
-          },
-          slideChange() {
-            cleanupIframesExceptActive();
-            updateFixedTitle(this);
-            refrescarComentariosSlide();
-          }
-        },
+     on: {
+  init() {
+    updateFixedTitle(this);
+    refrescarComentariosSlide();
+    iniciarComentariosTiempoReal();
+  },
+  slideChange() {
+    cleanupIframesExceptActive();
+    updateFixedTitle(this);
+    refrescarComentariosSlide();
+    iniciarComentariosTiempoReal();
+  }
+},
       });
 
       cleanupIframesExceptActive();
@@ -1725,3 +1719,4 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
