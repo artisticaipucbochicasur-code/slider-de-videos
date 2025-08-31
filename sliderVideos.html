@@ -935,18 +935,29 @@ commentInput.addEventListener('blur', () => {
 
 // === Refrescar comentarios cuando cambia el video ===
 function refrescarComentariosSlide() {
-  if (!swiper || !lastVideos || lastVideos.length === 0) return;
+  const videoId = getActiveVideoId();
+  const lista = comentariosPorVideo[videoId] || [];
 
-  // ✅ Tomamos el índice REAL del slide, ignorando los clones
-  const indiceReal = swiper.realIndex;
+  const commentsList = document.getElementById("commentsList");
+  const commentCountValue = document.getElementById("commentCountValue");
 
-  // ✅ Buscamos el videoId desde lastVideos, que siempre está correcto
-  const videoActivo = lastVideos[indiceReal];
-  if (!videoActivo) return;
+  commentsList.innerHTML = "";
 
-  // ✅ Cargar comentarios del video real
-  cargarComentarios(videoActivo.id);
+  if (lista.length > 0) {
+    lista.forEach((c) => {
+      const li = document.createElement("li");
+      li.textContent = `${c.autor} (${c.fecha}) - ${c.comentario}`;
+      commentsList.appendChild(li);
+    });
+    commentCountValue.textContent = lista.length;
+  } else {
+    const li = document.createElement("li");
+    li.textContent = "No hay comentarios aún.";
+    commentsList.appendChild(li);
+    commentCountValue.textContent = 0;
+  }
 }
+
 
 
 
@@ -1616,6 +1627,11 @@ async function cargarVideos(checkNew = false) {
     const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
     const data = await res.json();
 
+    // 🟢 Guardamos todos los comentarios del servidor una sola vez
+    if (data.comentarios) {
+      comentariosPorVideo = data.comentarios; 
+    }
+
     const wrapper = document.getElementById("slides");
     if (!checkNew) wrapper.innerHTML = "";
 
@@ -1636,10 +1652,8 @@ async function cargarVideos(checkNew = false) {
       });
     }
 
-    // Insertamos todos los slides de golpe → 🔥 instantáneo
     if (!checkNew) wrapper.appendChild(fragment);
 
-    // Manejo silencioso si hay cambios
     if (checkNew) {
       const linksActivos = newVideos.map(v => v.link);
       Array.from(wrapper.children).forEach(slide => {
@@ -1651,7 +1665,6 @@ async function cargarVideos(checkNew = false) {
       });
     }
 
-    // Notificaciones si hay nuevos videos
     if (checkNew) {
       newVideos.forEach(v => {
         if (!lastVideos.find(old => old.link === v.link)) {
@@ -1663,11 +1676,11 @@ async function cargarVideos(checkNew = false) {
 
     lastVideos = newVideos;
 
-    // Swiper solo se reinicia una vez, después de pintar slides
+    // Swiper solo se reinicia una vez
     if (!checkNew) {
       if (swiper) swiper.destroy(true, true);
       swiper = new Swiper(".swiper", {
-        loop: true, // ✅ Seguimos usando loop pero controlamos el índice real
+        loop: true,
         direction: "horizontal",
         slidesPerView: 1,
         spaceBetween: 10,
@@ -1675,26 +1688,19 @@ async function cargarVideos(checkNew = false) {
         on: {
           init() {
             updateFixedTitle(this);
-            // ✅ Siempre usamos swiper.realIndex para obtener el video correcto
-            const videoActivo = lastVideos[this.realIndex];
-            if (videoActivo) cargarComentarios(videoActivo.id);
+            refrescarComentariosSlide();
           },
           slideChange() {
             cleanupIframesExceptActive();
             updateFixedTitle(this);
-            // ✅ Igual aquí, cargamos comentarios del video real
-            const videoActivo = lastVideos[this.realIndex];
-            if (videoActivo) cargarComentarios(videoActivo.id);
+            refrescarComentariosSlide();
           }
         },
       });
 
       cleanupIframesExceptActive();
       updateFixedTitle(swiper);
-
-      // ✅ Comentarios del primer slide al iniciar
-      const videoActivo = lastVideos[swiper.realIndex];
-      if (videoActivo) cargarComentarios(videoActivo.id);
+      refrescarComentariosSlide();
     }
   } catch (e) {
     console.error("Error cargando videos:", e);
@@ -1717,6 +1723,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
