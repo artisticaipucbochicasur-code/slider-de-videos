@@ -798,11 +798,10 @@ commentsList.addEventListener('touchend', (e) => {
 // === Obtener el ID del video activo ===
 function getActiveVideoId() {
   if (!swiper) return null;
-  // ✅ Usamos realIndex para evitar problemas con los clones
-  const activeSlide = swiper.slides[swiper.realIndex];
-  if (!activeSlide) return null;
-  return activeSlide.dataset.videoid || null;
+  const activeSlide = swiper.slides[swiper.realIndex]; // ✅ Slide real, no clon
+  return activeSlide ? activeSlide.dataset.videoid : null;
 }
+
 
 
 // === Cargar comentarios desde Google Sheets ===
@@ -896,7 +895,13 @@ async function enviarComentario() {
     });
 
     commentInput.value = "";
+
+    // 🟢 Actualizamos la data de comentarios para este video
     await cargarComentarios(videoId);
+
+    // 🟢 Refrescamos la lista visible del slide actual
+    refrescarComentariosSlide();
+
   } catch (e) {
     console.error("Error al enviar comentario:", e);
   } finally {
@@ -938,10 +943,9 @@ commentInput.addEventListener('blur', () => {
 // === Refrescar comentarios cuando cambia el video ===
 function refrescarComentariosSlide() {
   const videoId = getActiveVideoId();
-  if (!videoId) return; // ✅ Evitamos fallos si no hay video activo
+  if (!videoId) return; // Si no hay video activo, no hacemos nada
 
   const lista = comentariosPorVideo[videoId] || [];
-
   const commentsList = document.getElementById("commentsList");
   const commentCountValue = document.getElementById("commentCountValue");
 
@@ -1686,24 +1690,25 @@ async function cargarVideos(checkNew = false) {
     // Swiper solo se reinicia una vez
     if (!checkNew) {
       if (swiper) swiper.destroy(true, true);
-      swiper = new Swiper(".swiper", {
-        loop: true,
-        direction: "horizontal",
-        slidesPerView: 1,
-        spaceBetween: 10,
-        pagination: false,
-        on: {
-          init() {
-            updateFixedTitle(this);
-            refrescarComentariosSlide();
-          },
-          slideChange() {
-            cleanupIframesExceptActive();
-            updateFixedTitle(this);
-            refrescarComentariosSlide();
-          }
-        },
-      });
+    swiper = new Swiper(".swiper", {
+  loop: true,
+  direction: "horizontal",
+  slidesPerView: 1,
+  spaceBetween: 10,
+  pagination: false,
+  on: {
+    init() {
+      updateFixedTitle(this);
+      refrescarComentariosSlide(); // ✅ Cargar comentarios del primer slide real
+    },
+    slideChange() {
+      cleanupIframesExceptActive();
+      updateFixedTitle(this);
+      refrescarComentariosSlide(); // ✅ Actualizar comentarios al deslizar
+    }
+  },
+});
+
 
       cleanupIframesExceptActive();
       updateFixedTitle(swiper);
@@ -1736,6 +1741,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
