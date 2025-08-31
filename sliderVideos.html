@@ -3338,33 +3338,37 @@ function cleanupIframesExceptActive() {
 async function cargarVideos(checkNew = false) {
   const loader = document.getElementById("loader");
   if (!checkNew) loader.style.display = "flex";
+
   try {
     const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
     const data = await res.json();
 
     const wrapper = document.getElementById("slides");
-    if (!checkNew) {
-      wrapper.innerHTML = "";
-    }
+    if (!checkNew) wrapper.innerHTML = "";
 
     let newVideos = [];
+    const fragment = document.createDocumentFragment();
+
     if (Array.isArray(data.data)) {
       data.data.forEach((row) => {
         const titulo = row[0];
         const link = row[1];
         const descripcion = row[4] || "";
-        const id = row[5]; // ← ASEGÚRATE DE EXTRAER EL ID DE LA FILA
-        if (!checkNew) {
-          wrapper.appendChild(createSlide(titulo, link, descripcion, id)); // ← PASA EL ID AQUÍ
-        }
-        newVideos.push({ title: titulo, link, desc: descripcion, id }); // ← GUARDA EL ID POR SI LO NECESITAS
+        const id = row[5];
+
+        const slide = createSlide(titulo, link, descripcion, id);
+        fragment.appendChild(slide);
+
+        newVideos.push({ title: titulo, link, desc: descripcion, id });
       });
     }
 
-    // 🔥 Eliminación silenciosa (solo en modo checkNew para no afectar carga inicial)
+    // Insertamos todos los slides de golpe → 🔥 instantáneo
+    if (!checkNew) wrapper.appendChild(fragment);
+
+    // Manejo silencioso si hay cambios
     if (checkNew) {
       const linksActivos = newVideos.map(v => v.link);
-
       Array.from(wrapper.children).forEach(slide => {
         const card = slide.querySelector(".player-card");
         if (card && !linksActivos.includes(card.dataset.embed)) {
@@ -3374,20 +3378,19 @@ async function cargarVideos(checkNew = false) {
       });
     }
 
-    // 🔥 Corregido: ahora también notifica si es el primer video
+    // Notificaciones si hay nuevos videos
     if (checkNew) {
       newVideos.forEach(v => {
         if (!lastVideos.find(old => old.link === v.link)) {
-          notifications.unshift(v); // acumula notificación
+          notifications.unshift(v);
         }
       });
-      if (notifications.length > 0) {
-        renderNotifications();
-      }
+      if (notifications.length > 0) renderNotifications();
     }
 
     lastVideos = newVideos;
 
+    // Swiper solo se reinicia una vez, después de pintar slides
     if (!checkNew) {
       if (swiper) swiper.destroy(true, true);
       swiper = new Swiper(".swiper", {
@@ -3399,22 +3402,19 @@ async function cargarVideos(checkNew = false) {
         on: {
           init() {
             updateFixedTitle(this);
-            refrescarComentariosSlide(); // ← AGREGA ESTO PARA CARGAR COMENTARIOS DEL PRIMER VIDEO
+            refrescarComentariosSlide();
           },
           slideChange() {
             cleanupIframesExceptActive();
             updateFixedTitle(this);
-            refrescarComentariosSlide(); // ← AGREGA ESTO PARA CAMBIAR LOS COMENTARIOS AL CAMBIAR DE VIDEO
-          },
-          slideChangeTransitionEnd() {
-            updateFixedTitle(this);
+            refrescarComentariosSlide();
           }
         },
       });
 
       cleanupIframesExceptActive();
       updateFixedTitle(swiper);
-      refrescarComentariosSlide(); // ← LLAMA ESTO AL FINAL PARA CARGAR COMENTARIOS INICIALES
+      refrescarComentariosSlide();
     }
   } catch (e) {
     console.error("Error cargando videos:", e);
@@ -3422,6 +3422,7 @@ async function cargarVideos(checkNew = false) {
     loader.style.display = "none";
   }
 }
+
 
 
 
@@ -3444,6 +3445,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
