@@ -955,7 +955,6 @@ function refrescarComentariosSlide() {
 
 
 
-
 // === Cargar comentarios en tiempo real ===
 function iniciarComentariosTiempoReal() {
   if (comentariosInterval) clearInterval(comentariosInterval);
@@ -1679,24 +1678,29 @@ async function cargarVideos(checkNew = false) {
         slidesPerView: 1,
         spaceBetween: 10,
         pagination: false,
-     on: {
-  init() {
-    updateFixedTitle(this);
-    refrescarComentariosSlide();
-    //iniciarComentariosTiempoReal();
-  },
-  slideChange() {
-    cleanupIframesExceptActive();
-    updateFixedTitle(this);
-    refrescarComentariosSlide();
-    //iniciarComentariosTiempoReal();
-  }
-},
+        on: {
+          init() {
+            updateFixedTitle(this);
+            refrescarComentariosSlide();
+            //iniciarComentariosTiempoReal();
+          },
+          slideChange() {
+            cleanupIframesExceptActive();
+            updateFixedTitle(this);
+            refrescarComentariosSlide();
+            //iniciarComentariosTiempoReal();
+          }
+        },
       });
 
       cleanupIframesExceptActive();
       updateFixedTitle(swiper);
       refrescarComentariosSlide();
+
+      // === Refrescar comentarios del primer slide justo después de inicializar Swiper ===
+      setTimeout(() => {
+        refrescarComentariosSlide();
+      }, 0);
     }
   } catch (e) {
     console.error("Error cargando videos:", e);
@@ -1704,7 +1708,6 @@ async function cargarVideos(checkNew = false) {
     loader.style.display = "none";
   }
 }
-
 
 
 
@@ -1719,6 +1722,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
