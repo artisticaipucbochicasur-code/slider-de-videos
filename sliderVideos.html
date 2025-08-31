@@ -1667,7 +1667,7 @@ async function cargarVideos(checkNew = false) {
     if (!checkNew) {
       if (swiper) swiper.destroy(true, true);
       swiper = new Swiper(".swiper", {
-        loop: true,
+        loop: true, // ✅ Seguimos usando loop pero controlamos el índice real
         direction: "horizontal",
         slidesPerView: 1,
         spaceBetween: 10,
@@ -1675,19 +1675,26 @@ async function cargarVideos(checkNew = false) {
         on: {
           init() {
             updateFixedTitle(this);
-            refrescarComentariosSlide();
+            // ✅ Siempre usamos swiper.realIndex para obtener el video correcto
+            const videoActivo = lastVideos[this.realIndex];
+            if (videoActivo) cargarComentarios(videoActivo.id);
           },
           slideChange() {
             cleanupIframesExceptActive();
             updateFixedTitle(this);
-            refrescarComentariosSlide();
+            // ✅ Igual aquí, cargamos comentarios del video real
+            const videoActivo = lastVideos[this.realIndex];
+            if (videoActivo) cargarComentarios(videoActivo.id);
           }
         },
       });
 
       cleanupIframesExceptActive();
       updateFixedTitle(swiper);
-      refrescarComentariosSlide();
+
+      // ✅ Comentarios del primer slide al iniciar
+      const videoActivo = lastVideos[swiper.realIndex];
+      if (videoActivo) cargarComentarios(videoActivo.id);
     }
   } catch (e) {
     console.error("Error cargando videos:", e);
@@ -1695,7 +1702,6 @@ async function cargarVideos(checkNew = false) {
     loader.style.display = "none";
   }
 }
-
 
 
 
@@ -1711,6 +1717,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
