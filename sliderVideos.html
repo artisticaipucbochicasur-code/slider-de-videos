@@ -695,6 +695,7 @@ const notificationWrapper = document.getElementById('notification-wrapper');
 const notificationList = document.getElementById('notification-list');
 
 let comentariosPorVideo = {}; // videoId: [ {autor, correo, fecha, comentario} ]
+let contadorComentariosPrevio = {}; // Para detectar cambios y refrescar UI
 let lastTapTime = 0;
 let activeComment = null;
 let startX = 0;
@@ -727,114 +728,99 @@ commentsOverlay.addEventListener('click', (e) => {
 
 // --- Swipe-to-delete en móviles ---
 commentsList.addEventListener('touchstart', (e) => {
-    const commentElement = e.target.closest('li');
-    if (!commentElement) return;
-
-    const commentData = commentElement.dataset;
-    const autorCorreo = commentData.correo; // 👈 nombre coherente con dataset
-
-    if (normalizeText(autorCorreo) === normalizeText(usuarioCorreo)) { // 👈 usuarioCorreo del segundo bloque
-        startX = e.touches[0].clientX;
-        activeComment = commentElement;
-        activeComment.querySelector('.comment-content').style.transition = 'none';
-        isSwiping = false; 
-    }
+  const commentElement = e.target.closest('li');
+  if (!commentElement) return;
+  const commentData = commentElement.dataset;
+  if (normalizeText(commentData.correo) === normalizeText(usuarioCorreo)) {
+    startX = e.touches[0].clientX;
+    activeComment = commentElement;
+    activeComment.querySelector('.comment-content').style.transition = 'none';
+    isSwiping = false;
+  }
 });
-
 commentsList.addEventListener('touchmove', (e) => {
-    if (!activeComment) return;
-
-    const currentX = e.touches[0].clientX;
-    const diffX = currentX - startX;
-    
-    if (Math.abs(diffX) > 10) { 
-      isSwiping = true;
-    }
-    
-    const commentContent = activeComment.querySelector('.comment-content');
-    const deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
-
-    if (diffX > 0) { 
-        commentContent.style.transform = `translateX(${diffX}px)`;
-        if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(0)`;
-    } else { 
-        commentContent.style.transform = `translateX(0)`; 
-        if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
-    }
-});
-
-commentsList.addEventListener('touchend', (e) => {
-    if (!activeComment) return;
-    
-    const swipeThreshold = 50;
-    const diffX = e.changedTouches[0].clientX - startX;
-    const commentContent = activeComment.querySelector('.comment-content');
+  if (!activeComment) return;
+  const currentX = e.touches[0].clientX;
+  const diffX = currentX - startX;
+  if (Math.abs(diffX) > 10) isSwiping = true;
+  if (diffX > 0) {
+    activeComment.querySelector('.comment-content').style.transform = `translateX(${diffX}px)`;
     let deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
-
-    commentContent.style.transition = 'transform 0.3s ease';
-
-    if (diffX > swipeThreshold) {
-        commentContent.style.transform = `translateX(100px)`; 
-        
-        if (!deleteBtnContainer) {
-            deleteBtnContainer = document.createElement('div');
-            deleteBtnContainer.className = 'delete-btn-container';
-            
-            let deleteBtn = document.createElement('div');
-            deleteBtn.className = 'delete-btn';
-            deleteBtn.textContent = 'Borrar';
-            deleteBtnContainer.appendChild(deleteBtn);
-            
-            activeComment.insertBefore(deleteBtnContainer, commentContent);
-            deleteBtnContainer.style.transform = `translateX(0)`;
-            
-            deleteBtn.addEventListener('click', (ev) => {
-                ev.stopPropagation(); 
-                const commentData = activeComment.dataset;
-                const comentario = commentData.texto;   // 👈 nombre coherente
-                const autorCorreo = commentData.correo; // 👈 nombre coherente
-                
-                showConfirmationDialog("¿Estás seguro de que quieres borrar este comentario?", () => {
-                  const videoId = getActiveVideoId(); // 👈 coherente con segundo bloque
-                  if(videoId) {
-                    eliminarComentario(videoId, comentario, autorCorreo);
-                  }
-                });
-            });
-        } else {
-            deleteBtnContainer.style.transform = `translateX(0)`;
-        }
+    if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(0)`;
+  } else {
+    activeComment.querySelector('.comment-content').style.transform = `translateX(0)`;
+    let deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
+    if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
+  }
+});
+commentsList.addEventListener('touchend', (e) => {
+  if (!activeComment) return;
+  const swipeThreshold = 50;
+  const diffX = e.changedTouches[0].clientX - startX;
+  const commentContent = activeComment.querySelector('.comment-content');
+  let deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
+  commentContent.style.transition = 'transform 0.3s ease';
+  if (diffX > swipeThreshold) {
+    commentContent.style.transform = `translateX(100px)`;
+    if (!deleteBtnContainer) {
+      deleteBtnContainer = document.createElement('div');
+      deleteBtnContainer.className = 'delete-btn-container';
+      let deleteBtn = document.createElement('div');
+      deleteBtn.className = 'delete-btn';
+      deleteBtn.textContent = 'Borrar';
+      deleteBtnContainer.appendChild(deleteBtn);
+      activeComment.insertBefore(deleteBtnContainer, commentContent);
+      deleteBtnContainer.style.transform = `translateX(0)`;
+      deleteBtn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const commentData = activeComment.dataset;
+        eliminarComentario(getActiveVideoId(), commentData.texto, commentData.correo);
+      });
     } else {
-        commentContent.style.transform = `translateX(0)`;
-        if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
+      deleteBtnContainer.style.transform = `translateX(0)`;
     }
-
-    activeComment = null;
-    startX = 0;
+  } else {
+    commentContent.style.transform = `translateX(0)`;
+    if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
+  }
+  activeComment = null;
+  startX = 0;
 });
 
-
-// --- Lógica de comentarios por video ---
+// === OBTENER EL ID DEL VIDEO ACTUAL ===
 function getActiveVideoId() {
   if (!swiper) return null;
   const activeSlide = swiper.slides[swiper.activeIndex];
-  if (!activeSlide) return null;
-  return activeSlide.dataset.videoid || null; // ← AHORA USA EL ID ÚNICO
+  return activeSlide ? activeSlide.dataset.videoid || null : null;
+}
+
+        // === NORMALIZAR DATOS DE COMENTARIOS ===
+function normalizarComentarios(lista) {
+  return lista.map(c => ({
+    autor: c.autor || "Anónimo",
+    comentario: c.comentario || "",
+    fecha: c.fecha || "",
+    correo: c.correo || ""
+  }));
 }
 
 
+// === CARGAR COMENTARIOS DESDE GOOGLE SHEETS ===
 async function cargarComentarios(videoId) {
   try {
     const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}`);
     const data = await res.json();
     comentariosPorVideo[videoId] = [];
+
     if (Array.isArray(data.data) && data.data.length > 0) {
-      comentariosPorVideo[videoId] = data.data.map(c => ({
-        autor: c[2] || "Anónimo",
-        comentario: c[1] || "",
-        fecha: c[4] || "",
-        correo: c[3] || ""
-      }));
+      comentariosPorVideo[videoId] = normalizarComentarios(
+        data.data.map(c => ({
+          autor: c[2],
+          comentario: c[1],
+          fecha: c[4],
+          correo: c[3]
+        }))
+      );
     }
     renderComentarios(videoId);
   } catch (e) {
@@ -843,10 +829,12 @@ async function cargarComentarios(videoId) {
   }
 }
 
+// === RENDERIZAR COMENTARIOS ===
 function renderComentarios(videoId) {
   if (!videoId) return;
   const lista = comentariosPorVideo[videoId] || [];
   commentsList.innerHTML = '';
+
   if (lista.length === 0) {
     const li = document.createElement('li');
     li.textContent = "Sé el primero en comentar...";
@@ -854,17 +842,21 @@ function renderComentarios(videoId) {
     commentCountValue.textContent = "0";
     return;
   }
+
   lista.forEach(c => {
     const li = document.createElement('li');
     li.classList.add('deletable');
+
     const commentContent = document.createElement('div');
     commentContent.className = 'comment-content';
     commentContent.textContent = `${c.autor} (${c.fecha}) - ${c.comentario}`;
     li.appendChild(commentContent);
+
     li.dataset.correo = c.correo;
     li.dataset.texto = c.comentario;
+
+    // Si es del usuario actual, mostrar botón de eliminar
     if (normalizeText(c.correo) === normalizeText(usuarioCorreo)) {
-      // Eliminar solo si es del usuario actual
       const deleteBtnContainer = document.createElement('div');
       deleteBtnContainer.className = 'delete-btn-container';
       const deleteBtn = document.createElement('div');
@@ -872,63 +864,50 @@ function renderComentarios(videoId) {
       deleteBtn.textContent = 'Borrar';
       deleteBtnContainer.appendChild(deleteBtn);
       li.appendChild(deleteBtnContainer);
-      deleteBtn.addEventListener('click', (ev) => {
+
+      deleteBtn.addEventListener('click', ev => {
         ev.stopPropagation();
         eliminarComentario(videoId, c.comentario, c.correo);
       });
     }
+
     commentsList.appendChild(li);
   });
+
   commentCountValue.textContent = lista.length;
 }
-
+// === ENVIAR COMENTARIO ===
 async function enviarComentario() {
-    const comentarioTexto = commentInput.value.trim();
-    const activeIndex = swiperInstance.realIndex;
-    const currentAnuncio = anunciosData[activeIndex];
+  const texto = commentInput.value.trim();
+  const videoId = getActiveVideoId();
+  if (!texto || !videoId) return;
 
-    if (!comentarioTexto || !currentAnuncio) {
-        showInfoDialog("Error", "No puedes enviar un comentario vacío.");
-        return;
-    }
+  sendCommentBtn.disabled = true;
+  try {
+    await fetch(SCRIPT_URL, {
+      method: "POST",
+      body: new URLSearchParams({
+        accion: "agregarComentarioVideo",
+        videoId,
+        comentario: texto,
+        autor: usuarioAutor,
+        correo: usuarioCorreo
+      })
+    });
 
-    loader.style.display = 'block';
-    try {
-        const formData = new FormData();
-        formData.append('accion', 'agregarComentarioVideo'); // 👈 cambiado
-        formData.append('videoId', currentAnuncio.id);       // 👈 cambiado
-        formData.append('comentario', comentarioTexto);      // 👈 cambiado
-        formData.append('autor', currentAuthorName);         // 👈 cambiado
-        formData.append('correo', currentAuthorEmail);       // 👈 cambiado
-
-        const response = await fetch(SCRIPT_URL, {
-            method: 'POST',
-            body: formData
-        });
-
-        const result = await response.json();
-        if (result.status === "🗣️ success") {
-            console.log("Comentario agregado con éxito.");
-            commentInput.value = ''; 
-            await verificarComentarios(); 
-        } else {
-            console.error("Error al agregar el comentario:", result.message);
-            showInfoDialog("Error", `No se pudo agregar el comentario. ${result.message}`);
-        }
-    } catch (error) {
-        console.error("Error de red al agregar el comentario:", error);
-        showInfoDialog("Error", "Ocurrió un error al intentar agregar el comentario.");
-    } finally {
-        loader.style.display = 'none';
-    }
+    commentInput.value = "";
+    await cargarComentarios(videoId);
+  } catch (e) {
+    console.error("Error al enviar comentario:", e);
+  } finally {
+    sendCommentBtn.disabled = false;
+  }
 }
-sendCommentBtn.addEventListener('click', enviarComentario);
-commentInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') enviarComentario();
-});
 
+// === ELIMINAR COMENTARIO ===
 async function eliminarComentario(videoId, comentario, correo) {
   if (!videoId || !comentario || !correo) return;
+
   try {
     await fetch(SCRIPT_URL, {
       method: "POST",
@@ -939,33 +918,47 @@ async function eliminarComentario(videoId, comentario, correo) {
         correo
       })
     });
+
     await cargarComentarios(videoId);
-  } catch (e) {}
+  } catch (e) {
+    console.error("Error al eliminar comentario:", e);
+  }
 }
 
-// Input UX
-sendCommentBtn.addEventListener('click', enviarComentario);
-commentInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') enviarComentario();
-});
-commentInput.addEventListener('focus', () => {
-  document.body.style.transform = `translateY(-50%)`;
-});
-commentInput.addEventListener('blur', () => {
-  document.body.style.transform = `translateY(0)`;
-});
+// === VERIFICAR COMENTARIOS CADA 5 SEGUNDOS ===
+async function verificarComentarios() {
+  const videoId = getActiveVideoId();
+  if (!videoId) return;
 
-// --- Refresca comentarios al cambiar de video ---
+  const anterior = comentariosPorVideo[videoId] || [];
+  await cargarComentarios(videoId);
+
+  const actual = comentariosPorVideo[videoId] || [];
+  if (anterior.length !== actual.length) {
+    renderComentarios(videoId);
+  }
+}
+
+// === REFRESCAR COMENTARIOS AL CAMBIAR DE VIDEO ===
 function refrescarComentariosSlide() {
   const videoId = getActiveVideoId();
   if (videoId) cargarComentarios(videoId);
 }
-if (window.swiper) {
+
+// === EVENTOS ===
+sendCommentBtn.addEventListener('click', enviarComentario);
+commentInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') enviarComentario();
+});
+if (swiper) {
   swiper.on('slideChange', refrescarComentariosSlide);
 }
 document.addEventListener('DOMContentLoaded', refrescarComentariosSlide);
 
-// --- Utilidad para normalizar texto/correos ---
+// Actualiza automáticamente cada 5 segundos
+setInterval(verificarComentarios, 5000);
+
+// === NORMALIZAR TEXTOS ===
 function normalizeText(text) {
   return (text || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
 }
@@ -1714,24 +1707,3 @@ setInterval(() => {
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
