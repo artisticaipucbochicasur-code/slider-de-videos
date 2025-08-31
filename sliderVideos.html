@@ -1630,8 +1630,10 @@ async function cargarVideos(checkNew = false) {
     const data = await res.json();
 
     // 🟢 Guardamos todos los comentarios del servidor una sola vez
-    if (data.comentarios) {
-      comentariosPorVideo = data.comentarios; 
+    if (data.comentarios && typeof data.comentarios === "object") {
+      comentariosPorVideo = data.comentarios;
+    } else {
+      comentariosPorVideo = {};
     }
 
     const wrapper = document.getElementById("slides");
@@ -1703,6 +1705,12 @@ async function cargarVideos(checkNew = false) {
       cleanupIframesExceptActive();
       updateFixedTitle(swiper);
       refrescarComentariosSlide();
+
+      // 🔹 Cargar comentarios del primer video al inicio
+      const firstVideoId = getActiveVideoId();
+      if (firstVideoId && !comentariosPorVideo[firstVideoId]) {
+        await cargarComentarios(firstVideoId);
+      }
     }
   } catch (e) {
     console.error("Error cargando videos:", e);
@@ -1725,6 +1733,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
