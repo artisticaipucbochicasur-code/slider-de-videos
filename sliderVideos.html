@@ -797,8 +797,7 @@ commentsList.addEventListener('touchend', (e) => {
 
 // === Obtener el ID del video activo ===
 function getActiveVideoId() {
-  if (!swiper) return null;
-  const activeSlide = swiper.slides[swiper.realIndex]; // ✅ Slide real, no clon
+  const activeSlide = document.querySelector(".swiper-slide-active");
   return activeSlide ? activeSlide.dataset.videoid : null;
 }
 
@@ -1690,7 +1689,7 @@ async function cargarVideos(checkNew = false) {
     // Swiper solo se reinicia una vez
     if (!checkNew) {
       if (swiper) swiper.destroy(true, true);
-    swiper = new Swiper(".swiper", {
+   swiper = new Swiper(".swiper", {
   loop: true,
   direction: "horizontal",
   slidesPerView: 1,
@@ -1699,15 +1698,16 @@ async function cargarVideos(checkNew = false) {
   on: {
     init() {
       updateFixedTitle(this);
-      refrescarComentariosSlide(); // ✅ Cargar comentarios del primer slide real
+      refrescarComentariosSlide(); // ✅ Cargar comentarios iniciales
     },
     slideChange() {
       cleanupIframesExceptActive();
       updateFixedTitle(this);
-      refrescarComentariosSlide(); // ✅ Actualizar comentarios al deslizar
+      refrescarComentariosSlide(); // ✅ Mostrar comentarios del video actual
     }
   },
 });
+
 
 
       cleanupIframesExceptActive();
@@ -1741,6 +1741,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
