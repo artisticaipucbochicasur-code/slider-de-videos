@@ -1682,13 +1682,13 @@ async function cargarVideos(checkNew = false) {
      on: {
   init() {
     updateFixedTitle(this);
-    //refrescarComentariosSlide();
+    refrescarComentariosSlide();
     //iniciarComentariosTiempoReal();
   },
   slideChange() {
     cleanupIframesExceptActive();
     updateFixedTitle(this);
-    //refrescarComentariosSlide();
+    refrescarComentariosSlide();
     //iniciarComentariosTiempoReal();
   }
 },
