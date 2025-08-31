@@ -936,12 +936,10 @@ commentInput.addEventListener('blur', () => {
 // === Refrescar comentarios cuando cambia el video ===
 function refrescarComentariosSlide() {
   const videoId = getActiveVideoId();
+  const lista = comentariosPorVideo[videoId] || [];
+
   const commentsList = document.getElementById("commentsList");
   const commentCountValue = document.getElementById("commentCountValue");
-
-  if (!videoId || !commentsList || !commentCountValue) return;
-
-  const lista = comentariosPorVideo[videoId] || [];
 
   commentsList.innerHTML = "";
 
@@ -959,6 +957,7 @@ function refrescarComentariosSlide() {
     commentCountValue.textContent = 0;
   }
 }
+
 
 
 
@@ -1630,11 +1629,9 @@ async function cargarVideos(checkNew = false) {
     const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
     const data = await res.json();
 
-    // 🟢 Guardamos todos los comentarios del servidor UNA SOLA VEZ
-    if (data.comentarios && typeof data.comentarios === "object") {
-      comentariosPorVideo = data.comentarios;
-    } else {
-      comentariosPorVideo = {}; // Si no hay, lo dejamos vacío
+    // 🟢 Guardamos todos los comentarios del servidor una sola vez
+    if (data.comentarios) {
+      comentariosPorVideo = data.comentarios; 
     }
 
     const wrapper = document.getElementById("slides");
@@ -1657,10 +1654,8 @@ async function cargarVideos(checkNew = false) {
       });
     }
 
-    // Insertamos todos los slides de golpe → 🔥 instantáneo
     if (!checkNew) wrapper.appendChild(fragment);
 
-    // Manejo silencioso si hay cambios
     if (checkNew) {
       const linksActivos = newVideos.map(v => v.link);
       Array.from(wrapper.children).forEach(slide => {
@@ -1672,7 +1667,6 @@ async function cargarVideos(checkNew = false) {
       });
     }
 
-    // Notificaciones si hay nuevos videos
     if (checkNew) {
       newVideos.forEach(v => {
         if (!lastVideos.find(old => old.link === v.link)) {
@@ -1684,7 +1678,7 @@ async function cargarVideos(checkNew = false) {
 
     lastVideos = newVideos;
 
-    // Swiper solo se reinicia una vez, después de pintar slides
+    // Swiper solo se reinicia una vez
     if (!checkNew) {
       if (swiper) swiper.destroy(true, true);
       swiper = new Swiper(".swiper", {
@@ -1721,6 +1715,7 @@ async function cargarVideos(checkNew = false) {
 
 
 
+
 // === AUTO REFRESCO EN SEGUNDO PLANO ===
 setInterval(() => {
   cargarVideos(true); // solo refresca notificaciones, no toca el slider
@@ -1730,6 +1725,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
