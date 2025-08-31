@@ -693,7 +693,8 @@ const commentInput = document.getElementById('commentInput');
 const sendCommentBtn = document.querySelector('.send-comment-btn');
 const notificationWrapper = document.getElementById('notification-wrapper');
 const notificationList = document.getElementById('notification-list');
-
+        
+let contadorComentariosAnteriorVideo = -1;
 let comentariosPorVideo = {}; // videoId: [ {autor, correo, fecha, comentario} ]
 let lastTapTime = 0;
 let activeComment = null;
@@ -855,29 +856,49 @@ function renderComentarios(videoId) {
 }
 
 async function enviarComentario() {
-  const texto = commentInput.value.trim();
-  const videoId = getActiveVideoId();
-  if (!texto || !videoId) return;
-  sendCommentBtn.disabled = true;
-  try {
-    await fetch(SCRIPT_URL, {
-      method: "POST",
-      body: new URLSearchParams({
-        accion: "agregarComentarioVideo",
-        videoId,
-        comentario: texto,
-        autor: usuarioAutor,
-        correo: usuarioCorreo,
-      })
-    });
-    commentInput.value = "";
-    await cargarComentarios(videoId);
-  } catch (e) {
-    // Puedes mostrar un alert personalizado aquí si quieres
-  } finally {
-    sendCommentBtn.disabled = false;
-  }
+    const comentarioTexto = commentInput.value.trim();
+    const activeIndex = swiperInstance.realIndex;
+    const currentAnuncio = anunciosData[activeIndex];
+
+    if (!comentarioTexto || !currentAnuncio) {
+        showInfoDialog("Error", "No puedes enviar un comentario vacío.");
+        return;
+    }
+
+    loader.style.display = 'block';
+    try {
+        const formData = new FormData();
+        formData.append('accion', 'agregarComentarioVideo'); // 👈 cambiado
+        formData.append('videoId', currentAnuncio.id);       // 👈 cambiado
+        formData.append('comentario', comentarioTexto);      // 👈 cambiado
+        formData.append('autor', currentAuthorName);         // 👈 cambiado
+        formData.append('correo', currentAuthorEmail);       // 👈 cambiado
+
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+        if (result.status === "🗣️ success") {
+            console.log("Comentario agregado con éxito.");
+            commentInput.value = ''; 
+            await verificarComentarios(); 
+        } else {
+            console.error("Error al agregar el comentario:", result.message);
+            showInfoDialog("Error", `No se pudo agregar el comentario. ${result.message}`);
+        }
+    } catch (error) {
+        console.error("Error de red al agregar el comentario:", error);
+        showInfoDialog("Error", "Ocurrió un error al intentar agregar el comentario.");
+    } finally {
+        loader.style.display = 'none';
+    }
 }
+sendCommentBtn.addEventListener('click', enviarComentario);
+commentInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') enviarComentario();
+});
 
 async function eliminarComentario(videoId, comentario, correo) {
   if (!videoId || !comentario || !correo) return;
@@ -1666,6 +1687,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
