@@ -1678,15 +1678,17 @@ async function cargarVideos(checkNew = false) {
 
     lastVideos = newVideos;
 
-    // 🔹 PRECARGAR COMENTARIOS DE TODOS LOS VIDEOS (solo en la primera carga)
-    if (!checkNew && Array.isArray(data.data)) {
-      for (const row of data.data) {
-        const id = row[5];
-        if (id) {
-          await cargarComentarios(id);
-        }
-      }
+    
+  // 🔹 PRECARGAR COMENTARIOS EN SEGUNDO PLANO SIN BLOQUEAR LA UI
+if (!checkNew && Array.isArray(data.data)) {
+  data.data.forEach(row => {
+    const id = row[5];
+    if (id && !comentariosPorVideo[id]) {
+      // Disparamos la carga, pero NO usamos await
+      cargarComentarios(id).catch(e => console.error("Error precargando comentarios:", e));
     }
+  });
+}
 
     // Swiper solo se reinicia una vez
     if (!checkNew) {
@@ -1733,5 +1735,6 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
