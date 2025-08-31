@@ -798,10 +798,12 @@ commentsList.addEventListener('touchend', (e) => {
 // === Obtener el ID del video activo ===
 function getActiveVideoId() {
   if (!swiper) return null;
-  const activeSlide = swiper.slides[swiper.activeIndex];
+  // ✅ Usamos realIndex para evitar problemas con los clones
+  const activeSlide = swiper.slides[swiper.realIndex];
   if (!activeSlide) return null;
   return activeSlide.dataset.videoid || null;
 }
+
 
 // === Cargar comentarios desde Google Sheets ===
 async function cargarComentarios(videoId) {
@@ -936,6 +938,8 @@ commentInput.addEventListener('blur', () => {
 // === Refrescar comentarios cuando cambia el video ===
 function refrescarComentariosSlide() {
   const videoId = getActiveVideoId();
+  if (!videoId) return; // ✅ Evitamos fallos si no hay video activo
+
   const lista = comentariosPorVideo[videoId] || [];
 
   const commentsList = document.getElementById("commentsList");
@@ -957,7 +961,6 @@ function refrescarComentariosSlide() {
     commentCountValue.textContent = 0;
   }
 }
-
 
 
 
@@ -1733,6 +1736,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
