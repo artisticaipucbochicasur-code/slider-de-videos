@@ -796,11 +796,11 @@ commentsList.addEventListener('touchend', (e) => {
 });
 
 // === Obtener el ID del video activo ===
+// 🔹 Usamos .swiper-slide-active para evitar problemas con loop:true
 function getActiveVideoId() {
   const activeSlide = document.querySelector(".swiper-slide-active");
   return activeSlide ? activeSlide.dataset.videoid : null;
 }
-
 
 
 // === Cargar comentarios desde Google Sheets ===
@@ -890,23 +890,21 @@ async function enviarComentario() {
         comentario: texto,
         autor: usuarioAutor,
         correo: usuarioCorreo,
-      })
+      }),
     });
 
     commentInput.value = "";
-
-    // 🟢 Actualizamos la data de comentarios para este video
     await cargarComentarios(videoId);
 
-    // 🟢 Refrescamos la lista visible del slide actual
+    // 🔹 Refrescamos los comentarios inmediatamente
     refrescarComentariosSlide();
-
   } catch (e) {
     console.error("Error al enviar comentario:", e);
   } finally {
     sendCommentBtn.disabled = false;
   }
 }
+
 
 // === Eliminar comentario ===
 async function eliminarComentario(videoId, comentario, correo) {
@@ -942,9 +940,8 @@ commentInput.addEventListener('blur', () => {
 // === Refrescar comentarios cuando cambia el video ===
 function refrescarComentariosSlide() {
   const videoId = getActiveVideoId();
-  if (!videoId) return; // Si no hay video activo, no hacemos nada
-
   const lista = comentariosPorVideo[videoId] || [];
+
   const commentsList = document.getElementById("commentsList");
   const commentCountValue = document.getElementById("commentCountValue");
 
@@ -964,7 +961,6 @@ function refrescarComentariosSlide() {
     commentCountValue.textContent = 0;
   }
 }
-
 
 
 
@@ -1627,6 +1623,7 @@ function cleanupIframesExceptActive() {
 
         
 
+// === Cargar videos y comentarios ===
 async function cargarVideos(checkNew = false) {
   const loader = document.getElementById("loader");
   if (!checkNew) loader.style.display = "flex";
@@ -1635,7 +1632,7 @@ async function cargarVideos(checkNew = false) {
     const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
     const data = await res.json();
 
-    // 🟢 Guardamos todos los comentarios del servidor una sola vez
+    // 🟢 Guardamos todos los comentarios del servidor UNA SOLA VEZ
     if (data.comentarios && typeof data.comentarios === "object") {
       comentariosPorVideo = data.comentarios;
     } else {
@@ -1665,8 +1662,8 @@ async function cargarVideos(checkNew = false) {
     if (!checkNew) wrapper.appendChild(fragment);
 
     if (checkNew) {
-      const linksActivos = newVideos.map(v => v.link);
-      Array.from(wrapper.children).forEach(slide => {
+      const linksActivos = newVideos.map((v) => v.link);
+      Array.from(wrapper.children).forEach((slide) => {
         const card = slide.querySelector(".player-card");
         if (card && !linksActivos.includes(card.dataset.embed)) {
           wrapper.removeChild(slide);
@@ -1676,8 +1673,8 @@ async function cargarVideos(checkNew = false) {
     }
 
     if (checkNew) {
-      newVideos.forEach(v => {
-        if (!lastVideos.find(old => old.link === v.link)) {
+      newVideos.forEach((v) => {
+        if (!lastVideos.find((old) => old.link === v.link)) {
           notifications.unshift(v);
         }
       });
@@ -1686,39 +1683,38 @@ async function cargarVideos(checkNew = false) {
 
     lastVideos = newVideos;
 
+    // 🟢 Cargamos comentarios de TODOS los videos al inicio
+    for (const v of newVideos) {
+      if (!comentariosPorVideo[v.id]) {
+        await cargarComentarios(v.id);
+      }
+    }
+
     // Swiper solo se reinicia una vez
     if (!checkNew) {
       if (swiper) swiper.destroy(true, true);
-   swiper = new Swiper(".swiper", {
-  loop: true,
-  direction: "horizontal",
-  slidesPerView: 1,
-  spaceBetween: 10,
-  pagination: false,
-  on: {
-    init() {
-      updateFixedTitle(this);
-      refrescarComentariosSlide(); // ✅ Cargar comentarios iniciales
-    },
-    slideChange() {
-      cleanupIframesExceptActive();
-      updateFixedTitle(this);
-      refrescarComentariosSlide(); // ✅ Mostrar comentarios del video actual
-    }
-  },
-});
-
-
+      swiper = new Swiper(".swiper", {
+        loop: true,
+        direction: "horizontal",
+        slidesPerView: 1,
+        spaceBetween: 10,
+        pagination: false,
+        on: {
+          init() {
+            updateFixedTitle(this);
+            refrescarComentariosSlide(); // ✅ Muestra comentarios del primer video
+          },
+          slideChange() {
+            cleanupIframesExceptActive();
+            updateFixedTitle(this);
+            refrescarComentariosSlide(); // ✅ Cambia comentarios al deslizar
+          },
+        },
+      });
 
       cleanupIframesExceptActive();
       updateFixedTitle(swiper);
       refrescarComentariosSlide();
-
-      // 🔹 Cargar comentarios del primer video al inicio
-      const firstVideoId = getActiveVideoId();
-      if (firstVideoId && !comentariosPorVideo[firstVideoId]) {
-        await cargarComentarios(firstVideoId);
-      }
     }
   } catch (e) {
     console.error("Error cargando videos:", e);
@@ -1726,7 +1722,6 @@ async function cargarVideos(checkNew = false) {
     loader.style.display = "none";
   }
 }
-
 
 
 
@@ -1741,6 +1736,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
