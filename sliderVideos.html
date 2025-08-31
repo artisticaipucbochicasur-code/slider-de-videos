@@ -936,19 +936,28 @@ commentInput.addEventListener('blur', () => {
 // === Refrescar comentarios cuando cambia el video ===
 function refrescarComentariosSlide() {
   const videoId = getActiveVideoId();
-  if (!videoId) return;
+  const lista = comentariosPorVideo[videoId] || [];
 
-  // Si no tienes los comentarios cargados, pídelo al servidor
-  if (!comentariosPorVideo[videoId]) {
-    // Esto luego llamará a renderComentarios(videoId)
-    cargarComentarios(videoId);
-    // Puedes mostrar un loader aquí si quieres
-    return;
+  const commentsList = document.getElementById("commentsList");
+  const commentCountValue = document.getElementById("commentCountValue");
+
+  commentsList.innerHTML = "";
+
+  if (lista.length > 0) {
+    lista.forEach((c) => {
+      const li = document.createElement("li");
+      li.textContent = `${c.autor} (${c.fecha}) - ${c.comentario}`;
+      commentsList.appendChild(li);
+    });
+    commentCountValue.textContent = lista.length;
+  } else {
+    const li = document.createElement("li");
+    li.textContent = "No hay comentarios aún.";
+    commentsList.appendChild(li);
+    commentCountValue.textContent = 0;
   }
-
-  // Si ya los tienes, simplemente los pinta
-  renderComentarios(videoId);
 }
+
 
 
 
@@ -1682,13 +1691,11 @@ async function cargarVideos(checkNew = false) {
           init() {
             updateFixedTitle(this);
             refrescarComentariosSlide();
-            //iniciarComentariosTiempoReal();
           },
           slideChange() {
             cleanupIframesExceptActive();
             updateFixedTitle(this);
             refrescarComentariosSlide();
-            //iniciarComentariosTiempoReal();
           }
         },
       });
@@ -1696,11 +1703,6 @@ async function cargarVideos(checkNew = false) {
       cleanupIframesExceptActive();
       updateFixedTitle(swiper);
       refrescarComentariosSlide();
-
-      // === Refrescar comentarios del primer slide justo después de inicializar Swiper ===
-      setTimeout(() => {
-        refrescarComentariosSlide();
-      }, 0);
     }
   } catch (e) {
     console.error("Error cargando videos:", e);
@@ -1708,6 +1710,7 @@ async function cargarVideos(checkNew = false) {
     loader.style.display = "none";
   }
 }
+
 
 
 
@@ -1722,7 +1725,3 @@ setInterval(() => {
     </script>
 </body>
 </html>
-
-
-
-
