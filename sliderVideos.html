@@ -618,18 +618,18 @@
 
 
     
-<div class="comments-overlay-container hidden-overlay" id="commentsOverlay">
-  <ul id="commentsList"></ul>
-  <div class="comment-input-container">
-    <input type="text" id="commentInput" placeholder="Escribe un comentario...">
-    <button class="send-comment-btn"><i class="fas fa-paper-plane"></i></button>
+  <div class="comments-overlay-container" id="commentsOverlay">
+    <ul id="commentsList"></ul>
   </div>
-</div>
-<div class="comments-counter hidden-overlay" id="commentsCounter">
-  <span class="icon">💬</span>
-  <span class="count" id="commentCountValue">0</span>
-</div>
-
+  <div class="comments-counter" id="commentsCounter">
+      <span class="icon">💬</span>
+      <span class="count" id="commentCountValue">0</span>
+  </div>
+  
+  <div class="comment-input-container">
+      <input type="text" id="commentInput" placeholder="Escribe un comentario...">
+      <button class="send-comment-btn"><i class="fas fa-paper-plane"></i></button>
+  </div>
 
     
 <!-- Notificaciones -->
@@ -705,22 +705,6 @@ let activeComment = null;
 let startX = 0;
 let isSwiping = false;
 
-// Variables para almacenar los datos del usuario, obtenidos de la URL
-let usuarioAutor = "";
-let usuarioCorreo = "";
-
-// Función para obtener los parámetros 'name' y 'email' de la URL
-function getUsuarioDataFromUrl() {
-    const params = new URLSearchParams(window.location.search);
-    usuarioAutor = params.get("name") || "";
-    usuarioCorreo = params.get("email") || "";
-}
-
-
-
-
-
-        
 document.addEventListener("DOMContentLoaded", async () => {
   const commentsOverlay = document.getElementById("commentsOverlay");
   const commentsCounter = document.getElementById("commentsCounter");
@@ -732,7 +716,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   commentInputContainer.classList.add("hidden-overlay");
 
   try {
-    getUsuarioDataFromUrl();
+    const usuario = await getUsuarioDataFromUrl();
     const videos = await obtenerListaVideos();
 
     // Carga solo los slides del slider rápido
@@ -765,14 +749,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
 
+
 // Mostrar/ocultar overlays al tocar el slider
 document.querySelector('.swiper').addEventListener('click', () => {
   const currentTime = new Date().getTime();
   if (currentTime - lastTapTime > 300) {
     commentsOverlay.classList.toggle('hidden-overlay');
-    // Ya no necesitas alternar la clase en commentInputContainer
+    commentsCounter.classList.toggle('hidden-overlay');
+    commentInputContainer.classList.toggle('hidden-overlay');
+
+    // 🔔 Ocultar botón y lista de notificaciones
     notificationWrapper.classList.toggle('hidden-overlay');
-    notificationList.classList.add('hidden');
+    notificationList.classList.add('hidden'); // Cierra la lista si estaba abierta
   }
   lastTapTime = currentTime;
 });
@@ -781,12 +769,12 @@ document.querySelector('.swiper').addEventListener('click', () => {
 
 // === Expandir / Colapsar comentarios ===
 commentsOverlay.addEventListener('click', (e) => {
-  // SOLO si el click fue directamente en el fondo del overlay
-  if (e.target === commentsOverlay && !isSwiping) {
+  if (!isSwiping) {
     commentsOverlay.classList.toggle('expanded');
   }
   isSwiping = false;
 });
+
 // === Swipe-to-delete en móviles ===
 commentsList.addEventListener('touchstart', (e) => {
   const commentElement = e.target.closest('li');
@@ -1056,24 +1044,13 @@ async function eliminarComentario(videoId, comentario, correo) {
 // === Listeners del input ===
 sendCommentBtn.addEventListener('click', enviarComentario);
 commentInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-        enviarComentario();
-    }
+  if (e.key === 'Enter') enviarComentario();
 });
 commentInput.addEventListener('focus', () => {
-    document.body.style.transform = `translateY(-50%)`;
+  document.body.style.transform = `translateY(-50%)`;
 });
 commentInput.addEventListener('blur', () => {
-    document.body.style.transform = 'translateY(0)';
-});
-
-// === Overlay seguro ===
-commentsOverlay.addEventListener('click', (e) => {
-  // SOLO si el click fue directamente en el fondo del overlay
-  if (e.target === commentsOverlay && !isSwiping) {
-    commentsOverlay.classList.toggle('expanded');
-  }
-  isSwiping = false;
+  document.body.style.transform = `translateY(0)`;
 });
 
 // === Refrescar comentarios cuando cambia el video ===
@@ -1232,6 +1209,19 @@ document.addEventListener("click", (e) => {
 
 // --- MANEJO DE ELIMINACIÓN ---
 
+// Variables para almacenar los datos del usuario, obtenidos de la URL
+let usuarioAutor = "";
+let usuarioCorreo = "";
+
+// Función para obtener los parámetros 'name' y 'email' de la URL
+function getUsuarioDataFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    usuarioAutor = params.get("name") || "";
+    usuarioCorreo = params.get("email") || "";
+}
+
+// Llamar a la función al cargar la página para obtener los datos
+document.addEventListener("DOMContentLoaded", getUsuarioDataFromUrl);
 
 // NUEVO: Variables para el modal de alerta personalizada
 const customAlertModal = document.getElementById("custom-alert-modal");
@@ -1905,8 +1895,4 @@ setInterval(() => {
     </script>
 </body>
 </html>
-
-
-
-
 
