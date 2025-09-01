@@ -965,99 +965,48 @@ function renderComentarios(videoId) {
 
 
 
-// === Enviar un nuevo comentario ===
-async function enviarComentario(e) {
-  if (e) e.preventDefault();
-
-  const texto = commentInput.value.trim();
-  const videoId = getActiveVideoId();
-
-  if (!texto || !videoId) return;
-
-  // Si ya se está enviando, no permitir doble click/enter
-  if (sendCommentBtn.disabled) return;
-  sendCommentBtn.disabled = true;
-
-  try {
-    // 🟢 Enviar comentario a la API
-    await fetch(SCRIPT_URL, {
-      method: "POST",
-      body: new URLSearchParams({
-        accion: "agregarComentarioVideo",
-        videoId,
-        comentario: texto,
-        autor: usuarioAutor,
-        correo: usuarioCorreo,
-      })
-    });
-
-    // Limpiar input
-    commentInput.value = "";
-
-    // 🟢 Crear el nuevo comentario
-    const nuevoComentario = {
-      autor: usuarioAutor,
-      comentario: texto,
-      fecha: new Date().toLocaleString(),
-      correo: usuarioCorreo
-    };
-
-    // Inicializar estructuras si no existen
-    if (!comentariosPorVideo[videoId]) comentariosPorVideo[videoId] = [];
-    if (!comentariosCache[videoId]) comentariosCache[videoId] = [];
-
-    // Evitar duplicados
-    const yaExiste = comentariosCache[videoId].some(c => 
-      c.comentario === nuevoComentario.comentario &&
-      c.autor === nuevoComentario.autor &&
-      c.fecha === nuevoComentario.fecha
-    );
-
-    if (!yaExiste) {
-      comentariosPorVideo[videoId].push(nuevoComentario);
-      comentariosCache[videoId].push(nuevoComentario);
+ // Enviar comentario (adaptado)
+  async function enviarComentario() {
+    const comentarioTexto = commentInput.value.trim();
+    const activeIndex = swiperInstance.realIndex;
+    const currentVideo = videosData[activeIndex];
+    if (!comentarioTexto || !currentVideo) {
+      showInfoDialog("Error", "No puedes enviar un comentario vacío.");
+      return;
     }
-
-    // Renderizar comentarios actualizados
-    renderComentarios(videoId);
-
-    // 🔽 Auto-scroll hasta el final, incluso en el primer click
-    const commentsList = document.getElementById("commentsList");
-    setTimeout(() => {
-      commentsList.scrollTop = commentsList.scrollHeight;
-    }, 60);
-
-    // 🔽 Forzar que el contenedor "baje" en móviles
+    loader.style.display = 'block';
+    try {
+      const formData = new FormData();
+      formData.append('accion', 'agregarComentarioVideo');
+      formData.append('videoId', currentVideo.id);
+      formData.append('comentario', comentarioTexto);
+      formData.append('autor', currentAuthorName);
+      formData.append('correo', currentAuthorEmail);
+      const response = await fetch(SCRIPT_URL, { method: 'POST', body: formData });
+      const result = await response.json();
+      if (result.status === "success") {
+        commentInput.value = '';
+        await verificarComentarios();
+      } else {
+        showInfoDialog("Error", `No se pudo agregar el comentario. ${result.message}`);
+      }
+    } catch (error) {
+      showInfoDialog("Error", "Ocurrió un error al intentar agregar el comentario.");
+    } finally {
+      loader.style.display = 'none';
+    }
+  }
+  sendCommentBtn.addEventListener('click', enviarComentario);
+  commentInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') enviarComentario();
+  });
+  commentInput.addEventListener('focus', () => {
     document.body.style.transform = `translateY(-50%)`;
-    setTimeout(() => {
-      document.body.style.transform = `translateY(0)`;
-    }, 300);
+  });
+  commentInput.addEventListener('blur', () => {
+    document.body.style.transform = 'translateY(0)';
+  });
 
-  } catch (e) {
-    console.error("Error al enviar comentario:", e);
-  } finally {
-    sendCommentBtn.disabled = false;
-  }
-}
-
-// === Listeners del input ===
-sendCommentBtn.addEventListener("click", enviarComentario);
-
-commentInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault(); // Evita salto de línea
-    enviarComentario(e);
-  }
-});
-
-// Mantener animación de enfoque
-commentInput.addEventListener("focus", () => {
-  document.body.style.transform = `translateY(-50%)`;
-});
-
-commentInput.addEventListener("blur", () => {
-  document.body.style.transform = `translateY(0)`;
-});
 
 
 
@@ -1933,6 +1882,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
