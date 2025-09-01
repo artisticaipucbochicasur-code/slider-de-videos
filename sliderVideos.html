@@ -711,10 +711,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   const commentsList = document.getElementById("commentsList");
   const commentInputContainer = document.querySelector(".comment-input-container");
 
-  // 1. Ocultamos comentarios, contador y barra de entrada al inicio (para evitar parpadeo)
+  // 1. Ocultamos comentarios, contador, barra de entrada y lista de comentarios para evitar parpadeos
   commentsOverlay.classList.add("hidden-overlay");
   commentsCounter.classList.add("hidden-overlay");
   commentInputContainer.classList.add("hidden-overlay");
+  commentsList.style.visibility = "hidden"; // 👈 Mantiene el contenedor invisible
 
   try {
     // 2. Obtenemos primero los datos del usuario
@@ -731,10 +732,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       await cargarComentarios(videos[0].id);
     }
 
-    // 6. Mostramos comentarios, contador y barra de entrada de inmediato
+    // 6. Mostramos todo el bloque de comentarios solo cuando el primer video esté listo
     commentsOverlay.classList.remove("hidden-overlay");
     commentsCounter.classList.remove("hidden-overlay");
     commentInputContainer.classList.remove("hidden-overlay");
+    commentsList.style.visibility = "visible"; // 👈 Ahora aparece sin parpadeo
 
     // 7. Precargamos el resto de comentarios en segundo plano SIN bloquear la UI
     precargarComentariosTodos(videos).then(() => {
@@ -749,8 +751,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     commentsOverlay.classList.remove("hidden-overlay");
     commentsCounter.classList.remove("hidden-overlay");
     commentInputContainer.classList.remove("hidden-overlay");
+    commentsList.style.visibility = "visible";
   }
 });
+
 
 
 
@@ -1876,6 +1880,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
