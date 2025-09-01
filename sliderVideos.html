@@ -970,25 +970,10 @@ async function enviarComentario() {
       })
     });
 
-    // Limpiar input
     commentInput.value = "";
 
-    // 🟢 Agregar el nuevo comentario directamente a caché
-    const nuevoComentario = {
-      autor: usuarioAutor,
-      comentario: texto,
-      fecha: new Date().toLocaleString(),
-      correo: usuarioCorreo
-    };
-
-    if (!comentariosPorVideo[videoId]) comentariosPorVideo[videoId] = [];
-    if (!comentariosCache[videoId]) comentariosCache[videoId] = [];
-
-    comentariosPorVideo[videoId].push(nuevoComentario);
-    comentariosCache[videoId].push(nuevoComentario);
-
-    // Renderizar instantáneamente sin volver a pedir datos
-    renderComentarios(videoId);
+    // NO HAGAS PUSH LOCAL, SOLO RECARGA
+    await cargarComentarios(videoId);
 
   } catch (e) {
     console.error("Error al enviar comentario:", e);
@@ -1873,5 +1858,6 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
