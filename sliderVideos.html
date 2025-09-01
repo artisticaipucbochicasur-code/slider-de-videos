@@ -706,41 +706,45 @@ let isSwiping = false;
 
 // === Inicialización ===
 window.addEventListener("DOMContentLoaded", async () => {
-  // Elementos clave
   const commentsOverlay = document.getElementById("commentsOverlay");
   const commentsCounter = document.getElementById("commentsCounter");
   const commentInputContainer = document.querySelector(".comment-input-container");
 
-  // 🔹 Ocultar mientras se precargan para evitar parpadeos
+  // 🔹 Ocultamos overlays temporalmente para evitar parpadeo
   commentsOverlay.classList.add("hidden-overlay");
   commentsCounter.classList.add("hidden-overlay");
   commentInputContainer.classList.add("hidden-overlay");
 
   try {
-    // 1️⃣ Primero cargamos los datos del usuario
+    // 1️⃣ Primero obtenemos datos del usuario
     await getUsuarioDataFromUrl();
 
-    // 2️⃣ Cargamos la lista de videos
+    // 2️⃣ Cargamos los videos y activamos el Swiper
     const videos = await cargarVideos();
 
-    // 3️⃣ Precargamos todos los comentarios en caché
-    await precargarComentariosTodos(videos);
+    // 🚀 Importante: aquí inicializamos el Swiper después de cargar los videos
+    inicializarSwiper();
 
-    // 4️⃣ Mostrar comentarios del primer video activo
+    // 3️⃣ Precargamos todos los comentarios en paralelo, pero no bloqueamos el slider
+    precargarComentariosTodos(videos).then(() => {
+      console.log("✅ Comentarios precargados en caché");
+    });
+
+    // 4️⃣ Cargamos los comentarios del primer video
     const primerVideoId = videos?.[0]?.id;
     if (primerVideoId) {
       await cargarComentarios(primerVideoId);
     }
 
-    // 🔹 Ahora mostramos todo junto sin parpadeo
+    // 5️⃣ Mostramos los overlays solo cuando todo esté listo
     commentsOverlay.classList.remove("hidden-overlay");
     commentsCounter.classList.remove("hidden-overlay");
     commentInputContainer.classList.remove("hidden-overlay");
 
-    console.log("✅ Comentarios precargados y visibles");
+    console.log("🎥 Videos y comentarios listos");
   } catch (e) {
     console.error("Error al inicializar la página:", e);
-    // En caso de error, al menos mostramos los overlays para que no queden ocultos
+    // En caso de error, al menos mostramos los overlays
     commentsOverlay.classList.remove("hidden-overlay");
     commentsCounter.classList.remove("hidden-overlay");
     commentInputContainer.classList.remove("hidden-overlay");
@@ -1871,6 +1875,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
