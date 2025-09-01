@@ -608,11 +608,29 @@
         background: transparent;
     }
 
+/* Ocultar comentarios y contador mientras precargamos */
+.hidden-before-load {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
         
     </style>
 </head>
 <body>
 
+<div class="comments-overlay-container hidden-before-load" id="commentsOverlay">
+    <ul id="commentsList"></ul>
+</div>
+
+<div class="comments-counter hidden-before-load" id="commentsCounter">
+    <span class="icon">💬</span>
+    <span class="count" id="commentCountValue">0</span>
+</div>
+
+
+    
 <div class="comments-overlay-container" id="commentsOverlay">
     <ul id="commentsList"></ul>
   </div>
@@ -699,6 +717,33 @@ let lastTapTime = 0;
 let activeComment = null;
 let startX = 0;
 let isSwiping = false;
+
+// === Inicialización general ===
+document.addEventListener("DOMContentLoaded", async () => {
+  const commentsOverlay = document.getElementById("commentsOverlay");
+  const commentsCounter = document.getElementById("commentsCounter");
+
+  // 1. Ocultamos comentarios y contador mientras precargamos
+  commentsOverlay.classList.add("hidden-before-load");
+  commentsCounter.classList.add("hidden-before-load");
+
+  // 2. Obtenemos datos del usuario primero
+  await getUsuarioDataFromUrl();
+
+  // 3. Obtenemos la lista de videos
+  const videos = await obtenerListaVideos();
+
+  // 4. Precargamos TODOS los comentarios en caché ANTES de mostrar nada
+  await precargarComentariosTodos(videos);
+
+  // 5. Cargamos los videos normalmente
+  await cargarVideos();
+
+  // 6. Mostramos comentarios y contador cuando todo está listo
+  commentsOverlay.classList.remove("hidden-before-load");
+  commentsCounter.classList.remove("hidden-before-load");
+});
+
 
 // Mostrar/ocultar overlays al tocar el slider
 document.querySelector('.swiper').addEventListener('click', () => {
@@ -1820,6 +1865,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
