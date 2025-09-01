@@ -1777,11 +1777,8 @@ async function cargarVideos(checkNew = false) {
     }
 
     // 🛎️ Notificaciones de nuevos videos
-    if (checkNew) {
-      // Filtrar solo los videos realmente nuevos
+    if (checkNew && lastVideos.length > 0) { // <-- solo si ya hay videos cargados
       const nuevos = newVideos.filter(v => !lastVideos.find(old => old.link === v.link));
-
-      // Agregar al inicio de notifications solo si hay nuevos
       if (nuevos.length > 0) {
         notifications.unshift(...nuevos);
         renderNotifications();
@@ -1842,6 +1839,7 @@ async function cargarVideos(checkNew = false) {
 }
 
 
+
         
 
 function activarSwipeParaBorrar() {
@@ -1879,5 +1877,6 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
