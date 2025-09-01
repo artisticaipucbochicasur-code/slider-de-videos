@@ -1729,7 +1729,7 @@ function cleanupIframesExceptActive() {
         
 
 
-// 🚀 Cargar videos + comentarios optimizado
+// 🚀 Cargar videos + comentarios optimizado con precarga total antes de mostrar Swiper
 async function cargarVideos(checkNew = false) {
   const loader = document.getElementById("loader");
   if (!checkNew) loader.style.display = "flex";
@@ -1752,22 +1752,17 @@ async function cargarVideos(checkNew = false) {
       });
     }
 
-    // ⚡ Primero cargamos los slides de inmediato
+    // ⚡ Precargamos TODOS los comentarios de TODOS los videos antes de crear los slides
+    if (!checkNew && newVideos.length > 0) {
+      const promesasComentarios = newVideos.map(video => cargarComentarios(video.id, false));
+      await Promise.all(promesasComentarios); // Esperamos a que TODOS estén listos
+    }
+
+    // ⚡ Ahora mostramos los videos cuando ya están los comentarios en caché
     if (!checkNew) {
       newVideos.forEach(v => {
         wrapper.appendChild(createSlide(v.title, v.link, v.desc, v.id));
       });
-    }
-
-    // ⚡ Precargar comentarios en paralelo, sin bloquear la UI
-    if (!checkNew && newVideos.length > 0) {
-      // Renderizamos SOLO los comentarios del primer video
-      cargarComentarios(newVideos[0].id, true);
-
-      // Los demás se precargan en segundo plano SIN renderizar
-      for (let i = 1; i < newVideos.length; i++) {
-        cargarComentarios(newVideos[i].id, false);
-      }
     }
 
     // 🔥 Eliminación silenciosa (solo en modo checkNew)
@@ -1793,7 +1788,7 @@ async function cargarVideos(checkNew = false) {
 
     lastVideos = newVideos;
 
-    // ✅ Inicializar Swiper cuando los videos ya están en el DOM
+    // ✅ Inicializamos Swiper solo cuando TODO (videos + comentarios) esté listo
     if (!checkNew) {
       if (swiper) swiper.destroy(true, true);
       swiper = new Swiper(".swiper", {
@@ -1807,7 +1802,7 @@ async function cargarVideos(checkNew = false) {
             updateFixedTitle(this);
             activarSwipeParaBorrar();
 
-            // 🔹 Mostrar comentarios del video activo desde caché
+            // 🔹 Mostrar comentarios del video activo (instantáneamente desde caché)
             const videoId = getActiveVideoId();
             if (videoId) renderComentarios(videoId);
           },
@@ -1830,7 +1825,7 @@ async function cargarVideos(checkNew = false) {
       updateFixedTitle(swiper);
       activarSwipeParaBorrar();
 
-      // 🔹 Mostrar comentarios para el primer video desde caché
+      // 🔹 Mostrar comentarios para el primer video (ya están en caché)
       const videoId = getActiveVideoId();
       if (videoId) renderComentarios(videoId);
     }
@@ -1840,6 +1835,8 @@ async function cargarVideos(checkNew = false) {
     loader.style.display = "none";
   }
 }
+
+
 
 
 function activarSwipeParaBorrar() {
@@ -1877,6 +1874,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
