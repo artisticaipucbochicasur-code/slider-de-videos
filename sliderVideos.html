@@ -803,24 +803,42 @@ function getActiveVideoId() {
   return activeSlide.dataset.videoid || null;
 }
 
-// === Cargar comentarios desde Google Sheets ===
+// 🗂️ Caché de comentarios
+const comentariosCache = {}; // { videoId: [comentarios] }
+
+// === Cargar comentarios desde Google Sheets con caché ===
 async function cargarComentarios(videoId) {
+  if (!videoId) return;
+
+  // Si ya está en caché → renderiza instantáneamente
+  if (comentariosCache[videoId]) {
+    comentariosPorVideo[videoId] = comentariosCache[videoId];
+    renderComentarios(videoId);
+    return;
+  }
+
   try {
     const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}`);
     const data = await res.json();
-    comentariosPorVideo[videoId] = [];
 
-    if (Array.isArray(data.data) && data.data.length > 0) {
-      comentariosPorVideo[videoId] = data.data.map(c => ({
-        autor: c[2] || "Anónimo",
-        comentario: c[1] || "",
-        fecha: c[4] || "",
-        correo: c[3] || ""
-      }));
-    }
+    // Guardar comentarios en variables y cachearlos
+    comentariosPorVideo[videoId] = Array.isArray(data.data)
+      ? data.data.map(c => ({
+          autor: c[2] || "Anónimo",
+          comentario: c[1] || "",
+          fecha: c[4] || "",
+          correo: c[3] || ""
+        }))
+      : [];
+
+    // Guardar en caché para acceso instantáneo
+    comentariosCache[videoId] = comentariosPorVideo[videoId];
+
     renderComentarios(videoId);
   } catch (e) {
+    console.error("Error cargando comentarios:", e);
     comentariosPorVideo[videoId] = [];
+    comentariosCache[videoId] = [];
     renderComentarios(videoId);
   }
 }
@@ -862,9 +880,15 @@ function renderComentarios(videoId) {
       deleteBtnContainer.appendChild(deleteBtn);
       li.appendChild(deleteBtnContainer);
 
-      deleteBtn.addEventListener('click', (ev) => {
+      deleteBtn.addEventListener('click', async (ev) => {
         ev.stopPropagation();
-        eliminarComentario(videoId, c.comentario, c.correo);
+        await eliminarComentario(videoId, c.comentario, c.correo);
+
+        // 🟢 Actualizar caché tras eliminar
+        if (comentariosCache[videoId]) {
+          comentariosCache[videoId] = comentariosCache[videoId].filter(com => com.comentario !== c.comentario || com.correo !== c.correo);
+        }
+        renderComentarios(videoId);
       });
     }
     commentsList.appendChild(li);
@@ -893,12 +917,40 @@ async function enviarComentario() {
       })
     });
 
+    // Limpiar input
     commentInput.value = "";
-    await cargarComentarios(videoId);
+
+    // 🟢 Agregar el nuevo comentario directamente a caché
+    const nuevoComentario = {
+      autor: usuarioAutor,
+      comentario: texto,
+      fecha: new Date().toLocaleString(),
+      correo: usuarioCorreo
+    };
+
+    if (!comentariosPorVideo[videoId]) comentariosPorVideo[videoId] = [];
+    if (!comentariosCache[videoId]) comentariosCache[videoId] = [];
+
+    comentariosPorVideo[videoId].push(nuevoComentario);
+    comentariosCache[videoId].push(nuevoComentario);
+
+    // Renderizar instantáneamente sin volver a pedir datos
+    renderComentarios(videoId);
+
   } catch (e) {
     console.error("Error al enviar comentario:", e);
   } finally {
     sendCommentBtn.disabled = false;
+  }
+}
+
+// === Precargar todos los comentarios al inicio ===
+async function precargarComentariosTodos(videos) {
+  try {
+    await Promise.all(videos.map(video => cargarComentarios(video.id)));
+    console.log("✅ Todos los comentarios precargados en caché");
+  } catch (e) {
+    console.error("Error precargando comentarios:", e);
   }
 }
 
@@ -1621,6 +1673,7 @@ function cleanupIframesExceptActive() {
 
         
 
+// 🚀 Cargar videos + comentarios en paralelo con caché
 async function cargarVideos(checkNew = false) {
   const loader = document.getElementById("loader");
   if (!checkNew) loader.style.display = "flex";
@@ -1670,6 +1723,12 @@ async function cargarVideos(checkNew = false) {
 
     lastVideos = newVideos;
 
+    // 🚀 **Pre-carga todos los comentarios en paralelo**
+    await Promise.all(
+      newVideos.map(v => cargarComentarios(v.id))
+    );
+    console.log("✅ Todos los comentarios precargados en caché");
+
     if (!checkNew) {
       if (swiper) swiper.destroy(true, true);
       swiper = new Swiper(".swiper", {
@@ -1684,11 +1743,9 @@ async function cargarVideos(checkNew = false) {
             refrescarComentariosSlide();
             activarSwipeParaBorrar();
 
-            // 🔹 Cargar comentarios del primer video activo al iniciar
+            // 🔹 Mostrar comentarios instantáneos desde caché
             const videoId = getActiveVideoId();
-            if (videoId) {
-              cargarComentarios(videoId);
-            }
+            if (videoId) cargarComentarios(videoId);
           },
           slideChange() {
             cleanupIframesExceptActive();
@@ -1696,11 +1753,9 @@ async function cargarVideos(checkNew = false) {
             refrescarComentariosSlide();
             activarSwipeParaBorrar();
 
-            // 🔹 Cargar comentarios cuando se cambia de video
+            // 🔹 Mostrar comentarios instantáneamente al cambiar video
             const videoId = getActiveVideoId();
-            if (videoId) {
-              cargarComentarios(videoId);
-            }
+            if (videoId) cargarComentarios(videoId);
           },
           slideChangeTransitionEnd() {
             updateFixedTitle(this);
@@ -1713,11 +1768,9 @@ async function cargarVideos(checkNew = false) {
       refrescarComentariosSlide();
       activarSwipeParaBorrar();
 
-      // 🔹 Cargar comentarios también después de preparar todo
+      // 🔹 Mostrar comentarios para el primer video
       const videoId = getActiveVideoId();
-      if (videoId) {
-        cargarComentarios(videoId);
-      }
+      if (videoId) cargarComentarios(videoId);
     }
   } catch (e) {
     console.error("Error cargando videos:", e);
@@ -1764,6 +1817,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
