@@ -27,19 +27,18 @@
 </head>
 <body>
 
-<div class="swiper"><div class="swiper-wrapper"></div></div>
-
+<div class="swiper"><div class="swiper-wrapper"></div></div> 
 <div id="loader"><span class="spinner">⏳</span></div>
-
 <div id="lblContador"></div>
 
-<div id="customAlertOverlay" style="display:none">
-  <div class="custom-alert">
-    <h2 id="alertTitle"></h2>
-    <div class="titles-list" id="alertMessage"></div>
-  </div>
+<div id="customAlertOverlay">
+    <div class="custom-alert">
+        <h2 id="alertTitle"></h2>
+        <div class="titles-list" id="alertMessage"></div>
+    </div>
 </div>
 
+<!-- 🔍 Overlay de búsqueda -->
 <div id="searchOverlay" class="custom-alert-overlay" style="display:none;">
   <div class="custom-alert">
     <h2>Buscar video</h2>
@@ -65,22 +64,21 @@
 
 <div class="comment-input-container">
   <input type="text" id="commentInput" placeholder="Escribe un comentario...">
-  <button class="send-comment-btn">Enviar</button>
+  <button class="send-comment-btn"><i class="fas fa-paper-plane"></i></button>
 </div>
 
+<!-- Botón fijo para eliminar video -->
 <button id="deleteAnnouncementBtn" class="delete-announcement-btn">
-  Eliminar video
+  <i class="fas fa-trash"></i>
 </button>
 
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec"; // Reemplaza con tu URL de Apps Script
+const SCRIPT_URL = "https://script.google.com/macros/s/TU_SCRIPT_ID/exec";
 
 let videosData = [];
+let indiceBusqueda = [];
 let swiperInstance = null;
-let comentariosPorVideo = {};
-let currentAuthorEmail = "deimer.herrera91@gmail.com";
-let currentAuthorName = "AnónimoDH";
 
 const loader = document.getElementById('loader');
 const lblContador = document.getElementById("lblContador");
@@ -96,140 +94,166 @@ const commentInput = document.getElementById('commentInput');
 const sendCommentBtn = document.querySelector('.send-comment-btn');
 const deleteAnnouncementBtn = document.getElementById('deleteAnnouncementBtn');
 
-// Función para normalizar texto
+let currentAuthorEmail = "deimer.herrera91@gmail.com";
+let currentAuthorName = "AnónimoDH";
+
+// 🔹 Normalizar texto
 function normalizar(txt) {
-  return (txt||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
+  return (txt || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 }
 
-// Cargar videos desde hoja
-async function cargarVideos() {
-  loader.style.display='block';
-  try {
-    const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
-    const data = await res.json();
-    if(data.status==="success") {
-      videosData = data.data.map(v => ({
-        titulo: v[0]||"",
-        url: v[1]||"",
-        autor: v[2]||"",
-        correo: v[3]||"",
-        descripcion: v[4]||"",
-        id: v[5]||""
-      }));
-      initSwiper();
+// 🔹 Abrir/cerrar buscador
+function abrirBusqueda() { document.getElementById("searchOverlay").style.display = "flex"; document.getElementById("searchInput").focus(); }
+function cerrarBusqueda() { document.getElementById("searchOverlay").style.display = "none"; }
+
+document.getElementById("searchInput").addEventListener("input", function () {
+  const query = normalizar(this.value);
+  const resultadosDiv = document.getElementById("searchResults");
+  resultadosDiv.innerHTML = "";
+  if (query.length < 2) return;
+  const coincidencias = indiceBusqueda.filter(item => item.key.includes(query));
+  coincidencias.forEach(item => {
+    const div = document.createElement("div");
+    div.textContent = item.titulo;
+    div.classList.add("resultado-item");
+    div.onclick = () => { cerrarBusqueda(); if(swiperInstance) swiperInstance.slideToLoop(item.i, 500); };
+    resultadosDiv.appendChild(div);
+  });
+  if (!resultadosDiv.hasChildNodes()) resultadosDiv.innerHTML = "<p>No se encontraron coincidencias</p>";
+});
+
+// 🔹 Función para actualizar overlay de título y descripción
+function updateInfo(title, description) {
+  currentTitle.setAttribute("data-full", title);
+  currentDescription.setAttribute("data-full", description);
+  const shortTitle = title.length>50 ? title.substring(0,50)+" <span class='more-link'>...más</span>" : title;
+  const shortDescription = description.length>80 ? description.substring(0,80)+" <span class='more-link'>...más</span>" : description;
+  currentTitle.setAttribute("data-short", shortTitle);
+  currentDescription.setAttribute("data-short", shortDescription);
+  currentTitle.innerHTML = shortTitle;
+  currentDescription.innerHTML = shortDescription;
+  currentTitle.classList.remove("expanded");
+  currentDescription.classList.remove("expanded");
+}
+
+// Click para expandir título/descripción
+[currentTitle, currentDescription].forEach(el=>{
+  el.addEventListener('click', function(){
+    if(this.classList.contains("expanded")){
+      this.innerHTML = this.getAttribute("data-short");
+      this.classList.remove("expanded");
+    } else {
+      this.innerHTML = this.getAttribute("data-full") + " <span class='more-link'>Mostrar menos</span>";
+      this.classList.add("expanded");
     }
+  });
+});
+
+// Enviar comentario
+async function enviarComentario() {
+  const comentarioTexto = commentInput.value.trim();
+  const activeIndex = swiperInstance.realIndex;
+  const videoActual = videosData[activeIndex];
+  if(!comentarioTexto || !videoActual) return;
+  loader.style.display = 'block';
+  try {
+    const formData = new FormData();
+    formData.append('accion', 'agregarComentarioVideo');
+    formData.append('videoId', videoActual.id);
+    formData.append('comentario', comentarioTexto);
+    formData.append('autor', currentAuthorName);
+    formData.append('correo', currentAuthorEmail);
+    const response = await fetch(SCRIPT_URL, { method:'POST', body:formData });
+    const result = await response.json();
+    commentInput.value = '';
+    cargarComentarios(videoActual.id);
   } catch(e){ console.error(e); }
-  finally{ loader.style.display='none'; }
+  finally{ loader.style.display = 'none'; }
+}
+sendCommentBtn.addEventListener('click', enviarComentario);
+commentInput.addEventListener('keydown', e=>{ if(e.key==='Enter') enviarComentario(); });
+
+// Cargar videos
+async function cargarVideos() {
+  loader.style.display = 'block';
+  try {
+    const response = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
+    const data = await response.json();
+    videosData = data.data.map(d => ({ titulo:d[0], url:d[1], autor:d[2], correo:d[3], descripcion:d[4], id:d[5], comentarios:[] })).reverse();
+    reconstruirIndiceBusqueda();
+    initSwiper(0);
+    updateContentOverlay(0);
+  } catch(e){ console.error(e); }
+  finally{ loader.style.display = 'none'; }
+}
+
+// Reconstruir índice de búsqueda
+function reconstruirIndiceBusqueda() {
+  indiceBusqueda = videosData.map((v,i)=>({i, key: normalizar(v.titulo+" "+v.descripcion), titulo:v.titulo}));
+}
+
+// Inicializar swiper
+function initSwiper(initialIndex=0){
+  if(!swiperInstance){
+    swiperInstance = new Swiper('.swiper',{ loop:true, direction:'vertical', slidesPerView:1, spaceBetween:10, zoom:{maxRatio:3} });
+    swiperInstance.on('slideChange', ()=>{ updateContentOverlay(swiperInstance.realIndex); });
+  }
+  const wrapper = document.querySelector('.swiper-wrapper');
+  wrapper.innerHTML = '';
+  videosData.forEach(video=>{
+    const slide = document.createElement('div');
+    slide.className='swiper-slide';
+    slide.dataset.id = video.id;
+    const zoomContainer = document.createElement('div');
+    zoomContainer.className='swiper-zoom-container';
+    const img = document.createElement('img');
+    img.src = video.url; img.alt=video.titulo;
+    zoomContainer.appendChild(img); slide.appendChild(zoomContainer);
+    wrapper.appendChild(slide);
+  });
+  swiperInstance.slideToLoop(initialIndex,0,false);
+}
+
+// Actualizar overlay y comentarios
+function updateContentOverlay(index){
+  if(videosData.length<=index) return;
+  const video = videosData[index];
+  updateInfo(video.titulo, video.descripcion);
+  commentsList.innerHTML='';
+  cargarComentarios(video.id);
+  // Mostrar botón eliminar
+  if(normalizar(video.correo)===normalizar(currentAuthorEmail)){
+    deleteAnnouncementBtn.classList.add("visible");
+    deleteAnnouncementBtn.onclick = ()=>eliminarVideo(video.id);
+  } else { deleteAnnouncementBtn.classList.remove("visible"); }
 }
 
 // Cargar comentarios de un video
 async function cargarComentarios(videoId){
   try {
-    const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${videoId}`);
-    const data = await res.json();
-    comentariosPorVideo[videoId] = data.data.map(c=>({
-      texto: `${c[2]} (${c[4]}) - ${c[1]}`,
-      autorCorreo: c[3],
-      textoPuro: c[1]
-    }));
+    const response = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${videoId}`);
+    const data = await response.json();
+    const comentarios = (data.data || []).map(c=>({texto:`${c[2]} (${c[4]}) - ${c[1]}`, textoPuro:c[1], autorCorreo:c[3]}));
+    const activeIndex = swiperInstance.realIndex;
+    videosData[activeIndex].comentarios = comentarios;
+    commentsList.innerHTML='';
+    if(comentarios.length>0){
+      comentarios.forEach(c=>{
+        const li=document.createElement('li');
+        const content=document.createElement('div'); content.className='comment-content'; content.textContent=c.texto;
+        const delBtnDiv=document.createElement('div'); delBtnDiv.className='delete-btn-container';
+        const delBtn=document.createElement('div'); delBtn.className='delete-btn'; delBtn.textContent='Borrar';
+        delBtn.onclick=()=>eliminarComentario(videoId, c.textoPuro, c.autorCorreo);
+        delBtnDiv.appendChild(delBtn); li.appendChild(delBtnDiv); li.appendChild(content);
+        commentsList.appendChild(li);
+      });
+      commentCountValue.textContent=comentarios.length;
+    } else { commentsList.innerHTML='<li>No hay comentarios aún.</li>'; commentCountValue.textContent=0; }
   } catch(e){ console.error(e); }
 }
-
-// Actualizar overlay de contenido y comentarios
-function updateContentOverlay(index){
-  if(videosData.length<=index) return;
-  const video = videosData[index];
-  currentTitle.textContent = video.titulo;
-  currentDescription.textContent = video.descripcion;
-
-  commentsList.innerHTML='';
-  const comentarios = comentariosPorVideo[video.id]||[];
-  if(comentarios.length>0){
-    comentarios.forEach(c=>{
-      const li = document.createElement('li');
-      li.textContent = c.texto;
-      li.dataset.correo=c.autorCorreo;
-      li.dataset.texto=c.textoPuro;
-      commentsList.appendChild(li);
-    });
-    commentCountValue.textContent = comentarios.length;
-  } else {
-    const li = document.createElement('li'); li.textContent="No hay comentarios aún.";
-    commentsList.appendChild(li);
-    commentCountValue.textContent = 0;
-  }
-
-  if(normalizar(video.correo)===normalizar(currentAuthorEmail)){
-    deleteAnnouncementBtn.classList.add("visible");
-    deleteAnnouncementBtn.onclick = ()=>eliminarVideo(video.id);
-  } else {
-    deleteAnnouncementBtn.classList.remove("visible");
-  }
-}
-
-// Inicializar Swiper
-function initSwiper(){
-  const swiperWrapper = document.querySelector('.swiper-wrapper');
-  swiperWrapper.innerHTML='';
-  videosData.forEach(v=>{
-    const slide=document.createElement('div');
-    slide.classList.add('swiper-slide');
-    const videoEl = document.createElement('video');
-    videoEl.src=v.url;
-    videoEl.controls=true;
-    slide.appendChild(videoEl);
-    swiperWrapper.appendChild(slide);
-  });
-
-  swiperInstance = new Swiper('.swiper',{
-    loop:true,
-    direction:'vertical',
-    slidesPerView:1,
-    spaceBetween:10
-  });
-
-  swiperInstance.on('slideChange', async ()=>{
-    const idx = swiperInstance.realIndex;
-    await cargarComentarios(videosData[idx].id);
-    updateContentOverlay(idx);
-  });
-
-  // Cargar comentarios del primer video
-  if(videosData.length>0){
-    cargarComentarios(videosData[0].id).then(()=>updateContentOverlay(0));
-  }
-}
-
-// Enviar comentario
-async function enviarComentario(){
-  const texto = commentInput.value.trim();
-  if(!texto || !swiperInstance) return;
-  const idx = swiperInstance.realIndex;
-  const video = videosData[idx];
-  loader.style.display='block';
-  try {
-    const formData = new FormData();
-    formData.append('accion','agregarComentarioVideo');
-    formData.append('videoId',video.id);
-    formData.append('comentario',texto);
-    formData.append('autor',currentAuthorName);
-    formData.append('correo',currentAuthorEmail);
-    const res = await fetch(SCRIPT_URL,{method:'POST',body:formData});
-    const data = await res.json();
-    if(data.status==="success"){
-      commentInput.value='';
-      await cargarComentarios(video.id);
-      updateContentOverlay(idx);
-    }
-  } catch(e){ console.error(e); }
-  finally{ loader.style.display='none'; }
-}
-
-sendCommentBtn.addEventListener('click', enviarComentario);
-commentInput.addEventListener('keydown', e=>{ if(e.key==='Enter') enviarComentario(); });
 
 // Eliminar comentario
-async function eliminarComentario(videoId,texto,correo){
+async function eliminarComentario(videoId, texto, correo){
   loader.style.display='block';
   try {
     const formData = new FormData();
@@ -237,25 +261,31 @@ async function eliminarComentario(videoId,texto,correo){
     formData.append('videoId',videoId);
     formData.append('comentario',texto);
     formData.append('correo',correo);
-    const res = await fetch(SCRIPT_URL,{method:'POST',body:formData});
-    const data = await res.json();
-    if(data.status==="success"){
-      const idx = swiperInstance.realIndex;
-      await cargarComentarios(videoId);
-      updateContentOverlay(idx);
-    }
+    await fetch(SCRIPT_URL,{method:'POST',body:formData});
+    cargarComentarios(videoId);
   } catch(e){ console.error(e); }
   finally{ loader.style.display='none'; }
 }
 
 // Eliminar video
 async function eliminarVideo(videoId){
-  alert("Implementa tu función de eliminar video según tu Apps Script si es necesario");
+  if(!confirm("¿Deseas eliminar este video?")) return;
+  loader.style.display='block';
+  try {
+    const formData = new FormData();
+    formData.append('accion','eliminarAnuncio');
+    formData.append('id',videoId);
+    formData.append('correo',currentAuthorEmail);
+    await fetch(SCRIPT_URL,{method:'POST',body:formData});
+    cargarVideos();
+  } catch(e){ console.error(e); }
+  finally{ loader.style.display='none'; }
 }
 
 // Inicializar
-document.addEventListener('DOMContentLoaded', cargarVideos);
+document.addEventListener('DOMContentLoaded',()=>{ cargarVideos(); });
 </script>
 </body>
 </html>
+
 
