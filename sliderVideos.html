@@ -719,20 +719,28 @@ document.addEventListener("DOMContentLoaded", async () => {
     const usuario = await getUsuarioDataFromUrl();
     const videos = await obtenerListaVideos();
 
-    await cargarVideos(videos);          // Carga slider
-    await precargarComentariosTodos(videos); // Precarga caché
+    // Carga solo los slides del slider rápido
+    await cargarVideos(videos);
 
-    if (videos.length > 0) {
-      await cargarComentarios(videos[0].id); // Render del primer video
-    }
+    // 🔹 Precargamos todos los comentarios en segundo plano
+    await precargarComentariosTodos(videos);
 
-    // Mostramos la interfaz limpia, ya con comentarios
+    // 🔹 Solo ahora mostramos la interfaz de comentarios
     commentsOverlay.classList.remove("hidden-overlay");
     commentsCounter.classList.remove("hidden-overlay");
     commentInputContainer.classList.remove("hidden-overlay");
 
+    // 🔹 Renderizamos los comentarios del primer video para la visualización inicial
+    if (videos.length > 0) {
+      const primerVideoId = getActiveVideoId() || videos[0].id;
+      renderComentarios(primerVideoId);
+    }
+
+    console.log("✅ Todos los comentarios precargados, interfaz visible.");
+
   } catch (e) {
     console.error("❌ Error al inicializar:", e);
+    // En caso de error, mostramos la interfaz de todas formas
     commentsOverlay.classList.remove("hidden-overlay");
     commentsCounter.classList.remove("hidden-overlay");
     commentInputContainer.classList.remove("hidden-overlay");
@@ -892,11 +900,7 @@ function renderComentarios(videoId) {
   const lista = comentariosPorVideo[videoId] || [];
   const commentsList = document.getElementById('commentsList');
   const commentCountValue = document.getElementById('commentCountValue');
-  const overlay = document.getElementById('commentsOverlay');
-  const counter = document.getElementById('commentsCounter');
-  const inputContainer = document.querySelector('.comment-input-container');
 
-  // Limpiar lista antes de renderizar
   commentsList.innerHTML = '';
 
   if (lista.length === 0) {
@@ -945,12 +949,8 @@ function renderComentarios(videoId) {
 
     commentCountValue.textContent = lista.length;
   }
-
-  // 🔹 Mostrar contenedor solo después de renderizar comentarios
-  overlay.classList.remove('hidden-overlay');
-  counter.classList.remove('hidden-overlay');
-  inputContainer.classList.remove('hidden-overlay');
 }
+
 
 
 // === Enviar un nuevo comentario ===
@@ -1873,6 +1873,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
