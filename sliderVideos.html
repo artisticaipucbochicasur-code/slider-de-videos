@@ -966,7 +966,9 @@ function renderComentarios(videoId) {
 
 
 // === Enviar un nuevo comentario ===
-async function enviarComentario() {
+async function enviarComentario(e) {
+  if (e) e.preventDefault();
+
   const texto = commentInput.value.trim();
   const videoId = getActiveVideoId();
   if (!texto || !videoId) return;
@@ -974,6 +976,7 @@ async function enviarComentario() {
   sendCommentBtn.disabled = true;
 
   try {
+    // 🟢 Enviar comentario inmediatamente
     await fetch(SCRIPT_URL, {
       method: "POST",
       body: new URLSearchParams({
@@ -1005,12 +1008,38 @@ async function enviarComentario() {
     // Renderizar instantáneamente sin volver a pedir datos
     renderComentarios(videoId);
 
+    // 🔽 Auto-scroll al final de la lista de comentarios
+    const commentsList = document.getElementById("commentsList");
+    setTimeout(() => {
+      commentsList.scrollTop = commentsList.scrollHeight;
+    }, 50);
+
   } catch (e) {
     console.error("Error al enviar comentario:", e);
   } finally {
     sendCommentBtn.disabled = false;
   }
 }
+
+// === Listeners del input ===
+sendCommentBtn.addEventListener("click", (e) => enviarComentario(e));
+
+commentInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault(); // Evita salto de línea accidental
+    enviarComentario(e);
+  }
+});
+
+// Mantener animación de enfoque
+commentInput.addEventListener("focus", () => {
+  document.body.style.transform = `translateY(-50%)`;
+});
+
+commentInput.addEventListener("blur", () => {
+  document.body.style.transform = `translateY(0)`;
+});
+
 
 // === Precargar todos los comentarios al inicio ===
 async function precargarComentariosTodos(videos) {
@@ -1040,17 +1069,7 @@ async function eliminarComentario(videoId, comentario, correo) {
   }
 }
 
-// === Listeners del input ===
-sendCommentBtn.addEventListener('click', enviarComentario);
-commentInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') enviarComentario();
-});
-commentInput.addEventListener('focus', () => {
-  document.body.style.transform = `translateY(-50%)`;
-});
-commentInput.addEventListener('blur', () => {
-  document.body.style.transform = `translateY(0)`;
-});
+
 
 // === Refrescar comentarios cuando cambia el video ===
 // ❌ ESTA FUNCIÓN ESTÁ CAUSANDO EL PROBLEMA Y DEBE SER ELIMINADA ❌
@@ -1894,6 +1913,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
