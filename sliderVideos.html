@@ -1752,20 +1752,22 @@ async function cargarVideos(checkNew = false) {
       });
     }
 
-    // ⚡ Primero precargamos TODOS los comentarios en segundo plano (sin renderizar)
-    if (!checkNew && newVideos.length > 0) {
-      for (const v of newVideos) {
-        // Solo renderizamos los comentarios del primer video activo
-        const render = (v === newVideos[0]);
-        await cargarComentarios(v.id, render);
-      }
-    }
-
-    // ⚡ Cargar los slides de los videos
+    // ⚡ Primero cargamos los slides de inmediato
     if (!checkNew) {
       newVideos.forEach(v => {
         wrapper.appendChild(createSlide(v.title, v.link, v.desc, v.id));
       });
+    }
+
+    // ⚡ Precargar comentarios en paralelo, sin bloquear la UI
+    if (!checkNew && newVideos.length > 0) {
+      // Renderizamos SOLO los comentarios del primer video
+      cargarComentarios(newVideos[0].id, true);
+
+      // Los demás se precargan en segundo plano SIN renderizar
+      for (let i = 1; i < newVideos.length; i++) {
+        cargarComentarios(newVideos[i].id, false);
+      }
     }
 
     // 🔥 Eliminación silenciosa (solo en modo checkNew)
@@ -1781,7 +1783,7 @@ async function cargarVideos(checkNew = false) {
     }
 
     // 🛎️ Notificaciones de nuevos videos
-    if (checkNew && lastVideos.length > 0) { // <-- solo si ya hay videos cargados
+    if (checkNew && lastVideos.length > 0) { 
       const nuevos = newVideos.filter(v => !lastVideos.find(old => old.link === v.link));
       if (nuevos.length > 0) {
         notifications.unshift(...nuevos);
@@ -1791,7 +1793,7 @@ async function cargarVideos(checkNew = false) {
 
     lastVideos = newVideos;
 
-    // ✅ Inicializar Swiper solo cuando todo esté listo (videos + comentarios)
+    // ✅ Inicializar Swiper cuando los videos ya están en el DOM
     if (!checkNew) {
       if (swiper) swiper.destroy(true, true);
       swiper = new Swiper(".swiper", {
@@ -1805,7 +1807,7 @@ async function cargarVideos(checkNew = false) {
             updateFixedTitle(this);
             activarSwipeParaBorrar();
 
-            // 🔹 Mostrar comentarios desde caché para el video activo
+            // 🔹 Mostrar comentarios del video activo desde caché
             const videoId = getActiveVideoId();
             if (videoId) renderComentarios(videoId);
           },
@@ -1875,6 +1877,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
