@@ -1,1226 +1,190 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
-    />
-    <title>Galería de Videos</title>
-    <link
-        rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"
-    />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --bg1: #000;
-            --bg2: #000;
-            --text: #fff;
-            --card-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
-        }
-
-        html, body {
-            height: 100%;
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-            background: linear-gradient(135deg, var(--bg1), var(--bg2));
-            font-family: "Segoe UI", Arial, sans-serif;
-            color: var(--text);
-            overflow: hidden;
-        }
-
-    /* Botones flotantes */
-    .floating-buttons {
-        position: fixed;
-        bottom: 90px;
-        right: 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        z-index: 2000;
-    }
-    .fab {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        border: none;
-        background: transparent;
-        color: white;
-        font-size: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-    }
-    .fab.danger {}
-.modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 10px;
-}
-.modal-actions button {
-    flex: 1;
-}
-
-        
-
-    /* Modal */
-    .modal {
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,0.6);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 3000;
-    }
-    .modal.hidden { display: none; }
-    .modal-content {
-        background: #111;
-        padding: 20px;
-        border-radius: 10px;
-        width: 300px;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        color: #fff;
-    }
-    .modal-content input { padding: 6px; }
-
-    /* Progreso flotante */
-    .progress-toast {
-        position: fixed;
-        top: 15px;
-        right: 15px;
-        background: rgba(0,0,0,0.8);
-        color: #fff;
-        padding: 10px 14px;
-        border-radius: 6px;
-        z-index: 4000;
-        width: 200px;
-    }
-    .progress-toast.hidden { display: none; }
-    .progress-toast .bar {
-        height: 4px;
-        background: #28a745;
-        width: 0%;
-        margin-bottom: 6px;
-        transition: width 0.3s ease;
-    }
-
-
-        
-        .swiper {
-            width: 100vw;
-            height: 100vh;
-            position: relative;
-        }
-
-        .swiper-slide {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: stretch;
-            position: relative;
-            background: #000;
-        }
-
-        .player-card {
-            position: relative;
-            width: 100%;
-            height: calc(100vh - 120px);
-            background: #000;
-            overflow: hidden;
-            box-shadow: var(--card-shadow);
-            border-radius: 10px;
-        }
-
-        .poster {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #111;
-            background-size: cover;
-            background-position: center center;
-            cursor: pointer;
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: manipulation;
-        }
-
-        .play-btn {
-            display: grid;
-            place-items: center;
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            background: rgba(0, 0, 0, 0.55);
-            backdrop-filter: blur(2px);
-            font-size: 28px;
-            line-height: 1;
-            border: 2px solid #fff;
-        }
-
-        .player-iframe {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            border: 0;
-            background: #000;
-        }
-
-/* Truncamiento para el contenedor del título y la descripción */
-#video-title-fixed .text-container {
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2; /* Truncar a 2 líneas por defecto */
-    transition: -webkit-line-clamp 0.3s ease;
-    cursor: pointer; /* Cursor de puntero para indicar que es clicable */
-    position: relative;
-    max-height: 4em; /* Altura máxima cuando está truncado */
-    line-height: 1.2;
-}
-
-#video-title-fixed .text-container.expanded {
-    -webkit-line-clamp: unset;
-    cursor: pointer;
-    overflow-y: auto; /* Hacer que el contenedor sea scrollable si el contenido es muy largo */
-    max-height: 60vh; /* <<-- Ajuste: Altura máxima al expandir (50% de la altura de la ventana) */
-    padding-right: 15px; /* Espacio para la barra de desplazamiento */
-}
-
-/* Estilo para el botón de 'más' o 'menos' */
-#video-title-fixed .toggle-text {
-    color: #ccc;
-    font-size: 12px;
-    font-weight: bold;
-    user-select: none;
-    display: inline-block;
-    position: absolute; /* Colocar en la esquina para que siempre esté visible */
-    bottom: 0;
-    right: 20px; /* <<-- Ajuste: Separación del borde derecho */
-    background: rgba(0, 0, 0, 0.5); /* Fondo semitransparente para que sea legible */
-    padding: 2px 5px;
-    border-radius: 3px;
-    backdrop-filter: blur(2px);
-}
-
-#video-title-fixed {
-    position: absolute;
-    top: 0;
-    left: 10px; /* Ajuste: Desplaza el contenedor 10px desde el borde izquierdo */
-    width: auto; /* Ajuste: El ancho se ajustará al contenido + márgenes */
-    max-width: 80%; /* Mantienes este ajuste para el ancho máximo */
-    z-index: 1000;
-    background: rgba(0,0,0,0.3);
-    transition: opacity 0.18s ease;
-    opacity: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 6px 10px;
-    margin: 0; /* Ajuste: Elimina el centrado para que 'left' funcione */
-    right: auto; /* Ajuste: Desactiva el valor de la derecha */
-}
-
-#video-title-fixed .video-title {
-    font-size: 18px;
-    font-weight: 600;
-    text-align: left;
-    color: #f1f1f1;
-}
-
-#video-title-fixed .video-desc {
-    font-size: 14px;
-    opacity: 0.85;
-    text-align: left;
-    color: #ddd;
-}
-/* 🔔 Notificaciones */
-#notification-wrapper {
-  position: fixed;
-  right: 20px;
-  bottom: 140px; /* la subimos para que quede arriba del bote */
-  z-index: 5000;
-}
-
-#notification-btn {
-  position: relative;
-  background: transparent;   /* 👈 Igual que el bote */
-  border: none;
-  border-radius: 50%;
-  width: 40px;              /* 👈 mismo tamaño que el fab */
-  height: 40px;
-  color: white;
-  font-size: 24px;
-  cursor: pointer;
-  display: flex;            /* 👈 centra el icono */
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.4); /* 👈 igual que el bote */
-}
-
-
-#notification-count {
-  display: none; /* 👈 arranca escondido */
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  background: red;
-  color: white;
-  font-size: 12px;
-  font-weight: bold;
-  padding: 2px 6px;
-  border-radius: 50%;
-}
-
-
-
-
-#notification-list {
-  position: absolute;
-  top: 55px;
-  right: 0;
-  background: #222;
-  border: 1px solid #444;
-  border-radius: 10px;
-  width: 260px;
-  max-height: 320px;
-  overflow-y: auto;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.6);
-}
-#notification-list.hidden { display: none; }
-#notification-list div {
-  padding: 10px;
-  border-bottom: 1px solid #333;
-  cursor: pointer;
-  color: #ddd;
-}
-#notification-list div:hover {
-  background: #333;
-}
-
-
-        
-
-        #loader {
-            position: fixed;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            z-index: 10;
-            color: #fff;
-            text-shadow: 0 0 8px rgba(0, 0, 0, 0.7);
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        #loader .spinner {
-            display: inline-block;
-            animation: spin 1.1s linear infinite;
-        }
-
-        .touch-blocker {
-            position: absolute;
-            inset: 0;
-            z-index: 1;
-            display: none;
-        }
-
-        .controls-bar {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 5px 10px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            z-index: 5;
-            transition: opacity 0.3s ease;
-            opacity: 0;
-        }
-
-        .player-card:hover .controls-bar {
-            opacity: 1;
-        }
-        
-        .center-play-pause-btn {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            display: grid;
-            place-items: center;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: rgba(0, 0, 0, 0.55);
-            border: 2px solid #fff;
-            color: #fff;
-            font-size: 28px;
-            cursor: pointer;
-            z-index: 6;
-            transition: opacity 0.3s ease;
-            opacity: 0;
-        }
-
-        .player-card:hover .center-play-pause-btn {
-            opacity: 1;
-        }
-
-        .play-pause-btn {
-            background: none;
-            border: none;
-            color: #fff;
-            font-size: 24px;
-            cursor: pointer;
-        }
-
-        .progress-bar {
-            flex-grow: 1;
-            height: 3px;
-            background: rgba(255, 255, 255, 0.3);
-            cursor: pointer;
-        }
-        .progress {
-            height: 100%;
-            width: 0%;
-            background: #ff0000;
-        }
-
-        .volume-control {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .volume-control input[type="range"] {
-            width: 60px;
-            -webkit-appearance: none;
-            background: transparent;
-        }
-        .volume-control input[type="range"]::-webkit-slider-runnable-track {
-            height: 3px;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 1.5px;
-        }
-        .volume-control input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 12px;
-            width: 12px;
-            border-radius: 50%;
-            background: #fff;
-            margin-top: -4.5px;
-        }
-        .volume-icon {
-            font-size: 20px;
-        }
-
-        .time {
-            font-size: 12px;
-            color: #fff;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Comentarios de Video</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/>
+  <style>
+    body { font-family: Arial, sans-serif; margin:0; padding:0; }
+    .swiper { width: 100%; height: 60vh; background:#000; }
+    .swiper-slide { display:flex; justify-content:center; align-items:center; }
+    .comments-overlay-container { position: absolute; bottom: 70px; width: 100%; max-height: 200px; overflow-y: auto; background: rgba(255,255,255,0.9); }
+    .comments-counter { position: absolute; bottom: 10px; right: 10px; cursor: pointer; background: #fff; border-radius: 50%; padding: 5px 10px; display: flex; align-items: center; }
+    .comment-input-container { position: absolute; bottom: 0; width: 100%; display: flex; padding: 5px; background: #fff; }
+    .send-comment-btn { cursor: pointer; }
+    #loader { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); display: none; }
+  </style>
 </head>
 <body>
-<!-- Notificaciones -->
-<div id="notification-wrapper">
-  <button id="notification-btn">
-    <i class="fas fa-bell"></i>
-    <span id="notification-count"></span>
-  </button>
-  <div id="notification-list" class="hidden"></div>
-</div>
 
-    
-<div id="custom-alert-modal" class="modal hidden">
-  <div class="modal-content">
-    <h3>¡Atención!</h3>
-    <p id="custom-alert-message"></p>
-    <div class="modal-actions">
-      <button id="custom-alert-ok" style="background:#007bff; color:white; padding:8px; border:none; border-radius:6px; cursor:pointer;">Aceptar</button>
-    </div>
-  </div>
-</div>
-<!-- Modal de eliminación -->
-<div id="delete-modal" class="modal hidden">
-  <div class="modal-content">
-    <h3>¿Eliminar Video?</h3>
-    <p id="delete-video-title">¿Seguro que deseas eliminar este video?</p>
-    <div class="modal-actions">
-      <button id="delete-confirm" style="background:#dc3545; color:white; padding:8px; border:none; border-radius:6px; cursor:pointer;">Eliminar</button>
-      <button id="delete-cancel" style="background:#444; color:white; padding:8px; border:none; border-radius:6px; cursor:pointer;">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-    
-        <!-- BOTONES flotantes -->
-   <div class="floating-buttons">
-  <button id="btn-delete" class="fab danger"><i class="fas fa-trash"></i></button>
-</div>
-
-  
-
+  <!-- Slider -->
   <div class="swiper">
-  <div id="video-title-fixed">
-    <div class="video-title"></div>
-    <div class="video-desc"></div>
+    <div class="swiper-wrapper"></div>
   </div>
-  <div class="swiper-wrapper" id="slides"></div>
-</div>
 
+  <!-- Loader -->
+  <div id="loader"><span class="spinner">⏳</span></div>
 
-    <div id="loader"><span class="spinner">⏳</span></div>
+  <!-- Overlay de comentarios -->
+  <div class="comments-overlay-container" id="commentsOverlay">
+    <ul id="commentsList"></ul>
+  </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-    <script src="https://www.youtube.com/iframe_api"></script>
-    <script>
-        const SCRIPT_URL =
-            "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
+  <!-- Contador de comentarios -->
+  <div class="comments-counter" id="commentsCounter">
+    <span class="icon">💬</span>
+    <span class="count" id="commentCountValue">0</span>
+  </div>
 
-  
-// === NOTIFICACIONES ===
-let notifications = [];
-let lastVideos = [];
+  <!-- Input para comentarios -->
+  <div class="comment-input-container">
+    <input type="text" id="commentInput" placeholder="Escribe un comentario...">
+    <button class="send-comment-btn"><i class="fas fa-paper-plane"></i></button>
+  </div>
 
-// Actualiza el listado de notificaciones
-function renderNotifications() {
-  const list = document.getElementById("notification-list");
-  const count = document.getElementById("notification-count");
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+  <script>
+  const SCRIPT_URL = "TU_URL_DEL_SCRIPT_AQUI"; // <-- Cambia por tu URL de Google Apps Script
 
-  list.innerHTML = "";
+  let swiperInstance = null;
+  let videosData = [];
+  let currentAuthorName = "Anónimo";
+  let currentAuthorEmail = "anonimo@correo.com";
 
-  if (notifications.length === 0) {
-    list.innerHTML = "<div>Sin notificaciones</div>";
-    count.textContent = "";             // 👈 aseguramos que no quede número
-    count.style.display = "none";       // 👈 escondemos el circulito rojo
-    return;
+  const loader = document.getElementById('loader');
+  const commentsList = document.getElementById('commentsList');
+  const commentCountValue = document.getElementById('commentCountValue');
+  const commentInput = document.getElementById('commentInput');
+
+  // Función para mostrar loader
+  function showLoader(show){
+    loader.style.display = show ? 'block' : 'none';
   }
 
-  count.textContent = notifications.length;
-  count.style.display = "block";        // 👈 solo aparece si hay notificaciones
-
-  notifications.forEach((notif, i) => {
-    const item = document.createElement("div");
-    item.textContent = notif.title;
-    item.style.cursor = "pointer";
-
-    item.onclick = () => {
-      const wrapper = document.getElementById("slides");
-
-      // Buscar si ya existe el slide del anuncio
-      let slide = Array.from(wrapper.children).find(s => {
-        const card = s.querySelector('.player-card');
-        return card && card.dataset.embed === notif.link;
-      });
-
-      // Si no existe, crearlo y agregarlo
-      if (!slide) {
-        const nuevoSlide = createSlide(notif.title, notif.link, notif.desc);
-        wrapper.appendChild(nuevoSlide);
-        swiper.update();
-      }
-
-      // Buscar índice real del slide en Swiper
-      let realIndex = -1;
-      swiper.slides.forEach((s, idx) => {
-        const card = s.querySelector('.player-card');
-        if (card && card.dataset.embed === notif.link) {
-          realIndex = idx;
-        }
-      });
-
-      if (swiper && realIndex !== -1) {
-        swiper.update();
-        cleanupIframesExceptActive();
-
-        swiper.slideTo(realIndex, 0);
-        updateFixedTitle(swiper);
-
-        swiper.once('slideChangeTransitionEnd', () => {
-          cleanupIframesExceptActive();
-          const activeCard = document.querySelector('.swiper-slide-active .player-card');
-          if (activeCard && !activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
-            mountIframe(activeCard);
-          }
-        });
-      }
-
-      // Marcar como leída y cerrar panel
-      notifications.splice(i, 1);
-      renderNotifications();
-      document.getElementById("notification-list").classList.add("hidden");
-    };
-
-    list.appendChild(item);
-  });
-}
-
-
-
-// --- BOTÓN NOTIFICACIONES UNIVERSAL ---
-const notifBtn = document.getElementById("notification-btn");
-const notifList = document.getElementById("notification-list");
-
-// Mostrar/ocultar la lista al tocar el botón (desktop y móvil)
-notifBtn.addEventListener("click", (e) => {
-  e.stopPropagation();
-  notifList.classList.toggle("hidden");
-});
-
-        
-// Ocultar la lista al hacer clic fuera
-document.addEventListener("click", (e) => {
-  if (!notifList.classList.contains("hidden")) {
-    if (!notifList.contains(e.target) && e.target !== notifBtn) {
-      notifList.classList.add("hidden");
-    }
-  }
-});
-
-// --- MANEJO DE ELIMINACIÓN ---
-
-// Variables para almacenar los datos del usuario, obtenidos de la URL
-let usuarioAutor = "";
-let usuarioCorreo = "";
-
-// Función para obtener los parámetros 'name' y 'email' de la URL
-function getUsuarioDataFromUrl() {
-    const params = new URLSearchParams(window.location.search);
-    usuarioAutor = params.get("name") || "";
-    usuarioCorreo = params.get("email") || "";
-}
-
-// Llamar a la función al cargar la página para obtener los datos
-document.addEventListener("DOMContentLoaded", getUsuarioDataFromUrl);
-
-// NUEVO: Variables para el modal de alerta personalizada
-const customAlertModal = document.getElementById("custom-alert-modal");
-const customAlertMessage = document.getElementById("custom-alert-message");
-const customAlertOk = document.getElementById("custom-alert-ok");
-
-// NUEVO: Función para mostrar el modal de alerta personalizado
-function showAlert(message, title = "¡Atención!") {
-    customAlertMessage.textContent = message;
-    customAlertModal.querySelector('h3').textContent = title;
-    customAlertModal.classList.remove("hidden");
-}
-
-// NUEVO: Ocultar el modal de alerta cuando se hace clic en "Aceptar"
-customAlertOk.onclick = () => {
-    customAlertModal.classList.add("hidden");
-};
-
-const btnDelete = document.getElementById("btn-delete");
-const deleteModal = document.getElementById("delete-modal");
-const deleteTitle = document.getElementById("delete-video-title");
-const deleteConfirm = document.getElementById("delete-confirm");
-const deleteCancel = document.getElementById("delete-cancel");
-
-let pendingDelete = null;
-
-btnDelete.onclick = () => {
-    if (!swiper) return;
-    const activeSlide = document.querySelector(".swiper-slide-active");
-    if (!activeSlide) return;
-
-    const title = activeSlide.dataset.title;
-    const link = activeSlide.querySelector(".player-card")?.dataset.embed;
-
-    // Si no hay datos de usuario, notificar y salir
-    if (!usuarioAutor || !usuarioCorreo) {
-        showAlert("No se pudo obtener la información de tu cuenta. Intenta recargar la página.");
-        return;
-    }
-
-    pendingDelete = { title, link };
-    deleteTitle.textContent = `¿Eliminar "${title}"?`;
-    deleteModal.classList.remove("hidden");
-};
-
-deleteCancel.onclick = () => {
-    deleteModal.classList.add("hidden");
-    pendingDelete = null;
-};
-
-deleteConfirm.onclick = async () => {
-    if (!pendingDelete) return;
-    const { title, link } = pendingDelete;
-
-    deleteModal.classList.add("hidden");
-    pendingDelete = null;
-
-    let identifier = "";
-    let fileName = "";
-    let archiveMatch = link.match(/archive\.org\/download\/([^/]+)\/(.+)$/);
-    if (archiveMatch) {
-        identifier = archiveMatch[1];
-        fileName = decodeURIComponent(archiveMatch[2]);
-    }
-    
-    const deleteUrl = `${SCRIPT_URL}?accion=eliminar&link=${encodeURIComponent(link)}&id=${encodeURIComponent(identifier)}&file=${encodeURIComponent(fileName)}&autor=${encodeURIComponent(usuarioAutor)}&correo=${encodeURIComponent(usuarioCorreo)}`;
-
+  // Cargar videos desde Google Sheet
+  async function cargarVideos() {
+    showLoader(true);
     try {
-        const response = await fetch(deleteUrl);
-        const data = await response.json();
+     const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
 
-        if (data.status === "success") {
-            const activeIndex = swiper.activeIndex; // 👈 usar activeIndex real del DOM
-            const activeSlide = swiper.slides[activeIndex];
-
-            if (activeSlide) {
-                activeSlide.remove();
-                swiper.update();
-
-                // Si hay slides, ir al mismo índice (que ahora apunta al siguiente inmediato)
-                if (swiper.slides.length > 0) {
-                    let targetIndex = Math.min(activeIndex, swiper.slides.length - 1);
-                    swiper.slideTo(targetIndex, 0); // 👈 movimiento exacto
-                }
-            }
-
-            showAlert("✅ Video eliminado con éxito.", "¡Listo!");
-        } else {
-            showAlert("❌ Error al eliminar: " + data.message, "Error");
-        }
-    } catch (err) {
-        showAlert("⚠️ Error de conexión al intentar eliminar.", "Error");
-    }
-};
-
-
-
-
-        
-        let swiper = null;
-        let players = {};
-
-        function getEmbedInfo(link) {
-            const url = new URL(link, location.href);
-            if (url.hostname.includes("youtube.com") || url.hostname.includes("youtu.be")) {
-                let videoId = "";
-                if (url.hostname.includes("youtube.com")) {
-                    videoId = url.searchParams.get("v") || "";
-                } else if (url.hostname.includes("youtu.be")) {
-                    videoId = url.pathname.replace("/", "");
-                }
-                if (videoId) {
-                    const embedSrc = `https://www.youtube.com/embed/${videoId}?rel=0&playsinline=1&controls=0&modestbranding=1`;
-                    const poster = "https://img.youtube.com/vi/" + videoId + "/hqdefault.jpg";
-                    return { type: "youtube", embedSrc, poster, videoId };
-                }
-            }
-            if (url.hostname.includes("archive.org")) {
-                let identifier = "";
-                const m = link.match(/archive\.org\/(?:embed|details|download)\/([^?&#/]+)/i);
-                if (m && m[1]) {
-                    identifier = m[1];
-                }
-                const poster = identifier ? `https://archive.org/services/img/${identifier}` : "";
-                return { type: "mp4", embedSrc: link, poster: poster };
-            }
-            if (url.pathname.endsWith(".mp4")) {
-                 return { type: "mp4", embedSrc: link, poster: "" };
-            }
-            return { type: "other", embedSrc: link, poster: "" };
-        }
-
-       function createSlide(titulo, link, descripcion) {
-    const { embedSrc, poster } = getEmbedInfo(link);
-    const slide = document.createElement("div");
-    slide.className = "swiper-slide";
-    slide.dataset.title = titulo || "Video";
-    slide.dataset.descripcion = descripcion || "";
-
-    const card = document.createElement("div");
-    card.className = "player-card";
-    card.dataset.embed = embedSrc;
-
-    const posterEl = document.createElement("div");
-    posterEl.className = "poster";
-    if (poster) posterEl.style.backgroundImage = `url("${poster}")`;
-
-    const playBtn = document.createElement("div");
-    playBtn.className = "play-btn";
-    playBtn.innerHTML = '<i class="fas fa-play"></i>';
-    posterEl.appendChild(playBtn);
-
-    posterEl.addEventListener("click", () => {
-        mountIframe(card);
-    });
-
-    card.appendChild(posterEl);
-
-    slide.appendChild(card);
-   
-    return slide;
-}
-
-
-        function mountIframe(cardEl) {
-  // 🔥 Antes de montar, desmonta todo lo demás
-  cleanupIframesExceptActive();
-
-  if (cardEl.querySelector("iframe") || cardEl.querySelector("video")) return;
-
-  const src = cardEl.dataset.embed;
-  const info = getEmbedInfo(src);
-
-  const poster = cardEl.querySelector(".poster");
-  if (poster) poster.remove();
-  
-  const controls = createControls();
-  cardEl.appendChild(controls);
-
-  const centerPlayPauseBtn = document.createElement("div");
-  centerPlayPauseBtn.className = "center-play-pause-btn";
-  centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-  cardEl.appendChild(centerPlayPauseBtn);
-  
-  let player;
-
-  if (info.type === "youtube") {
-    const container = document.createElement("div");
-    container.className = "player-iframe";
-    cardEl.appendChild(container);
-
-    player = new YT.Player(container, {
-      videoId: info.videoId,
-      playerVars: { autoplay: 1, rel: 0, playsinline: 1, controls: 0, modestbranding: 1 },
-      events: {
-        onReady: (event) => {
-          event.target.playVideo();
-          setupControls(event.target, 'youtube', controls, centerPlayPauseBtn, cardEl);
-        },
-        onStateChange: (event) => {
-          const state = event.data;
-          if (state === YT.PlayerState.PLAYING) {
-            centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-            centerPlayPauseBtn.style.opacity = 0;
-          } else if (state === YT.PlayerState.PAUSED) {
-            centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-            centerPlayPauseBtn.style.opacity = 1;
-          } else {
-            centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-          }
-        }
-      }
-    });
-    players[src] = player;
-  } else if (info.type === "mp4") {
-    const video = document.createElement("video");
-    video.className = "player-iframe";
-    video.setAttribute("autoplay", "true");
-    video.setAttribute("playsinline", "true");
-    video.style.width = "100%";
-    video.style.height = "100%";
-    video.style.background = "#000";
-
-    const source = document.createElement("source");
-    source.src = src;
-    source.type = "video/mp4";
-    video.appendChild(source);
-    cardEl.appendChild(video);
-
-    player = video;
-    players[src] = player;
-
-    video.addEventListener('loadedmetadata', () => {
-      setupControls(video, 'mp4', controls, centerPlayPauseBtn, cardEl);
-    });
-    video.addEventListener('play', () => {
-      centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-      centerPlayPauseBtn.style.opacity = 0;
-    });
-    video.addEventListener('pause', () => {
-      centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-      centerPlayPauseBtn.style.opacity = 1;
-    });
-    video.addEventListener('ended', () => {
-      centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-      centerPlayPauseBtn.style.opacity = 1;
-    });
-  } else {
-    const iframe = document.createElement("iframe");
-    iframe.className = "player-iframe";
-    iframe.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share");
-    iframe.setAttribute("allowfullscreen", "true");
-    iframe.src = src + (src.includes("?") ? "&" : "?") + "autoplay=1";
-    cardEl.appendChild(iframe);
+      const data = await res.json();
+      videosData = data.data || [];
+      const wrapper = document.querySelector('.swiper-wrapper');
+      wrapper.innerHTML = '';
+      videosData.forEach(v=>{
+        const slide = document.createElement('div');
+        slide.classList.add('swiper-slide');
+        slide.dataset.id = v[0]; // ID_Video
+        slide.innerHTML = `<iframe width="100%" height="100%" src="${v[3]}" frameborder="0" allowfullscreen></iframe>`;
+        wrapper.appendChild(slide);
+      });
+      initSwiper();
+      if(videosData.length>0) listarComentarios(videosData[0][0]);
+    } catch(e){ console.error(e); }
+    finally { showLoader(false); }
   }
-}
 
-        
-        function createControls() {
-            const controlsBar = document.createElement("div");
-            controlsBar.className = "controls-bar";
-
-            const playPauseBtn = document.createElement("button");
-            playPauseBtn.className = "play-pause-btn";
-            playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-
-            const progressBarContainer = document.createElement("div");
-            progressBarContainer.className = "progress-bar";
-            const progress = document.createElement("div");
-            progress.className = "progress";
-            progressBarContainer.appendChild(progress);
-
-            const timeDisplay = document.createElement("div");
-            timeDisplay.className = "time";
-            timeDisplay.textContent = "00:00 / 00:00";
-
-            const volumeControl = document.createElement("div");
-            volumeControl.className = "volume-control";
-            const volumeIcon = document.createElement("span");
-            volumeIcon.className = "volume-icon";
-            volumeIcon.innerHTML = '<i class="fas fa-volume-up"></i>';
-            const volumeSlider = document.createElement("input");
-            volumeSlider.type = "range";
-            volumeSlider.min = "0";
-            volumeSlider.max = "1";
-            volumeSlider.step = "0.01";
-            volumeSlider.value = "1";
-            volumeControl.appendChild(volumeIcon);
-            volumeControl.appendChild(volumeSlider);
-
-            controlsBar.appendChild(playPauseBtn);
-            controlsBar.appendChild(progressBarContainer);
-            controlsBar.appendChild(timeDisplay);
-            controlsBar.appendChild(volumeControl);
-
-            return controlsBar;
-        }
-
-        function formatTime(seconds) {
-            const h = Math.floor(seconds / 3600);
-            const m = Math.floor((seconds % 3600) / 60);
-            const s = Math.floor(seconds % 60);
-            return [h, m, s]
-                .filter(v => v > 0 || v === 0)
-                .map(v => v.toString().padStart(2, '0'))
-                .join(':')
-                .replace(/^00:/, '');
-        }
-
-        function setupControls(player, type, controls, centerPlayPauseBtn, cardEl) {
-            const playPauseBtn = controls.querySelector('.play-pause-btn');
-            const progressBarContainer = controls.querySelector('.progress-bar');
-            const progress = controls.querySelector('.progress');
-            const volumeSlider = controls.querySelector('.volume-control input');
-            const timeDisplay = controls.querySelector('.time');
-            let totalTime = 0;
-            let timeoutId;
-            
-            const hideControls = () => {
-                controls.style.opacity = 0;
-                if (type === 'youtube' && player.getPlayerState() === YT.PlayerState.PLAYING) {
-                    centerPlayPauseBtn.style.opacity = 0;
-                } else if (type === 'mp4' && !player.paused) {
-                    centerPlayPauseBtn.style.opacity = 0;
-                }
-            };
-            
-            const showControls = () => {
-                clearTimeout(timeoutId);
-                controls.style.opacity = 1;
-                centerPlayPauseBtn.style.opacity = 1;
-                timeoutId = setTimeout(hideControls, 3000);
-            };
-
-            const updateTime = () => {
-                let currentTime = 0;
-                if (type === 'youtube') {
-                    currentTime = player.getCurrentTime();
-                } else {
-                    currentTime = player.currentTime;
-                }
-                const progressPercentage = (currentTime / totalTime) * 100;
-                progress.style.width = `${progressPercentage}%`;
-                timeDisplay.textContent = `${formatTime(currentTime)} / ${formatTime(totalTime)}`;
-            };
-
-            const interval = setInterval(updateTime, 1000);
-
-            cardEl.addEventListener('mouseenter', showControls);
-            cardEl.addEventListener('mouseleave', hideControls);
-            cardEl.addEventListener('mousemove', showControls);
-            
-            if (type === 'youtube') {
-                totalTime = player.getDuration();
-                updateTime();
-                playPauseBtn.onclick = () => {
-                    const state = player.getPlayerState();
-                    if (state === YT.PlayerState.PLAYING) {
-                        player.pauseVideo();
-                    } else {
-                        player.playVideo();
-                    }
-                };
-                centerPlayPauseBtn.onclick = playPauseBtn.onclick;
-
-                progressBarContainer.onclick = (e) => {
-                    const clickX = e.offsetX;
-                    const totalWidth = progressBarContainer.clientWidth;
-                    const newTime = (clickX / totalWidth) * totalTime;
-                    player.seekTo(newTime, true);
-                };
-                volumeSlider.oninput = (e) => player.setVolume(e.target.value * 100);
-            } else if (type === 'mp4') {
-                totalTime = player.duration;
-                updateTime();
-                playPauseBtn.onclick = () => {
-                    if (player.paused) {
-                        player.play();
-                    } else {
-                        player.pause();
-                    }
-                };
-                centerPlayPauseBtn.onclick = playPauseBtn.onclick;
-                progressBarContainer.onclick = (e) => {
-                    const clickX = e.offsetX;
-                    const totalWidth = progressBarContainer.clientWidth;
-                    const newTime = (clickX / totalWidth) * totalTime;
-                    player.currentTime = newTime;
-                };
-                volumeSlider.oninput = (e) => player.volume = e.target.value;
-                player.addEventListener('timeupdate', updateTime);
-            }
-        }
-
-        function restorePoster(card) {
-            const src = card.dataset.embed;
-            const player = players[src];
-            if (player) {
-                if (typeof player.pauseVideo === 'function') {
-                    player.pauseVideo();
-                } else if (typeof player.pause === 'function') {
-                    player.pause();
-                }
-            }
-
-            const playerContainer = card.querySelector(".player-iframe");
-            if (playerContainer) playerContainer.remove();
-
-            const controlsBar = card.querySelector(".controls-bar");
-            if (controlsBar) controlsBar.remove();
-            
-            const centerBtn = card.querySelector(".center-play-pause-btn");
-            if (centerBtn) centerBtn.remove();
-
-            if (!card.querySelector(".poster")) {
-                const info = getEmbedInfo(src);
-                const posterEl = document.createElement("div");
-                posterEl.className = "poster";
-                if (info.poster) {
-                    posterEl.style.backgroundImage = `url("${info.poster}")`;
-                }
-                const playBtn = document.createElement("div");
-                playBtn.className = "play-btn";
-                playBtn.innerHTML = '<i class="fas fa-play"></i>';
-                posterEl.appendChild(playBtn);
-                posterEl.addEventListener("click", () => mountIframe(card));
-                card.appendChild(posterEl);
-            }
-        }
-
-        // --- INICIO DE LA CORRECCIÓN ---
-function cleanupIframesExceptActive() {
-    if (!swiper) return;
-
-    swiper.slides.forEach((slide, index) => {
-        if (index !== swiper.activeIndex) {
-            const card = slide.querySelector(".player-card");
-            if (card) restorePoster(card);
-        }
+  // Inicializar Swiper
+  function initSwiper(){
+    swiperInstance = new Swiper('.swiper',{
+      slidesPerView:1,
+      spaceBetween:10,
+      on:{ slideChange: ()=> { const videoId = swiperInstance.slides[swiperInstance.activeIndex].dataset.id; listarComentarios(videoId); }}
     });
-}
-
-        // --- FIN DE LA CORRECCIÓN ---
-
-     function updateFixedTitle(swiperInstance) {
-    const fixedBox = document.getElementById("video-title-fixed");
-    if (!fixedBox || !swiperInstance) return;
-
-    // Obtener el slide activo
-    const activeSlide = swiperInstance.slides[swiperInstance.activeIndex] || document.querySelector('.swiper-slide-active');
-
-    if (!activeSlide) return;
-
-    const newTitle = activeSlide.dataset.title || "Video";
-    const newDesc = activeSlide.dataset.descripcion || "";
-
-    const titleEl = fixedBox.querySelector(".video-title");
-    const descEl = fixedBox.querySelector(".video-desc");
-
-    // Verificar si el contenido ya es el mismo para evitar parpadeos innecesarios
-    const currentTitle = titleEl.querySelector('.text-container')?.textContent;
-    const currentDesc = descEl.querySelector('.text-container')?.textContent;
-    
-    if (currentTitle === newTitle && currentDesc === newDesc) {
-        return;
-    }
-
-    // Transición suave al cambiar de título
-    fixedBox.style.opacity = 0;
-
-    setTimeout(() => {
-        // Función genérica para manejar el truncamiento y expansión
-        const setupExpandableText = (element, text) => {
-            // Eliminar contenido anterior para evitar duplicados
-            element.innerHTML = `<span class="text-container">${text}</span>`;
-            const container = element.querySelector('.text-container');
-            
-            // Usar setTimeout para asegurar que la renderización está completa antes de medir
-            setTimeout(() => {
-                // Comprobar si el contenido se desborda y necesita truncamiento
-                if (container.scrollHeight > container.clientHeight) {
-                    const toggleButton = document.createElement('span');
-                    toggleButton.className = 'toggle-text';
-                    toggleButton.textContent = '...más';
-                    element.appendChild(toggleButton);
-
-                    // Añadir el listener para expandir/contraer
-                    element.addEventListener('click', () => {
-                        const isExpanded = container.classList.contains('expanded');
-                        if (isExpanded) {
-                            container.classList.remove('expanded');
-                            toggleButton.textContent = '...más';
-                        } else {
-                            container.classList.add('expanded');
-                            toggleButton.textContent = 'mostrar menos';
-                        }
-                    });
-                } else {
-                    // Si no necesita truncamiento, limpiar el listener y el botón
-                    const existingButton = element.querySelector('.toggle-text');
-                    if (existingButton) existingButton.remove();
-                    // Importante: Eliminar el listener si no es necesario para evitar problemas
-                    const clonedElement = element.cloneNode(true);
-                    element.parentNode.replaceChild(clonedElement, element);
-                }
-            }, 50);
-        };
-
-        // Aplicar la lógica al título y la descripción
-        setupExpandableText(titleEl, newTitle);
-        setupExpandableText(descEl, newDesc);
-
-        // Mostrar el contenedor de nuevo
-        fixedBox.style.opacity = 1;
-    }, 120);
-}
-
-        
-
-async function cargarVideos(checkNew = false) {
-  const loader = document.getElementById("loader");
-  if (!checkNew) loader.style.display = "flex";
-  try {
-    const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
-    const data = await res.json();
-
-    const wrapper = document.getElementById("slides");
-    if (!checkNew) {
-      wrapper.innerHTML = "";
-    }
-
-    let newVideos = [];
-    if (Array.isArray(data.data)) {
-      data.data.forEach((row) => {
-        const titulo = row[0];
-        const link = row[1];
-        const descripcion = row[4] || "";
-        if (!checkNew) {
-          wrapper.appendChild(createSlide(titulo, link, descripcion));
-        }
-        newVideos.push({ title: titulo, link, desc: descripcion });
-      });
-    }
-
-    // 🔥 Eliminación silenciosa (solo en modo checkNew para no afectar carga inicial)
-    if (checkNew) {
-      const linksActivos = newVideos.map(v => v.link);
-
-      Array.from(wrapper.children).forEach(slide => {
-        const card = slide.querySelector(".player-card");
-        if (card && !linksActivos.includes(card.dataset.embed)) {
-          wrapper.removeChild(slide);
-          if (swiper) swiper.update();
-        }
-      });
-    }
-
-    // 🔥 Corregido: ahora también notifica si es el primer video
-    if (checkNew) {
-      newVideos.forEach(v => {
-        if (!lastVideos.find(old => old.link === v.link)) {
-          notifications.unshift(v); // acumula notificación
-        }
-      });
-      if (notifications.length > 0) {
-        renderNotifications();
-      }
-    }
-
-    lastVideos = newVideos;
-
-    if (!checkNew) {
-      if (swiper) swiper.destroy(true, true);
-      swiper = new Swiper(".swiper", {
-        loop: true,
-        direction: "horizontal",
-        slidesPerView: 1,
-        spaceBetween: 10,
-        pagination: false,
-        on: {
-          init() {
-            updateFixedTitle(this);
-          },
-          slideChange() {
-            cleanupIframesExceptActive();
-            updateFixedTitle(this);
-          },
-          slideChangeTransitionEnd() {
-            updateFixedTitle(this);
-          }
-        },
-      });
-
-      cleanupIframesExceptActive();
-      updateFixedTitle(swiper);
-    }
-  } catch (e) {
-    console.error("Error cargando videos:", e);
-  } finally {
-    loader.style.display = "none";
   }
-}
 
+  // Listar comentarios de video
+  async function listarComentarios(videoId){
+    showLoader(true);
+    try {
+      const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${videoId}`);
+      const data = await res.json();
+      const comentarios = data.data || [];
+      commentsList.innerHTML='';
+      if(comentarios.length===0){
+        const li = document.createElement('li');
+        li.textContent="No hay comentarios aún.";
+        commentsList.appendChild(li);
+        commentCountValue.textContent='0';
+      } else {
+        comentarios.forEach(c=>{
+          const li = document.createElement('li');
+          li.textContent = `${c[2]} (${c[4]}): ${c[1]}`;
+          li.dataset.videoId = c[0];
+          li.dataset.comentario = c[1];
+          li.dataset.correo = c[3];
+          commentsList.appendChild(li);
+        });
+        commentCountValue.textContent=comentarios.length;
+      }
+    } catch(e){ console.error(e); }
+    finally { showLoader(false); }
+  }
 
+  // Agregar comentario
+  async function agregarComentario(videoId, texto){
+    if(!texto) return;
+    showLoader(true);
+    const formData = new FormData();
+    formData.append('accion','agregarComentarioVideo');
+    formData.append('videoId', videoId);
+    formData.append('comentario', texto);
+    formData.append('autor', currentAuthorName);
+    formData.append('correo', currentAuthorEmail);
+    try{
+      const res = await fetch(SCRIPT_URL,{ method:'POST', body: formData });
+      const data = await res.json();
+      if(data.status==='success'){
+        commentInput.value='';
+        listarComentarios(videoId);
+      } else {
+        alert('Error: '+data.message);
+      }
+    } catch(e){ console.error(e); }
+    finally{ showLoader(false); }
+  }
 
+  // Eliminar comentario
+  async function eliminarComentarioVideo(li){
+    const videoId = li.dataset.videoId;
+    const comentario = li.dataset.comentario;
+    const correo = li.dataset.correo;
+    if(!confirm('¿Deseas eliminar este comentario?')) return;
+    showLoader(true);
+    const formData = new FormData();
+    formData.append('accion','eliminarComentario');
+    formData.append('videoId', videoId);
+    formData.append('comentario', comentario);
+    formData.append('correo', correo);
+    try{
+      const res = await fetch(SCRIPT_URL,{ method:'POST', body: formData });
+      const data = await res.json();
+      if(data.status==='success') listarComentarios(videoId);
+      else alert('Error: '+data.message);
+    } catch(e){ console.error(e); }
+    finally{ showLoader(false); }
+  }
 
+  // Eventos
+  document.querySelector('.send-comment-btn').addEventListener('click', ()=>{
+    const activeSlide = swiperInstance.slides[swiperInstance.activeIndex];
+    agregarComentario(activeSlide.dataset.id, commentInput.value.trim());
+  });
 
-// === AUTO REFRESCO EN SEGUNDO PLANO ===
-setInterval(() => {
-  cargarVideos(true); // solo refresca notificaciones, no toca el slider
-}, 3000);
+  commentInput.addEventListener('keydown', e=>{
+    if(e.key==='Enter'){
+      const activeSlide = swiperInstance.slides[swiperInstance.activeIndex];
+      agregarComentario(activeSlide.dataset.id, commentInput.value.trim());
+    }
+  });
 
-        cargarVideos();
-    </script>
+  commentsList.addEventListener('click', e=>{
+    if(e.target.tagName==='LI') eliminarComentarioVideo(e.target);
+  });
+
+  document.addEventListener('DOMContentLoaded', cargarVideos);
+  </script>
 </body>
 </html>
