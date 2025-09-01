@@ -711,34 +711,45 @@ document.addEventListener("DOMContentLoaded", async () => {
   const commentsList = document.getElementById("commentsList");
   const commentInputContainer = document.querySelector(".comment-input-container");
 
-  // 1. Ocultamos comentarios, contador y barra de entrada al inicio
+  // 1. Ocultamos comentarios, contador y barra de entrada al inicio (para evitar parpadeo)
   commentsOverlay.classList.add("hidden-overlay");
   commentsCounter.classList.add("hidden-overlay");
   commentInputContainer.classList.add("hidden-overlay");
 
-  // 2. Obtenemos primero los datos del usuario
-  await getUsuarioDataFromUrl();
+  try {
+    // 2. Obtenemos primero los datos del usuario
+    const usuario = await getUsuarioDataFromUrl();
 
-  // 3. Obtenemos lista de videos
-  const videos = await obtenerListaVideos();
+    // 3. Obtenemos lista de videos
+    const videos = await obtenerListaVideos();
 
-  // 4. Precargamos TODOS los comentarios en caché
-  await precargarComentariosTodos(videos);
+    // 4. Cargamos videos inmediatamente para que el slider aparezca rápido
+    await cargarVideos(videos);
 
-  // 5. Mostramos los comentarios del primer video
-  if (videos.length > 0) {
-    await cargarComentarios(videos[0].id);
+    // 5. Mostramos comentarios del primer video lo antes posible
+    if (videos.length > 0) {
+      await cargarComentarios(videos[0].id);
+    }
+
+    // 6. Mostramos comentarios, contador y barra de entrada de inmediato
+    commentsOverlay.classList.remove("hidden-overlay");
+    commentsCounter.classList.remove("hidden-overlay");
+    commentInputContainer.classList.remove("hidden-overlay");
+
+    // 7. Precargamos el resto de comentarios en segundo plano SIN bloquear la UI
+    precargarComentariosTodos(videos).then(() => {
+      console.log("✅ Todos los comentarios precargados en caché");
+    });
+
+    console.log("🎥 Videos cargados y comentarios visibles sin retardo");
+  } catch (e) {
+    console.error("❌ Error al inicializar:", e);
+
+    // Si ocurre un error, al menos mostramos la interfaz
+    commentsOverlay.classList.remove("hidden-overlay");
+    commentsCounter.classList.remove("hidden-overlay");
+    commentInputContainer.classList.remove("hidden-overlay");
   }
-
-  // 6. Cargamos los videos normalmente
-  await cargarVideos();
-
-  // 7. Mostramos comentarios, contador y barra de entrada solo cuando todo está listo
-  commentsOverlay.classList.remove("hidden-overlay");
-  commentsCounter.classList.remove("hidden-overlay");
-  commentInputContainer.classList.remove("hidden-overlay");
-
-  console.log("✅ Comentarios precargados y visibles sin parpadeo");
 });
 
 
@@ -1865,6 +1876,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
