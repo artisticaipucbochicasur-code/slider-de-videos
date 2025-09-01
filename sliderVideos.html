@@ -708,45 +708,37 @@ let isSwiping = false;
 document.addEventListener("DOMContentLoaded", async () => {
   const commentsOverlay = document.getElementById("commentsOverlay");
   const commentsCounter = document.getElementById("commentsCounter");
-  const commentsList = document.getElementById("commentsList");
   const commentInputContainer = document.querySelector(".comment-input-container");
 
-  // Ocultamos todo al inicio para evitar parpadeo
+  // Todo empieza oculto
   commentsOverlay.classList.add("hidden-overlay");
   commentsCounter.classList.add("hidden-overlay");
   commentInputContainer.classList.add("hidden-overlay");
 
   try {
-    // Obtenemos los datos del usuario y la lista de videos
     const usuario = await getUsuarioDataFromUrl();
     const videos = await obtenerListaVideos();
 
-    // Cargamos los videos inmediatamente para que el slider aparezca rápido
-    await cargarVideos(videos);
+    await cargarVideos(videos);          // Carga slider
+    await precargarComentariosTodos(videos); // Precarga caché
 
-    // Precargamos TODOS los comentarios en segundo plano, y esperamos a que terminen
-    await precargarComentariosTodos(videos);
-    
-    // Y ahora que todos los comentarios están en caché, mostramos la interfaz
-    // y cargamos los del primer video para la primera visualización
     if (videos.length > 0) {
-      cargarComentarios(videos[0].id);
+      await cargarComentarios(videos[0].id); // Render del primer video
     }
-    
+
+    // Mostramos la interfaz limpia, ya con comentarios
     commentsOverlay.classList.remove("hidden-overlay");
     commentsCounter.classList.remove("hidden-overlay");
     commentInputContainer.classList.remove("hidden-overlay");
 
-    console.log("✅ Interfaz de comentarios visible, todos los comentarios precargados.");
   } catch (e) {
     console.error("❌ Error al inicializar:", e);
-
-    // Si hay un error, al menos mostramos la interfaz para que el usuario pueda usarla
     commentsOverlay.classList.remove("hidden-overlay");
     commentsCounter.classList.remove("hidden-overlay");
     commentInputContainer.classList.remove("hidden-overlay");
   }
 });
+
 
 
 
@@ -898,6 +890,13 @@ function renderComentarios(videoId) {
   if (!videoId) return;
 
   const lista = comentariosPorVideo[videoId] || [];
+  const commentsList = document.getElementById('commentsList');
+  const commentCountValue = document.getElementById('commentCountValue');
+  const overlay = document.getElementById('commentsOverlay');
+  const counter = document.getElementById('commentsCounter');
+  const inputContainer = document.querySelector('.comment-input-container');
+
+  // Limpiar lista antes de renderizar
   commentsList.innerHTML = '';
 
   if (lista.length === 0) {
@@ -905,47 +904,54 @@ function renderComentarios(videoId) {
     li.textContent = "Sé el primero en comentar...";
     commentsList.appendChild(li);
     commentCountValue.textContent = "0";
-    return;
+  } else {
+    lista.forEach(c => {
+      const li = document.createElement('li');
+      li.classList.add('deletable');
+
+      const commentContent = document.createElement('div');
+      commentContent.className = 'comment-content';
+      commentContent.textContent = `${c.autor} (${c.fecha}) - ${c.comentario}`;
+      li.appendChild(commentContent);
+
+      li.dataset.correo = c.correo;
+      li.dataset.texto = c.comentario;
+
+      if (normalizeText(c.correo) === normalizeText(usuarioCorreo)) {
+        const deleteBtnContainer = document.createElement('div');
+        deleteBtnContainer.className = 'delete-btn-container';
+        const deleteBtn = document.createElement('div');
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.textContent = 'Borrar';
+        deleteBtnContainer.appendChild(deleteBtn);
+        li.appendChild(deleteBtnContainer);
+
+        deleteBtn.addEventListener('click', async (ev) => {
+          ev.stopPropagation();
+          await eliminarComentario(videoId, c.comentario, c.correo);
+
+          if (comentariosCache[videoId]) {
+            comentariosCache[videoId] = comentariosCache[videoId].filter(
+              com => com.comentario !== c.comentario || com.correo !== c.correo
+            );
+          }
+
+          renderComentarios(videoId);
+        });
+      }
+
+      commentsList.appendChild(li);
+    });
+
+    commentCountValue.textContent = lista.length;
   }
 
-  lista.forEach(c => {
-    const li = document.createElement('li');
-    li.classList.add('deletable');
-
-    const commentContent = document.createElement('div');
-    commentContent.className = 'comment-content';
-    commentContent.textContent = `${c.autor} (${c.fecha}) - ${c.comentario}`;
-    li.appendChild(commentContent);
-
-    li.dataset.correo = c.correo;
-    li.dataset.texto = c.comentario;
-
-    // Si es el comentario del usuario actual, permitir borrarlo
-    if (normalizeText(c.correo) === normalizeText(usuarioCorreo)) {
-      const deleteBtnContainer = document.createElement('div');
-      deleteBtnContainer.className = 'delete-btn-container';
-      const deleteBtn = document.createElement('div');
-      deleteBtn.className = 'delete-btn';
-      deleteBtn.textContent = 'Borrar';
-      deleteBtnContainer.appendChild(deleteBtn);
-      li.appendChild(deleteBtnContainer);
-
-      deleteBtn.addEventListener('click', async (ev) => {
-        ev.stopPropagation();
-        await eliminarComentario(videoId, c.comentario, c.correo);
-
-        // 🟢 Actualizar caché tras eliminar
-        if (comentariosCache[videoId]) {
-          comentariosCache[videoId] = comentariosCache[videoId].filter(com => com.comentario !== c.comentario || com.correo !== c.correo);
-        }
-        renderComentarios(videoId);
-      });
-    }
-    commentsList.appendChild(li);
-  });
-
-  commentCountValue.textContent = lista.length;
+  // 🔹 Mostrar contenedor solo después de renderizar comentarios
+  overlay.classList.remove('hidden-overlay');
+  counter.classList.remove('hidden-overlay');
+  inputContainer.classList.remove('hidden-overlay');
 }
+
 
 // === Enviar un nuevo comentario ===
 async function enviarComentario() {
@@ -1867,6 +1873,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
