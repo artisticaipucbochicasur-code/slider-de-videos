@@ -704,51 +704,47 @@ let activeComment = null;
 let startX = 0;
 let isSwiping = false;
 
-        // Variables para almacenar los datos del usuario, obtenidos de la URL
-let usuarioAutor = "";
-let usuarioCorreo = "";
-
-// Función para obtener los parámetros 'name' y 'email' de la URL
-function getUsuarioDataFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  usuarioAutor = params.get("name") || "";
-  usuarioCorreo = params.get("email") || "";
-  return { autor: usuarioAutor, correo: usuarioCorreo };
-}
-
-
 document.addEventListener("DOMContentLoaded", async () => {
   const commentsOverlay = document.getElementById("commentsOverlay");
   const commentsCounter = document.getElementById("commentsCounter");
   const commentInputContainer = document.querySelector(".comment-input-container");
 
+  // Todo empieza oculto
   commentsOverlay.classList.add("hidden-overlay");
   commentsCounter.classList.add("hidden-overlay");
   commentInputContainer.classList.add("hidden-overlay");
 
   try {
-    const usuario = getUsuarioDataFromUrl(); // 👈 sin await
+    const usuario = await getUsuarioDataFromUrl();
     const videos = await obtenerListaVideos();
 
+    // Carga solo los slides del slider rápido
     await cargarVideos(videos);
+
+    // 🔹 Precargamos todos los comentarios en segundo plano
     await precargarComentariosTodos(videos);
 
+    // 🔹 Solo ahora mostramos la interfaz de comentarios
     commentsOverlay.classList.remove("hidden-overlay");
     commentsCounter.classList.remove("hidden-overlay");
     commentInputContainer.classList.remove("hidden-overlay");
 
+    // 🔹 Renderizamos los comentarios del primer video para la visualización inicial
     if (videos.length > 0) {
       const primerVideoId = getActiveVideoId() || videos[0].id;
       renderComentarios(primerVideoId);
     }
+
+    console.log("✅ Todos los comentarios precargados, interfaz visible.");
+
   } catch (e) {
     console.error("❌ Error al inicializar:", e);
+    // En caso de error, mostramos la interfaz de todas formas
     commentsOverlay.classList.remove("hidden-overlay");
     commentsCounter.classList.remove("hidden-overlay");
     commentInputContainer.classList.remove("hidden-overlay");
   }
 });
-
 
 
 
@@ -772,17 +768,11 @@ document.querySelector('.swiper').addEventListener('click', () => {
 
 // === Expandir / Colapsar comentarios ===
 commentsOverlay.addEventListener('click', (e) => {
-  // 👇 Evita que se cierre cuando el click viene del botón o del input
-  if (e.target.closest('#commentInput') || e.target.closest('.send-comment-btn')) {
-    return;
-  }
-
   if (!isSwiping) {
     commentsOverlay.classList.toggle('expanded');
   }
   isSwiping = false;
 });
-
 
 // === Swipe-to-delete en móviles ===
 commentsList.addEventListener('touchstart', (e) => {
@@ -1050,36 +1040,14 @@ async function eliminarComentario(videoId, comentario, correo) {
   }
 }
 
-// === Listeners del input (versión corregida) ===
-
-// 👉 Este bloque SOLO evita que el overlay/swiper se cierre
-;['touchstart', 'touchend'].forEach(evt => {
-  sendCommentBtn.addEventListener(evt, (e) => {
-    e.stopPropagation();
-  }, { passive: false });
-
-  commentInput.addEventListener(evt, (e) => {
-    e.stopPropagation();
-  }, { passive: false });
+// === Listeners del input CORREGIDO ===
+sendCommentBtn.addEventListener('click', async (e) => {
+  e.stopPropagation(); // Evita que el click se propague y cierre el overlay antes de enviar
+  await enviarComentario();
 });
-
-// 👉 Click normal: sí debe ejecutar enviarComentario
-sendCommentBtn.addEventListener('click', (e) => {
-  e.preventDefault();       // evita que recargue formulario
-  e.stopPropagation();      // evita que se cierre overlay
-  enviarComentario();
-});
-
-// 👉 Enter en el input: también envía
 commentInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    e.stopPropagation();
-    enviarComentario();
-  }
+  if (e.key === 'Enter') enviarComentario();
 });
-
-// 👉 Estos puedes dejarlos si quieres el efecto visual
 commentInput.addEventListener('focus', () => {
   document.body.style.transform = `translateY(-50%)`;
 });
@@ -1087,6 +1055,10 @@ commentInput.addEventListener('blur', () => {
   document.body.style.transform = `translateY(0)`;
 });
 
+// BONUS: Protege el contenedor del input de propagación de clicks
+commentInputContainer.addEventListener('click', (e) => {
+  e.stopPropagation();
+});
 
 // === Refrescar comentarios cuando cambia el video ===
 // ❌ ESTA FUNCIÓN ESTÁ CAUSANDO EL PROBLEMA Y DEBE SER ELIMINADA ❌
@@ -1244,7 +1216,19 @@ document.addEventListener("click", (e) => {
 
 // --- MANEJO DE ELIMINACIÓN ---
 
+// Variables para almacenar los datos del usuario, obtenidos de la URL
+let usuarioAutor = "";
+let usuarioCorreo = "";
 
+// Función para obtener los parámetros 'name' y 'email' de la URL
+function getUsuarioDataFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    usuarioAutor = params.get("name") || "";
+    usuarioCorreo = params.get("email") || "";
+}
+
+// Llamar a la función al cargar la página para obtener los datos
+document.addEventListener("DOMContentLoaded", getUsuarioDataFromUrl);
 
 // NUEVO: Variables para el modal de alerta personalizada
 const customAlertModal = document.getElementById("custom-alert-modal");
@@ -1918,7 +1902,3 @@ setInterval(() => {
     </script>
 </body>
 </html>
-
-
-
-
