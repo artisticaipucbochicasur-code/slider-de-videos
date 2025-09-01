@@ -1035,6 +1035,7 @@ commentInput.addEventListener('blur', () => {
 });
 
 // === Refrescar comentarios cuando cambia el video ===
+// ❌ ESTA FUNCIÓN ESTÁ CAUSANDO EL PROBLEMA Y DEBE SER ELIMINADA ❌
 function refrescarComentariosSlide() {
   const videoId = getActiveVideoId();
   const lista = comentariosPorVideo[videoId] || [];
@@ -1042,7 +1043,8 @@ function refrescarComentariosSlide() {
   const commentsList = document.getElementById("commentsList");
   const commentCountValue = document.getElementById("commentCountValue");
 
-  commentsList.innerHTML = "";
+  // El problema está en esta línea:
+  commentsList.innerHTML = ""; 
 
   if (lista.length > 0) {
     lista.forEach((c) => {
@@ -1058,7 +1060,6 @@ function refrescarComentariosSlide() {
     commentCountValue.textContent = 0;
   }
 }
-
 
 
 
@@ -1793,7 +1794,6 @@ async function cargarVideos(checkNew = false) {
         on: {
           init() {
             updateFixedTitle(this);
-            refrescarComentariosSlide();
             activarSwipeParaBorrar();
 
             // 🔹 Mostrar comentarios desde caché para el video activo
@@ -1803,7 +1803,6 @@ async function cargarVideos(checkNew = false) {
           slideChange() {
             cleanupIframesExceptActive();
             updateFixedTitle(this);
-            refrescarComentariosSlide();
             activarSwipeParaBorrar();
 
             // 🔹 Mostrar comentarios instantáneamente al cambiar video
@@ -1818,7 +1817,6 @@ async function cargarVideos(checkNew = false) {
 
       cleanupIframesExceptActive();
       updateFixedTitle(swiper);
-      refrescarComentariosSlide();
       activarSwipeParaBorrar();
 
       // 🔹 Mostrar comentarios para el primer video desde caché
@@ -1831,8 +1829,6 @@ async function cargarVideos(checkNew = false) {
     loader.style.display = "none";
   }
 }
-
-
 
         
 
@@ -1871,6 +1867,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
