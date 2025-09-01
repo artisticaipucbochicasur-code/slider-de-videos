@@ -1040,24 +1040,31 @@ async function eliminarComentario(videoId, comentario, correo) {
   }
 }
 
-// === Listeners del input CORREGIDO ===
-sendCommentBtn.addEventListener('click', async (e) => {
-  e.stopPropagation(); // Evita que el click se propague y cierre el overlay antes de enviar
-  await enviarComentario();
-});
+// --- Este es el patrón seguro, como en tu ejemplo "que sí funciona" ---
+
+sendCommentBtn.addEventListener('click', enviarComentario);
+
 commentInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') enviarComentario();
-});
-commentInput.addEventListener('focus', () => {
-  document.body.style.transform = `translateY(-50%)`;
-});
-commentInput.addEventListener('blur', () => {
-  document.body.style.transform = `translateY(0)`;
+    if (e.key === 'Enter') {
+        enviarComentario();
+    }
 });
 
-// BONUS: Protege el contenedor del input de propagación de clicks
-commentInputContainer.addEventListener('click', (e) => {
-  e.stopPropagation();
+commentInput.addEventListener('focus', () => {
+    document.body.style.transform = `translateY(-50%)`;
+});
+
+commentInput.addEventListener('blur', () => {
+    document.body.style.transform = 'translateY(0)';
+});
+
+// --- Cambia tu handler del overlay así: ---
+commentsOverlay.addEventListener('click', (e) => {
+    // Si el click fue en el fondo del overlay, Y NO en el input ni el botón ni sus hijos
+    if (e.target === commentsOverlay && !isSwiping) {
+        commentsOverlay.classList.toggle('expanded');
+    }
+    isSwiping = false;
 });
 
 // === Refrescar comentarios cuando cambia el video ===
@@ -1902,4 +1909,5 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
