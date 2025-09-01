@@ -618,18 +618,17 @@
 
 
     
-  <div class="comments-overlay-container" id="commentsOverlay">
-    <ul id="commentsList"></ul>
-  </div>
-  <div class="comments-counter" id="commentsCounter">
-      <span class="icon">💬</span>
-      <span class="count" id="commentCountValue">0</span>
-  </div>
-  
-  <div class="comment-input-container">
-      <input type="text" id="commentInput" placeholder="Escribe un comentario...">
-      <button class="send-comment-btn"><i class="fas fa-paper-plane"></i></button>
-  </div>
+<div class="comments-overlay-container hidden-overlay" id="commentsOverlay">
+  <ul id="commentsList"></ul>
+</div>
+<div class="comments-counter hidden-overlay" id="commentsCounter">
+  <span class="icon">💬</span>
+  <span class="count" id="commentCountValue">0</span>
+</div>
+<div class="comment-input-container hidden-overlay">
+  <input type="text" id="commentInput" placeholder="Escribe un comentario...">
+  <button class="send-comment-btn"><i class="fas fa-paper-plane"></i></button>
+</div>
 
     
 <!-- Notificaciones -->
@@ -1046,11 +1045,21 @@ sendCommentBtn.addEventListener('click', enviarComentario);
 commentInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') enviarComentario();
 });
+// Mantener el input fijo al fondo cuando el teclado aparece
 commentInput.addEventListener('focus', () => {
-  document.body.style.transform = `translateY(-50%)`;
+  commentInputContainer.style.position = "fixed";
+  commentInputContainer.style.bottom = "0";
+  commentInputContainer.style.left = "0";
+  commentInputContainer.style.width = "100%";
+  commentInputContainer.style.zIndex = "1000"; // asegurar que quede arriba
 });
+
 commentInput.addEventListener('blur', () => {
-  document.body.style.transform = `translateY(0)`;
+  commentInputContainer.style.position = "";
+  commentInputContainer.style.bottom = "";
+  commentInputContainer.style.left = "";
+  commentInputContainer.style.width = "";
+  commentInputContainer.style.zIndex = "";
 });
 
 // === Refrescar comentarios cuando cambia el video ===
@@ -1895,4 +1904,3 @@ setInterval(() => {
     </script>
 </body>
 </html>
-
