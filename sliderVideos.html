@@ -1682,13 +1682,13 @@ async function cargarVideos(checkNew = false) {
           init() {
             updateFixedTitle(this);
             refrescarComentariosSlide();
-            activarSwipeParaBorrar();  // ← 🔹 REACTIVAMOS SWIPE AQUÍ
+            activarSwipeParaBorrar();
           },
           slideChange() {
             cleanupIframesExceptActive();
             updateFixedTitle(this);
             refrescarComentariosSlide();
-            activarSwipeParaBorrar();  // ← 🔹 TAMBIÉN AL CAMBIAR SLIDE
+            activarSwipeParaBorrar();
           },
           slideChangeTransitionEnd() {
             updateFixedTitle(this);
@@ -1699,14 +1699,20 @@ async function cargarVideos(checkNew = false) {
       cleanupIframesExceptActive();
       updateFixedTitle(swiper);
       refrescarComentariosSlide();
-      activarSwipeParaBorrar(); // ← 🔹 LLAMADA FINAL POR SI ACASO
+      activarSwipeParaBorrar();
     }
+
+    // ✅ LLAMAMOS LA FUNCIÓN PARA CARGAR COMENTARIOS AL FINAL
+    cargarComentarios();
+
   } catch (e) {
     console.error("Error cargando videos:", e);
   } finally {
     loader.style.display = "none";
   }
 }
+
+        
 
 function activarSwipeParaBorrar() {
   const comentarios = document.querySelectorAll(".comentario-propio"); // clase para tus comentarios
@@ -1743,6 +1749,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
