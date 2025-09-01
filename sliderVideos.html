@@ -1778,12 +1778,14 @@ async function cargarVideos(checkNew = false) {
 
     // 🛎️ Notificaciones de nuevos videos
     if (checkNew) {
-      newVideos.forEach(v => {
-        if (!lastVideos.find(old => old.link === v.link)) {
-          notifications.unshift(v);
-        }
-      });
-      if (notifications.length > 0) renderNotifications();
+      // Filtrar solo los videos realmente nuevos
+      const nuevos = newVideos.filter(v => !lastVideos.find(old => old.link === v.link));
+
+      // Agregar al inicio de notifications solo si hay nuevos
+      if (nuevos.length > 0) {
+        notifications.unshift(...nuevos);
+        renderNotifications();
+      }
     }
 
     lastVideos = newVideos;
@@ -1839,6 +1841,7 @@ async function cargarVideos(checkNew = false) {
   }
 }
 
+
         
 
 function activarSwipeParaBorrar() {
@@ -1876,4 +1879,5 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
