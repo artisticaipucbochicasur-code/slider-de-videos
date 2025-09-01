@@ -729,7 +729,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   commentInputContainer.classList.add("hidden-overlay");
 
   try {
-    const usuario = await getUsuarioDataFromUrl();
+    getUsuarioDataFromUrl();
     const videos = await obtenerListaVideos();
 
     // Carga solo los slides del slider rápido
@@ -1898,3 +1898,4 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
