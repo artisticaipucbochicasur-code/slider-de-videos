@@ -527,8 +527,9 @@
     
     /* Clase para ocultar los overlays */
 .hidden-overlay {
-    opacity: 0;
-    visibility: hidden;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.3s;
 }
 
 
@@ -617,18 +618,17 @@
 
 
     
-<div class="comments-overlay-container" id="commentsOverlay">
-    <ul id="commentsList"></ul>
-  </div>
-  <div class="comments-counter" id="commentsCounter">
-      <span class="icon">💬</span>
-      <span class="count" id="commentCountValue">0</span>
-  </div>
-  
-  <div class="comment-input-container">
-      <input type="text" id="commentInput" placeholder="Escribe un comentario...">
-      <button class="send-comment-btn"><i class="fas fa-paper-plane"></i></button>
-  </div>
+<div class="comments-overlay-container hidden-overlay" id="commentsOverlay">
+  <ul id="commentsList"></ul>
+</div>
+<div class="comments-counter hidden-overlay" id="commentsCounter">
+  <span class="icon">💬</span>
+  <span class="count" id="commentCountValue">0</span>
+</div>
+<div class="comment-input-container hidden-overlay">
+  <input type="text" id="commentInput" placeholder="Escribe un comentario...">
+  <button class="send-comment-btn"><i class="fas fa-paper-plane"></i></button>
+</div>
 
     
 <!-- Notificaciones -->
@@ -1877,6 +1877,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
