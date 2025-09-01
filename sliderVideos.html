@@ -669,94 +669,109 @@
     }
   }
 
-  // ----- FUNCIONES DE CARGA, VISOR Y COMENTARIO -----
-  async function cargarVideos() {
-    loader.style.display = 'block';
-    const currentIndex = swiperInstance ? swiperInstance.realIndex : 0;
-    const currentId = swiperInstance && videosData.length > 0 ? videosData[swiperInstance.realIndex].id : null;
-    try {
-      const response = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
-      if(!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const result = await response.json();
-      let newVideosData = [];
-      if(result.status === "success" && result.data && result.data.length > 0) {
-        result.data.forEach((row) => {
-          newVideosData.push({
-            titulo: row[0] || "",
-            link: row[1] || "",
-            autor: row[2] || "",
-            correo: row[3] || "",
-            descripcion: row[4] || "",
-            id: row[5] || "",
-          });
+// ----- FUNCIONES DE CARGA, VISOR Y COMENTARIO -----
+async function cargarVideos() {
+  loader.style.display = 'block';
+  const currentIndex = swiperInstance ? swiperInstance.realIndex : 0;
+  const currentId = swiperInstance && videosData.length > 0 ? videosData[swiperInstance.realIndex].id : null;
+  try {
+    const response = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
+    if(!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await response.json();
+    let newVideosData = [];
+    if(result.status === "success" && result.data && result.data.length > 0) {
+      result.data.forEach((row) => {
+        newVideosData.push({
+          titulo: row[0] || "",
+          link: row[1] || "",
+          autor: row[2] || "",
+          correo: row[3] || "",
+          descripcion: row[4] || "",
+          id: row[5] || "",
         });
-      }
-      newVideosData.reverse();
-      const oldIds = videosData.map(v => v.id);
-      const newIds = newVideosData.map(v => v.id);
-      if (JSON.stringify(oldIds) === JSON.stringify(newIds)) {
-        loader.style.display = 'none';
-        return;
-      }
-      videosData = newVideosData;
-      reconstruirIndiceBusqueda();
-      if (swiperInstance) {
-        swiperInstance.removeAllSlides();
-        videosData.forEach(video => {
-          const slide = document.createElement('div');
-          slide.classList.add('swiper-slide');
-          slide.dataset.id = video.id;
-         // USA ESTO:
-const vid = document.createElement('video');
-vid.src = video.link;
-vid.controls = true;
-vid.style.maxWidth = "100%";
-vid.style.maxHeight = "100%";
-vid.style.background = "#000";
-// Lo importante: permite swipe sobre el video
-vid.addEventListener("touchstart", e => e.stopPropagation(), {passive:true});
-slide.appendChild(vid);
-swiperInstance.appendSlide(slide);
-        });
-        let newIndex = videosData.findIndex(v => v.id === currentId);
-        if (newIndex !== -1) {
-          swiperInstance.slideToLoop(newIndex, 0, false);
-        } else {
-          if (currentIndex < videosData.length) {
-            swiperInstance.slideToLoop(currentIndex, 0, false);
-          } else {
-            swiperInstance.slideToLoop(videosData.length - 1, 0, false);
-          }
-        }
-        swiperInstance.update();
-      } else {
-        const swiperWrapper = document.querySelector('.swiper-wrapper');
-        swiperWrapper.innerHTML = '';
-        videosData.forEach(video => {
-          const slide = document.createElement('div');
-          slide.classList.add('swiper-slide');
-          slide.dataset.id = video.id;
-          const zoomContainer = document.createElement('div');
-          zoomContainer.classList.add('swiper-zoom-container');
-          const vid = document.createElement('video');
-          vid.src = video.link;
-          vid.controls = true;
-          vid.style.maxWidth = "100%";
-          vid.style.maxHeight = "100%";
-          zoomContainer.appendChild(vid);
-          slide.appendChild(zoomContainer);
-          swiperWrapper.appendChild(slide);
-        });
-        initSwiper(0);
-      }
-      const activeIndex = swiperInstance ? swiperInstance.realIndex : 0;
-      updateContentOverlay(activeIndex);
-    } catch(error) {
-      console.error("Error al cargar los videos:", error);
-    } finally {
-      loader.style.display = 'none';
+      });
     }
+    newVideosData.reverse();
+    const oldIds = videosData.map(v => v.id);
+    const newIds = newVideosData.map(v => v.id);
+    if (JSON.stringify(oldIds) === JSON.stringify(newIds)) {
+      loader.style.display = 'none';
+      return;
+    }
+    videosData = newVideosData;
+    reconstruirIndiceBusqueda();
+    if (swiperInstance) {
+      swiperInstance.removeAllSlides();
+      videosData.forEach(video => {
+        const slide = document.createElement('div');
+        slide.classList.add('swiper-slide');
+        slide.dataset.id = video.id;
+        // Video con soporte para swipe y tap
+        const vid = document.createElement('video');
+        vid.src = video.link;
+        vid.controls = true;
+        vid.style.maxWidth = "100%";
+        vid.style.maxHeight = "100%";
+        vid.style.background = "#000";
+        // Permite swipe sobre el video
+        vid.addEventListener("touchstart", e => e.stopPropagation(), {passive:true});
+        // Oculta/muestra overlays al tocar el video
+        vid.addEventListener("click", function() {
+          contentOverlay.classList.toggle('hidden-overlay');
+          commentsOverlay.classList.toggle('hidden-overlay');
+          commentsCounter.classList.toggle('hidden-overlay');
+          commentInputContainer.classList.toggle('hidden-overlay');
+          lastTapTime = new Date().getTime();
+        });
+        slide.appendChild(vid);
+        swiperInstance.appendSlide(slide);
+      });
+      let newIndex = videosData.findIndex(v => v.id === currentId);
+      if (newIndex !== -1) {
+        swiperInstance.slideToLoop(newIndex, 0, false);
+      } else {
+        if (currentIndex < videosData.length) {
+          swiperInstance.slideToLoop(currentIndex, 0, false);
+        } else {
+          swiperInstance.slideToLoop(videosData.length - 1, 0, false);
+        }
+      }
+      swiperInstance.update();
+    } else {
+      const swiperWrapper = document.querySelector('.swiper-wrapper');
+      swiperWrapper.innerHTML = '';
+      videosData.forEach(video => {
+        const slide = document.createElement('div');
+        slide.classList.add('swiper-slide');
+        slide.dataset.id = video.id;
+        // Video con soporte para swipe y tap
+        const vid = document.createElement('video');
+        vid.src = video.link;
+        vid.controls = true;
+        vid.style.maxWidth = "100%";
+        vid.style.maxHeight = "100%";
+        vid.style.background = "#000";
+        vid.addEventListener("touchstart", e => e.stopPropagation(), {passive:true});
+        vid.addEventListener("click", function() {
+          contentOverlay.classList.toggle('hidden-overlay');
+          commentsOverlay.classList.toggle('hidden-overlay');
+          commentsCounter.classList.toggle('hidden-overlay');
+          commentInputContainer.classList.toggle('hidden-overlay');
+          lastTapTime = new Date().getTime();
+        });
+        slide.appendChild(vid);
+        swiperWrapper.appendChild(slide);
+      });
+      initSwiper(0);
+    }
+    const activeIndex = swiperInstance ? swiperInstance.realIndex : 0;
+    updateContentOverlay(activeIndex);
+  } catch(error) {
+    console.error("Error al cargar los videos:", error);
+  } finally {
+    loader.style.display = 'none';
   }
+}
 
   // Eliminar video
   async function eliminarVideo(videoId) {
@@ -1104,4 +1119,5 @@ swiperInstance.appendSlide(slide);
   </script>
 </body>
 </html>
+
 
