@@ -1683,12 +1683,24 @@ async function cargarVideos(checkNew = false) {
             updateFixedTitle(this);
             refrescarComentariosSlide();
             activarSwipeParaBorrar();
+
+            // 🔹 Cargar comentarios del primer video activo al iniciar
+            const videoId = getActiveVideoId();
+            if (videoId) {
+              cargarComentarios(videoId);
+            }
           },
           slideChange() {
             cleanupIframesExceptActive();
             updateFixedTitle(this);
             refrescarComentariosSlide();
             activarSwipeParaBorrar();
+
+            // 🔹 Cargar comentarios cuando se cambia de video
+            const videoId = getActiveVideoId();
+            if (videoId) {
+              cargarComentarios(videoId);
+            }
           },
           slideChangeTransitionEnd() {
             updateFixedTitle(this);
@@ -1700,12 +1712,17 @@ async function cargarVideos(checkNew = false) {
       updateFixedTitle(swiper);
       refrescarComentariosSlide();
       activarSwipeParaBorrar();
+
+      // 🔹 Cargar comentarios también después de preparar todo
+      const videoId = getActiveVideoId();
+      if (videoId) {
+        cargarComentarios(videoId);
+      }
     }
   } catch (e) {
     console.error("Error cargando videos:", e);
   } finally {
-    loader.style.display = "none";  // ⬅️ Cuando termina de cargar videos…
-    cargarComentarios();            // ⬅️ …se cargan los comentarios
+    loader.style.display = "none";
   }
 }
 
@@ -1747,6 +1764,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
