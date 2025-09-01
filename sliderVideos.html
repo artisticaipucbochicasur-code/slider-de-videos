@@ -709,42 +709,33 @@ document.addEventListener("DOMContentLoaded", async () => {
   const commentsCounter = document.getElementById("commentsCounter");
   const commentInputContainer = document.querySelector(".comment-input-container");
 
-  // Todo empieza oculto
   commentsOverlay.classList.add("hidden-overlay");
   commentsCounter.classList.add("hidden-overlay");
   commentInputContainer.classList.add("hidden-overlay");
 
   try {
-    getUsuarioDataFromUrl();
+    const usuario = getUsuarioDataFromUrl(); // 👈 sin await
     const videos = await obtenerListaVideos();
 
-    // Carga solo los slides del slider rápido
     await cargarVideos(videos);
-
-    // 🔹 Precargamos todos los comentarios en segundo plano
     await precargarComentariosTodos(videos);
 
-    // 🔹 Solo ahora mostramos la interfaz de comentarios
     commentsOverlay.classList.remove("hidden-overlay");
     commentsCounter.classList.remove("hidden-overlay");
     commentInputContainer.classList.remove("hidden-overlay");
 
-    // 🔹 Renderizamos los comentarios del primer video para la visualización inicial
     if (videos.length > 0) {
       const primerVideoId = getActiveVideoId() || videos[0].id;
       renderComentarios(primerVideoId);
     }
-
-    console.log("✅ Todos los comentarios precargados, interfaz visible.");
-
   } catch (e) {
     console.error("❌ Error al inicializar:", e);
-    // En caso de error, mostramos la interfaz de todas formas
     commentsOverlay.classList.remove("hidden-overlay");
     commentsCounter.classList.remove("hidden-overlay");
     commentInputContainer.classList.remove("hidden-overlay");
   }
 });
+
 
 
 
@@ -966,18 +957,10 @@ function renderComentarios(videoId) {
 
 
 // === Enviar un nuevo comentario ===
-async function enviarComentario(e) {
-  if (e) e.preventDefault();
-
+async function enviarComentario() {
   const texto = commentInput.value.trim();
   const videoId = getActiveVideoId();
-
   if (!texto || !videoId) return;
-
-  // ✅ Aseguramos que siempre haya datos de usuario antes de enviar
-  if (!usuarioAutor || !usuarioCorreo) {
-    getUsuarioDataFromUrl();
-  }
 
   sendCommentBtn.disabled = true;
 
@@ -990,20 +973,18 @@ async function enviarComentario(e) {
         comentario: texto,
         autor: usuarioAutor,
         correo: usuarioCorreo,
-      }),
+      })
     });
 
-    // ✅ Limpiar input y restaurar posición
+    // Limpiar input
     commentInput.value = "";
-    document.body.style.transform = `translateY(0)`;
-    commentInput.blur();
 
-    // ✅ Crear y guardar el nuevo comentario en cache
+    // 🟢 Agregar el nuevo comentario directamente a caché
     const nuevoComentario = {
       autor: usuarioAutor,
       comentario: texto,
       fecha: new Date().toLocaleString(),
-      correo: usuarioCorreo,
+      correo: usuarioCorreo
     };
 
     if (!comentariosPorVideo[videoId]) comentariosPorVideo[videoId] = [];
@@ -1012,14 +993,15 @@ async function enviarComentario(e) {
     comentariosPorVideo[videoId].push(nuevoComentario);
     comentariosCache[videoId].push(nuevoComentario);
 
+    // Renderizar instantáneamente sin volver a pedir datos
     renderComentarios(videoId);
+
   } catch (e) {
     console.error("Error al enviar comentario:", e);
   } finally {
     sendCommentBtn.disabled = false;
   }
 }
-
 
 // === Precargar todos los comentarios al inicio ===
 async function precargarComentariosTodos(videos) {
@@ -1049,21 +1031,32 @@ async function eliminarComentario(videoId, comentario, correo) {
   }
 }
 
-// === Listeners del input ===
-sendCommentBtn.addEventListener('click', async () => {
-  await enviarComentario();
+// === Listeners del input (versión corregida) ===
+['click', 'touchstart', 'touchend'].forEach(evt => {
+  sendCommentBtn.addEventListener(evt, (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, { passive: false });
 });
 
-commentInput.addEventListener('keydown', async (e) => {
+sendCommentBtn.addEventListener('click', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  enviarComentario();
+});
+
+commentInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
-    await enviarComentario();
+    e.preventDefault();
+    e.stopPropagation();
+    enviarComentario();
   }
 });
 
+// 👇 Puedes dejar tus listeners de focus/blur si los necesitas
 commentInput.addEventListener('focus', () => {
   document.body.style.transform = `translateY(-50%)`;
 });
-
 commentInput.addEventListener('blur', () => {
   document.body.style.transform = `translateY(0)`;
 });
@@ -1239,7 +1232,7 @@ function getUsuarioDataFromUrl() {
 
 
 // Llamar a la función al cargar la página para obtener los datos
-//document.addEventListener("DOMContentLoaded", getUsuarioDataFromUrl);
+document.addEventListener("DOMContentLoaded", getUsuarioDataFromUrl);
 
 // NUEVO: Variables para el modal de alerta personalizada
 const customAlertModal = document.getElementById("custom-alert-modal");
@@ -1913,6 +1906,4 @@ setInterval(() => {
     </script>
 </body>
 </html>
-
-
 
