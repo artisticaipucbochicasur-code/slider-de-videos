@@ -934,52 +934,59 @@ commentInput.addEventListener('blur', () => {
 });
 
 async function refrescarComentariosSlide() {
-  const activeSlide = swiper.slides[swiper.activeIndex];
-  const videoId = activeSlide.dataset.id; // asegúrate que cada slide tenga data-id
+  const activeSlide = document.querySelector(".swiper-slide-active");
+  if (!activeSlide) return;
 
-  const contenedorComentarios = document.getElementById("commentsList");
-  contenedorComentarios.innerHTML = `<p class="cargando">Cargando comentarios...</p>`;
+  const videoCard = activeSlide.querySelector(".player-card");
+  if (!videoCard) return;
+
+  const videoId = videoCard.dataset.id;
+  if (!videoId) return;
 
   try {
     const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${videoId}`);
     const data = await res.json();
 
-    if (data.status !== "✅ success") {
-      contenedorComentarios.innerHTML = `<p class="sin-comentarios">No hay comentarios aún.</p>`;
+    const commentsList = document.getElementById("commentsList");
+    commentsList.innerHTML = "";
+
+    if (data.status !== "✅ success" || !Array.isArray(data.data) || data.data.length === 0) {
+      commentsList.innerHTML = `<p class="sin-comentarios">No hay comentarios aún</p>`;
       return;
     }
 
-    if (!data.data || data.data.length === 0) {
-      contenedorComentarios.innerHTML = `<p class="sin-comentarios">No hay comentarios aún.</p>`;
-      return;
-    }
+    // Renderizamos comentarios
+    data.data.forEach(c => {
+      const li = document.createElement("li");
+      li.classList.add("comentario-item");
 
-    contenedorComentarios.innerHTML = "";
+      // Marcamos como "propio" si coincide el correo del usuario actual
+      const esMio = c.correo && c.correo === usuarioCorreo;
 
-    data.data.forEach(comentario => {
-      const div = document.createElement("div");
-      div.classList.add("comentario");
-
-      // Si el correo coincide con el tuyo → permitir swipe para eliminar
-      if (comentario.correo === usuarioCorreo) {
-        div.classList.add("comentario-propio");
-        div.dataset.id = comentario.fecha; // o un ID único si lo tienes
-      }
-
-      div.innerHTML = `
-        <p class="autor"><strong>${comentario.autor}</strong> <span>${comentario.fecha}</span></p>
-        <p class="texto">${comentario.comentario}</p>
+      li.innerHTML = `
+        <div class="comentario-header">
+          <span class="comentario-autor">${c.autor || "Anónimo"}</span>
+          <span class="comentario-fecha">${c.fecha || ""}</span>
+        </div>
+        <div class="comentario-texto">${c.comentario}</div>
       `;
 
-      contenedorComentarios.appendChild(div);
+      // Si es mío → habilitamos swipe para borrar
+      if (esMio) {
+        li.classList.add("comentario-propio");
+        li.setAttribute("data-id", videoId);
+      }
+
+      commentsList.appendChild(li);
     });
 
+    // Reactivamos swipe para comentarios propios
     activarSwipeParaBorrar();
   } catch (e) {
-    console.error("Error al cargar comentarios:", e);
-    contenedorComentarios.innerHTML = `<p class="error">Error al cargar comentarios</p>`;
+    console.error("Error cargando comentarios:", e);
   }
 }
+
 
 
 
@@ -1704,14 +1711,16 @@ async function cargarVideos(checkNew = false) {
         pagination: false,
         on: {
           init() {
+            // ✅ Cargamos títulos, descripciones y comentarios al iniciar
             updateFixedTitle(this);
-            refrescarComentariosSlide();   // ✅ Carga comentarios al iniciar
-            activarSwipeParaBorrar();      // ✅ Activa swipe en comentarios
+            refrescarComentariosSlide();
+            activarSwipeParaBorrar();
           },
           slideChange() {
+            // ✅ Cuando cambiamos de video, actualizamos comentarios
             cleanupIframesExceptActive();
             updateFixedTitle(this);
-            refrescarComentariosSlide();   // ✅ Actualiza comentarios al cambiar video
+            refrescarComentariosSlide();
             activarSwipeParaBorrar();
           },
           slideChangeTransitionEnd() {
@@ -1720,7 +1729,7 @@ async function cargarVideos(checkNew = false) {
         },
       });
 
-      // 🔹 Aseguramos que el primer video tenga comentarios cargados
+      // 🔹 Aseguramos que el primer video tenga comentarios, títulos y descripción cargados
       cleanupIframesExceptActive();
       updateFixedTitle(swiper);
       refrescarComentariosSlide();
@@ -1732,6 +1741,7 @@ async function cargarVideos(checkNew = false) {
     loader.style.display = "none";
   }
 }
+
 
 
 function activarSwipeParaBorrar() {
@@ -1769,6 +1779,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
