@@ -953,7 +953,6 @@ function renderComentarios(videoId) {
   commentCountValue.textContent = lista.length;
 }
 
-// === Enviar un nuevo comentario ===
 async function enviarComentario() {
   const texto = commentInput.value.trim();
   const videoId = getActiveVideoId();
@@ -976,7 +975,7 @@ async function enviarComentario() {
     // Limpiar input
     commentInput.value = "";
 
-    // 🟢 Agregar el nuevo comentario directamente a caché
+    // 🟢 Agregar el nuevo comentario directamente a la caché principal
     const nuevoComentario = {
       autor: usuarioAutor,
       comentario: texto,
@@ -985,12 +984,9 @@ async function enviarComentario() {
     };
 
     if (!comentariosPorVideo[videoId]) comentariosPorVideo[videoId] = [];
-    if (!comentariosCache[videoId]) comentariosCache[videoId] = [];
-
     comentariosPorVideo[videoId].push(nuevoComentario);
-    comentariosCache[videoId].push(nuevoComentario);
 
-    // Renderizar instantáneamente sin volver a pedir datos
+    // Renderizar instantáneamente sin volver a cargar del servidor
     renderComentarios(videoId);
 
   } catch (e) {
@@ -999,6 +995,7 @@ async function enviarComentario() {
     sendCommentBtn.disabled = false;
   }
 }
+
 
 // === Precargar todos los comentarios al inicio ===
 async function precargarComentariosTodos(videos) {
@@ -1042,19 +1039,31 @@ async function eliminarComentario(videoId, comentario, correo) {
 
 // === Listeners del input ===
 
+// === Listeners del input ===
+
+// Función auxiliar para enviar y resetear posición
+function enviarYReset() {
+  enviarComentario(); // envía el comentario
+  commentInput.blur(); // cierra el teclado en móviles
+  document.body.style.transform = `translateY(0)`; // vuelve a posición inicial
+}
+
 // Enviar comentario al hacer click o tap en el botón
 sendCommentBtn.addEventListener('touchstart', (e) => {
-  e.preventDefault(); // evita el retraso del tap y desplazamiento en móviles
-  enviarComentario();
+  e.preventDefault(); // evita retraso del tap en móviles
+  enviarYReset();
 });
 sendCommentBtn.addEventListener('click', (e) => {
   e.preventDefault(); // para desktop
-  enviarComentario();
+  enviarYReset();
 });
 
 // Enviar comentario al presionar Enter en el input
 commentInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') enviarComentario();
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    enviarYReset();
+  }
 });
 
 // Ajuste visual del body cuando se enfoca/blur input en móviles
@@ -1902,4 +1911,5 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
