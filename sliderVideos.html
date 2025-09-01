@@ -1692,10 +1692,20 @@ async function cargarVideos(checkNew = false) {
         const link = row[1];
         const descripcion = row[4] || "";
         const id = row[5];
-        if (!checkNew) {
-          wrapper.appendChild(createSlide(titulo, link, descripcion, id));
-        }
         newVideos.push({ title: titulo, link, desc: descripcion, id });
+      });
+    }
+
+    // 🚀 Precargar TODOS los comentarios ANTES de crear los slides
+    await Promise.all(
+      newVideos.map(v => cargarComentarios(v.id))
+    );
+    console.log("✅ Todos los comentarios precargados en caché");
+
+    // Ahora sí, creamos los slides (con comentarios ya listos)
+    if (!checkNew) {
+      newVideos.forEach(v => {
+        wrapper.appendChild(createSlide(v.title, v.link, v.desc, v.id));
       });
     }
 
@@ -1723,12 +1733,7 @@ async function cargarVideos(checkNew = false) {
 
     lastVideos = newVideos;
 
-    // 🚀 **Pre-carga todos los comentarios en paralelo**
-    await Promise.all(
-      newVideos.map(v => cargarComentarios(v.id))
-    );
-    console.log("✅ Todos los comentarios precargados en caché");
-
+    // Solo inicializamos Swiper cuando TODO está listo
     if (!checkNew) {
       if (swiper) swiper.destroy(true, true);
       swiper = new Swiper(".swiper", {
@@ -1745,7 +1750,7 @@ async function cargarVideos(checkNew = false) {
 
             // 🔹 Mostrar comentarios instantáneos desde caché
             const videoId = getActiveVideoId();
-            if (videoId) cargarComentarios(videoId);
+            if (videoId) renderComentarios(videoId);
           },
           slideChange() {
             cleanupIframesExceptActive();
@@ -1755,7 +1760,7 @@ async function cargarVideos(checkNew = false) {
 
             // 🔹 Mostrar comentarios instantáneamente al cambiar video
             const videoId = getActiveVideoId();
-            if (videoId) cargarComentarios(videoId);
+            if (videoId) renderComentarios(videoId);
           },
           slideChangeTransitionEnd() {
             updateFixedTitle(this);
@@ -1768,9 +1773,9 @@ async function cargarVideos(checkNew = false) {
       refrescarComentariosSlide();
       activarSwipeParaBorrar();
 
-      // 🔹 Mostrar comentarios para el primer video
+      // 🔹 Mostrar comentarios para el primer video desde caché
       const videoId = getActiveVideoId();
-      if (videoId) cargarComentarios(videoId);
+      if (videoId) renderComentarios(videoId);
     }
   } catch (e) {
     console.error("Error cargando videos:", e);
@@ -1778,6 +1783,7 @@ async function cargarVideos(checkNew = false) {
     loader.style.display = "none";
   }
 }
+
 
 
         
@@ -1817,6 +1823,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
