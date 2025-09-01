@@ -704,48 +704,49 @@ let activeComment = null;
 let startX = 0;
 let isSwiping = false;
 
+// === Inicialización general ===
 document.addEventListener("DOMContentLoaded", async () => {
   const commentsOverlay = document.getElementById("commentsOverlay");
   const commentsCounter = document.getElementById("commentsCounter");
+  const commentsList = document.getElementById("commentsList");
   const commentInputContainer = document.querySelector(".comment-input-container");
 
-  // Todo empieza oculto
+  // Ocultamos todo al inicio para evitar parpadeo
   commentsOverlay.classList.add("hidden-overlay");
   commentsCounter.classList.add("hidden-overlay");
   commentInputContainer.classList.add("hidden-overlay");
 
   try {
+    // Obtenemos los datos del usuario y la lista de videos
     const usuario = await getUsuarioDataFromUrl();
     const videos = await obtenerListaVideos();
 
-    // Carga solo los slides del slider rápido
+    // Cargamos los videos inmediatamente para que el slider aparezca rápido
     await cargarVideos(videos);
 
-    // 🔹 Precargamos todos los comentarios en segundo plano
+    // Precargamos TODOS los comentarios en segundo plano, y esperamos a que terminen
     await precargarComentariosTodos(videos);
-
-    // 🔹 Solo ahora mostramos la interfaz de comentarios
+    
+    // Y ahora que todos los comentarios están en caché, mostramos la interfaz
+    // y cargamos los del primer video para la primera visualización
+    if (videos.length > 0) {
+      cargarComentarios(videos[0].id);
+    }
+    
     commentsOverlay.classList.remove("hidden-overlay");
     commentsCounter.classList.remove("hidden-overlay");
     commentInputContainer.classList.remove("hidden-overlay");
 
-    // 🔹 Renderizamos los comentarios del primer video para la visualización inicial
-    if (videos.length > 0) {
-      const primerVideoId = getActiveVideoId() || videos[0].id;
-      renderComentarios(primerVideoId);
-    }
-
-    console.log("✅ Todos los comentarios precargados, interfaz visible.");
-
+    console.log("✅ Interfaz de comentarios visible, todos los comentarios precargados.");
   } catch (e) {
     console.error("❌ Error al inicializar:", e);
-    // En caso de error, mostramos la interfaz de todas formas
+
+    // Si hay un error, al menos mostramos la interfaz para que el usuario pueda usarla
     commentsOverlay.classList.remove("hidden-overlay");
     commentsCounter.classList.remove("hidden-overlay");
     commentInputContainer.classList.remove("hidden-overlay");
   }
 });
-
 
 
 
@@ -856,14 +857,13 @@ function getActiveVideoId() {
 const comentariosCache = {}; // { videoId: [comentarios] }
 
 // === Cargar comentarios desde Google Sheets con caché ===
-// === Cargar comentarios desde Google Sheets con caché ===
-async function cargarComentarios(videoId, render = true) {
+async function cargarComentarios(videoId) {
   if (!videoId) return;
 
-  // Si ya está en caché → opcional render
+  // Si ya está en caché → renderiza instantáneamente
   if (comentariosCache[videoId]) {
     comentariosPorVideo[videoId] = comentariosCache[videoId];
-    if (render) renderComentarios(videoId);
+    renderComentarios(videoId);
     return;
   }
 
@@ -884,22 +884,20 @@ async function cargarComentarios(videoId, render = true) {
     // Guardar en caché para acceso instantáneo
     comentariosCache[videoId] = comentariosPorVideo[videoId];
 
-    if (render) renderComentarios(videoId);
+    renderComentarios(videoId);
   } catch (e) {
     console.error("Error cargando comentarios:", e);
     comentariosPorVideo[videoId] = [];
     comentariosCache[videoId] = [];
-    if (render) renderComentarios(videoId);
+    renderComentarios(videoId);
   }
 }
+
 // === Renderizar comentarios en el DOM ===
 function renderComentarios(videoId) {
   if (!videoId) return;
 
   const lista = comentariosPorVideo[videoId] || [];
-  const commentsList = document.getElementById('commentsList');
-  const commentCountValue = document.getElementById('commentCountValue');
-
   commentsList.innerHTML = '';
 
   if (lista.length === 0) {
@@ -907,50 +905,47 @@ function renderComentarios(videoId) {
     li.textContent = "Sé el primero en comentar...";
     commentsList.appendChild(li);
     commentCountValue.textContent = "0";
-  } else {
-    lista.forEach(c => {
-      const li = document.createElement('li');
-      li.classList.add('deletable');
-
-      const commentContent = document.createElement('div');
-      commentContent.className = 'comment-content';
-      commentContent.textContent = `${c.autor} (${c.fecha}) - ${c.comentario}`;
-      li.appendChild(commentContent);
-
-      li.dataset.correo = c.correo;
-      li.dataset.texto = c.comentario;
-
-      if (normalizeText(c.correo) === normalizeText(usuarioCorreo)) {
-        const deleteBtnContainer = document.createElement('div');
-        deleteBtnContainer.className = 'delete-btn-container';
-        const deleteBtn = document.createElement('div');
-        deleteBtn.className = 'delete-btn';
-        deleteBtn.textContent = 'Borrar';
-        deleteBtnContainer.appendChild(deleteBtn);
-        li.appendChild(deleteBtnContainer);
-
-        deleteBtn.addEventListener('click', async (ev) => {
-          ev.stopPropagation();
-          await eliminarComentario(videoId, c.comentario, c.correo);
-
-          if (comentariosCache[videoId]) {
-            comentariosCache[videoId] = comentariosCache[videoId].filter(
-              com => com.comentario !== c.comentario || com.correo !== c.correo
-            );
-          }
-
-          renderComentarios(videoId);
-        });
-      }
-
-      commentsList.appendChild(li);
-    });
-
-    commentCountValue.textContent = lista.length;
+    return;
   }
+
+  lista.forEach(c => {
+    const li = document.createElement('li');
+    li.classList.add('deletable');
+
+    const commentContent = document.createElement('div');
+    commentContent.className = 'comment-content';
+    commentContent.textContent = `${c.autor} (${c.fecha}) - ${c.comentario}`;
+    li.appendChild(commentContent);
+
+    li.dataset.correo = c.correo;
+    li.dataset.texto = c.comentario;
+
+    // Si es el comentario del usuario actual, permitir borrarlo
+    if (normalizeText(c.correo) === normalizeText(usuarioCorreo)) {
+      const deleteBtnContainer = document.createElement('div');
+      deleteBtnContainer.className = 'delete-btn-container';
+      const deleteBtn = document.createElement('div');
+      deleteBtn.className = 'delete-btn';
+      deleteBtn.textContent = 'Borrar';
+      deleteBtnContainer.appendChild(deleteBtn);
+      li.appendChild(deleteBtnContainer);
+
+      deleteBtn.addEventListener('click', async (ev) => {
+        ev.stopPropagation();
+        await eliminarComentario(videoId, c.comentario, c.correo);
+
+        // 🟢 Actualizar caché tras eliminar
+        if (comentariosCache[videoId]) {
+          comentariosCache[videoId] = comentariosCache[videoId].filter(com => com.comentario !== c.comentario || com.correo !== c.correo);
+        }
+        renderComentarios(videoId);
+      });
+    }
+    commentsList.appendChild(li);
+  });
+
+  commentCountValue.textContent = lista.length;
 }
-
-
 
 // === Enviar un nuevo comentario ===
 async function enviarComentario() {
@@ -1001,13 +996,13 @@ async function enviarComentario() {
 
 // === Precargar todos los comentarios al inicio ===
 async function precargarComentariosTodos(videos) {
-  for (const v of videos) {
-    // ⚡ Carga los comentarios pero NO renderiza si no es el video activo
-    await cargarComentarios(v.id, false);
+  try {
+    await Promise.all(videos.map(video => cargarComentarios(video.id)));
+    console.log("✅ Todos los comentarios precargados en caché");
+  } catch (e) {
+    console.error("Error precargando comentarios:", e);
   }
-  console.log("✅ Todos los comentarios precargados en caché");
 }
-
 // === Eliminar comentario ===
 async function eliminarComentario(videoId, comentario, correo) {
   if (!videoId || !comentario || !correo) return;
@@ -1040,7 +1035,6 @@ commentInput.addEventListener('blur', () => {
 });
 
 // === Refrescar comentarios cuando cambia el video ===
-// ❌ ESTA FUNCIÓN ESTÁ CAUSANDO EL PROBLEMA Y DEBE SER ELIMINADA ❌
 function refrescarComentariosSlide() {
   const videoId = getActiveVideoId();
   const lista = comentariosPorVideo[videoId] || [];
@@ -1048,8 +1042,7 @@ function refrescarComentariosSlide() {
   const commentsList = document.getElementById("commentsList");
   const commentCountValue = document.getElementById("commentCountValue");
 
-  // El problema está en esta línea:
-  commentsList.innerHTML = ""; 
+  commentsList.innerHTML = "";
 
   if (lista.length > 0) {
     lista.forEach((c) => {
@@ -1065,6 +1058,7 @@ function refrescarComentariosSlide() {
     commentCountValue.textContent = 0;
   }
 }
+
 
 
 
@@ -1729,7 +1723,7 @@ function cleanupIframesExceptActive() {
         
 
 
-// 🚀 Cargar videos + comentarios optimizado con precarga total antes de mostrar Swiper
+// 🚀 Cargar videos + comentarios optimizado
 async function cargarVideos(checkNew = false) {
   const loader = document.getElementById("loader");
   if (!checkNew) loader.style.display = "flex";
@@ -1752,13 +1746,12 @@ async function cargarVideos(checkNew = false) {
       });
     }
 
-    // ⚡ Precargamos TODOS los comentarios de TODOS los videos antes de crear los slides
+    // ⚡ Primero precargamos TODOS los comentarios ANTES de mostrar los videos
     if (!checkNew && newVideos.length > 0) {
-      const promesasComentarios = newVideos.map(video => cargarComentarios(video.id, false));
-      await Promise.all(promesasComentarios); // Esperamos a que TODOS estén listos
+      await precargarComentariosTodos(newVideos);
     }
 
-    // ⚡ Ahora mostramos los videos cuando ya están los comentarios en caché
+    // ⚡ Cargar los slides de los videos
     if (!checkNew) {
       newVideos.forEach(v => {
         wrapper.appendChild(createSlide(v.title, v.link, v.desc, v.id));
@@ -1778,7 +1771,7 @@ async function cargarVideos(checkNew = false) {
     }
 
     // 🛎️ Notificaciones de nuevos videos
-    if (checkNew && lastVideos.length > 0) { 
+    if (checkNew && lastVideos.length > 0) { // <-- solo si ya hay videos cargados
       const nuevos = newVideos.filter(v => !lastVideos.find(old => old.link === v.link));
       if (nuevos.length > 0) {
         notifications.unshift(...nuevos);
@@ -1788,7 +1781,7 @@ async function cargarVideos(checkNew = false) {
 
     lastVideos = newVideos;
 
-    // ✅ Inicializamos Swiper solo cuando TODO (videos + comentarios) esté listo
+    // ✅ Inicializar Swiper solo cuando todo esté listo (videos + comentarios)
     if (!checkNew) {
       if (swiper) swiper.destroy(true, true);
       swiper = new Swiper(".swiper", {
@@ -1800,15 +1793,17 @@ async function cargarVideos(checkNew = false) {
         on: {
           init() {
             updateFixedTitle(this);
+            refrescarComentariosSlide();
             activarSwipeParaBorrar();
 
-            // 🔹 Mostrar comentarios del video activo (instantáneamente desde caché)
+            // 🔹 Mostrar comentarios desde caché para el video activo
             const videoId = getActiveVideoId();
             if (videoId) renderComentarios(videoId);
           },
           slideChange() {
             cleanupIframesExceptActive();
             updateFixedTitle(this);
+            refrescarComentariosSlide();
             activarSwipeParaBorrar();
 
             // 🔹 Mostrar comentarios instantáneamente al cambiar video
@@ -1823,9 +1818,10 @@ async function cargarVideos(checkNew = false) {
 
       cleanupIframesExceptActive();
       updateFixedTitle(swiper);
+      refrescarComentariosSlide();
       activarSwipeParaBorrar();
 
-      // 🔹 Mostrar comentarios para el primer video (ya están en caché)
+      // 🔹 Mostrar comentarios para el primer video desde caché
       const videoId = getActiveVideoId();
       if (videoId) renderComentarios(videoId);
     }
@@ -1838,6 +1834,7 @@ async function cargarVideos(checkNew = false) {
 
 
 
+        
 
 function activarSwipeParaBorrar() {
   const comentarios = document.querySelectorAll(".comentario-propio"); // clase para tus comentarios
@@ -1874,4 +1871,10 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
+
+
+
+
+
 
