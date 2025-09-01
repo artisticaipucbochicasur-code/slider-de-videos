@@ -204,13 +204,23 @@ function initSwiper(initialIndex=0){
     const slide = document.createElement('div');
     slide.className='swiper-slide';
     slide.dataset.id = video.id;
+    
     const zoomContainer = document.createElement('div');
     zoomContainer.className='swiper-zoom-container';
-    const img = document.createElement('img');
-    img.src = video.url; img.alt=video.titulo;
-    zoomContainer.appendChild(img); slide.appendChild(zoomContainer);
+    
+    const videoEl = document.createElement('video');
+    videoEl.src = video.url;
+    videoEl.controls = true;
+    videoEl.autoplay = false;
+    videoEl.loop = false;
+    videoEl.style.maxWidth = '100%';
+    videoEl.style.maxHeight = '100%';
+    
+    zoomContainer.appendChild(videoEl);
+    slide.appendChild(zoomContainer);
     wrapper.appendChild(slide);
-  });
+});
+
   swiperInstance.slideToLoop(initialIndex,0,false);
 }
 
@@ -287,5 +297,6 @@ document.addEventListener('DOMContentLoaded',()=>{ cargarVideos(); });
 </script>
 </body>
 </html>
+
 
 
