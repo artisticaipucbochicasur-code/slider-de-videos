@@ -731,7 +731,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       await cargarComentarios(videos[0].id);
     }
 
-    // 6. Mostramos comentarios, contador y barra de entrada de inmediato
+    // 6. Ahora que los comentarios se cargaron, mostramos todo
     commentsOverlay.classList.remove("hidden-overlay");
     commentsCounter.classList.remove("hidden-overlay");
     commentInputContainer.classList.remove("hidden-overlay");
@@ -751,8 +751,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     commentInputContainer.classList.remove("hidden-overlay");
   }
 });
-
-
 
 
 
@@ -1877,6 +1875,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
