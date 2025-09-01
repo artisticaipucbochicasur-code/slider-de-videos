@@ -768,12 +768,12 @@ document.querySelector('.swiper').addEventListener('click', () => {
 
 // === Expandir / Colapsar comentarios ===
 commentsOverlay.addEventListener('click', (e) => {
-  if (!isSwiping) {
+  // SOLO si el click fue directamente en el fondo del overlay
+  if (e.target === commentsOverlay && !isSwiping) {
     commentsOverlay.classList.toggle('expanded');
   }
   isSwiping = false;
 });
-
 // === Swipe-to-delete en móviles ===
 commentsList.addEventListener('touchstart', (e) => {
   const commentElement = e.target.closest('li');
@@ -1902,3 +1902,4 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
