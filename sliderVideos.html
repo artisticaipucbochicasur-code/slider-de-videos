@@ -704,6 +704,20 @@ let activeComment = null;
 let startX = 0;
 let isSwiping = false;
 
+
+        // Variables para almacenar los datos del usuario, obtenidos de la URL
+let usuarioAutor = "";
+let usuarioCorreo = "";
+
+        // Función para obtener los parámetros 'name' y 'email' de la URL
+function getUsuarioDataFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    usuarioAutor = params.get("name") || "";
+    usuarioCorreo = params.get("email") || "";
+}
+
+
+
 document.addEventListener("DOMContentLoaded", async () => {
   const commentsOverlay = document.getElementById("commentsOverlay");
   const commentsCounter = document.getElementById("commentsCounter");
@@ -1012,6 +1026,8 @@ async function enviarComentario() {
   }
 }
 
+
+
 // === Precargar todos los comentarios al inicio ===
 async function precargarComentariosTodos(videos) {
   for (const v of videos) {
@@ -1041,31 +1057,16 @@ async function eliminarComentario(videoId, comentario, correo) {
 }
 
 // === Listeners del input ===
-sendCommentBtn.addEventListener('click', async () => {
-  await enviarComentario();
-  // 🔹 Después de enviar, baja el contenedor inmediatamente
-  document.body.style.transform = `translateY(0)`;
-  commentInput.blur(); // Forzar que pierda el foco
+sendCommentBtn.addEventListener('click', enviarComentario);
+commentInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') enviarComentario();
 });
-
-commentInput.addEventListener('keydown', async (e) => {
-  if (e.key === 'Enter') {
-    await enviarComentario();
-    // 🔹 Después de enviar con Enter, también baja el contenedor
-    document.body.style.transform = `translateY(0)`;
-    commentInput.blur();
-  }
-});
-
-// 🔹 Control de animación al enfocar el input
 commentInput.addEventListener('focus', () => {
   document.body.style.transform = `translateY(-50%)`;
 });
-
 commentInput.addEventListener('blur', () => {
   document.body.style.transform = `translateY(0)`;
 });
-
 
 // === Refrescar comentarios cuando cambia el video ===
 // ❌ ESTA FUNCIÓN ESTÁ CAUSANDO EL PROBLEMA Y DEBE SER ELIMINADA ❌
@@ -1223,19 +1224,7 @@ document.addEventListener("click", (e) => {
 
 // --- MANEJO DE ELIMINACIÓN ---
 
-// Variables para almacenar los datos del usuario, obtenidos de la URL
-let usuarioAutor = "";
-let usuarioCorreo = "";
 
-// Función para obtener los parámetros 'name' y 'email' de la URL
-function getUsuarioDataFromUrl() {
-    const params = new URLSearchParams(window.location.search);
-    usuarioAutor = params.get("name") || "";
-    usuarioCorreo = params.get("email") || "";
-}
-
-// Llamar a la función al cargar la página para obtener los datos
-document.addEventListener("DOMContentLoaded", getUsuarioDataFromUrl);
 
 // NUEVO: Variables para el modal de alerta personalizada
 const customAlertModal = document.getElementById("custom-alert-modal");
