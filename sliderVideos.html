@@ -772,11 +772,17 @@ document.querySelector('.swiper').addEventListener('click', () => {
 
 // === Expandir / Colapsar comentarios ===
 commentsOverlay.addEventListener('click', (e) => {
+  // 👇 Evita que se cierre cuando el click viene del botón o del input
+  if (e.target.closest('#commentInput') || e.target.closest('.send-comment-btn')) {
+    return;
+  }
+
   if (!isSwiping) {
     commentsOverlay.classList.toggle('expanded');
   }
   isSwiping = false;
 });
+
 
 // === Swipe-to-delete en móviles ===
 commentsList.addEventListener('touchstart', (e) => {
@@ -1912,6 +1918,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
