@@ -933,30 +933,54 @@ commentInput.addEventListener('blur', () => {
   document.body.style.transform = `translateY(0)`;
 });
 
-// === Refrescar comentarios cuando cambia el video ===
-function refrescarComentariosSlide() {
-  const videoId = getActiveVideoId();
-  const lista = comentariosPorVideo[videoId] || [];
+async function refrescarComentariosSlide() {
+  const activeSlide = swiper.slides[swiper.activeIndex];
+  const videoId = activeSlide.dataset.id; // asegúrate que cada slide tenga data-id
 
-  const commentsList = document.getElementById("commentsList");
-  const commentCountValue = document.getElementById("commentCountValue");
+  const contenedorComentarios = document.getElementById("commentsList");
+  contenedorComentarios.innerHTML = `<p class="cargando">Cargando comentarios...</p>`;
 
-  commentsList.innerHTML = "";
+  try {
+    const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${videoId}`);
+    const data = await res.json();
 
-  if (lista.length > 0) {
-    lista.forEach((c) => {
-      const li = document.createElement("li");
-      li.textContent = `${c.autor} (${c.fecha}) - ${c.comentario}`;
-      commentsList.appendChild(li);
+    if (data.status !== "✅ success") {
+      contenedorComentarios.innerHTML = `<p class="sin-comentarios">No hay comentarios aún.</p>`;
+      return;
+    }
+
+    if (!data.data || data.data.length === 0) {
+      contenedorComentarios.innerHTML = `<p class="sin-comentarios">No hay comentarios aún.</p>`;
+      return;
+    }
+
+    contenedorComentarios.innerHTML = "";
+
+    data.data.forEach(comentario => {
+      const div = document.createElement("div");
+      div.classList.add("comentario");
+
+      // Si el correo coincide con el tuyo → permitir swipe para eliminar
+      if (comentario.correo === usuarioCorreo) {
+        div.classList.add("comentario-propio");
+        div.dataset.id = comentario.fecha; // o un ID único si lo tienes
+      }
+
+      div.innerHTML = `
+        <p class="autor"><strong>${comentario.autor}</strong> <span>${comentario.fecha}</span></p>
+        <p class="texto">${comentario.comentario}</p>
+      `;
+
+      contenedorComentarios.appendChild(div);
     });
-    commentCountValue.textContent = lista.length;
-  } else {
-    const li = document.createElement("li");
-    li.textContent = "No hay comentarios aún.";
-    commentsList.appendChild(li);
-    commentCountValue.textContent = 0;
+
+    activarSwipeParaBorrar();
+  } catch (e) {
+    console.error("Error al cargar comentarios:", e);
+    contenedorComentarios.innerHTML = `<p class="error">Error al cargar comentarios</p>`;
   }
 }
+
 
 
 
@@ -1681,14 +1705,14 @@ async function cargarVideos(checkNew = false) {
         on: {
           init() {
             updateFixedTitle(this);
-            refrescarComentariosSlide();
-            activarSwipeParaBorrar();  // ← 🔹 REACTIVAMOS SWIPE AQUÍ
+            refrescarComentariosSlide();   // ✅ Carga comentarios al iniciar
+            activarSwipeParaBorrar();      // ✅ Activa swipe en comentarios
           },
           slideChange() {
             cleanupIframesExceptActive();
             updateFixedTitle(this);
-            refrescarComentariosSlide();
-            activarSwipeParaBorrar();  // ← 🔹 TAMBIÉN AL CAMBIAR SLIDE
+            refrescarComentariosSlide();   // ✅ Actualiza comentarios al cambiar video
+            activarSwipeParaBorrar();
           },
           slideChangeTransitionEnd() {
             updateFixedTitle(this);
@@ -1696,10 +1720,11 @@ async function cargarVideos(checkNew = false) {
         },
       });
 
+      // 🔹 Aseguramos que el primer video tenga comentarios cargados
       cleanupIframesExceptActive();
       updateFixedTitle(swiper);
       refrescarComentariosSlide();
-      activarSwipeParaBorrar(); // ← 🔹 LLAMADA FINAL POR SI ACASO
+      activarSwipeParaBorrar();
     }
   } catch (e) {
     console.error("Error cargando videos:", e);
@@ -1707,6 +1732,7 @@ async function cargarVideos(checkNew = false) {
     loader.style.display = "none";
   }
 }
+
 
 function activarSwipeParaBorrar() {
   const comentarios = document.querySelectorAll(".comentario-propio"); // clase para tus comentarios
@@ -1743,6 +1769,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
