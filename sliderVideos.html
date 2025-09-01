@@ -706,16 +706,17 @@
           const slide = document.createElement('div');
           slide.classList.add('swiper-slide');
           slide.dataset.id = video.id;
-          const zoomContainer = document.createElement('div');
-          zoomContainer.classList.add('swiper-zoom-container');
-          const vid = document.createElement('video');
-          vid.src = video.link;
-          vid.controls = true;
-          vid.style.maxWidth = "100%";
-          vid.style.maxHeight = "100%";
-          zoomContainer.appendChild(vid);
-          slide.appendChild(zoomContainer);
-          swiperInstance.appendSlide(slide);
+         // USA ESTO:
+const vid = document.createElement('video');
+vid.src = video.link;
+vid.controls = true;
+vid.style.maxWidth = "100%";
+vid.style.maxHeight = "100%";
+vid.style.background = "#000";
+// Lo importante: permite swipe sobre el video
+vid.addEventListener("touchstart", e => e.stopPropagation(), {passive:true});
+slide.appendChild(vid);
+swiperInstance.appendSlide(slide);
         });
         let newIndex = videosData.findIndex(v => v.id === currentId);
         if (newIndex !== -1) {
@@ -840,13 +841,15 @@
   // Swiper init
   function initSwiper(initialIndex = 0) {
     if(!swiperInstance) {
-      swiperInstance = new Swiper('.swiper', {
-        loop: true,
-        direction: 'vertical',
-        slidesPerView: 1,
-        spaceBetween: 10,
-        zoom: { maxRatio: 3, minRatio: 1 }
-      });
+    swiperInstance = new Swiper('.swiper', {
+  loop: true,
+  direction: 'vertical',
+  slidesPerView: 1,
+  spaceBetween: 10,
+  nested: true,
+  touchStartPreventDefault: false,
+  threshold: 5 // más sensible al swipe
+});
       swiperInstance.on('slideChange', () => {
         const activeIndex = swiperInstance.realIndex;
         updateContentOverlay(activeIndex);
@@ -1101,3 +1104,4 @@
   </script>
 </body>
 </html>
+
