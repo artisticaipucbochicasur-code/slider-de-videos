@@ -718,6 +718,7 @@ function getUsuarioDataFromUrl() {
 
 
 
+
         
 document.addEventListener("DOMContentLoaded", async () => {
   const commentsOverlay = document.getElementById("commentsOverlay");
@@ -730,7 +731,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   commentInputContainer.classList.add("hidden-overlay");
 
   try {
-    const usuario =  getUsuarioDataFromUrl();
+    getUsuarioDataFromUrl();
     const videos = await obtenerListaVideos();
 
     // Carga solo los slides del slider rápido
@@ -1055,31 +1056,27 @@ async function eliminarComentario(videoId, comentario, correo) {
   }
 }
 
-// --- Este es el patrón seguro, como en tu ejemplo "que sí funciona" ---
-
+// === Listeners del input ===
 sendCommentBtn.addEventListener('click', enviarComentario);
-
 commentInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
         enviarComentario();
     }
 });
-
 commentInput.addEventListener('focus', () => {
     document.body.style.transform = `translateY(-50%)`;
 });
-
 commentInput.addEventListener('blur', () => {
     document.body.style.transform = 'translateY(0)';
 });
 
-// --- Cambia tu handler del overlay así: ---
+// === Overlay seguro ===
 commentsOverlay.addEventListener('click', (e) => {
-    // Si el click fue en el fondo del overlay, Y NO en el input ni el botón ni sus hijos
-    if (e.target === commentsOverlay && !isSwiping) {
-        commentsOverlay.classList.toggle('expanded');
-    }
-    isSwiping = false;
+  // SOLO si el click fue directamente en el fondo del overlay
+  if (e.target === commentsOverlay && !isSwiping) {
+    commentsOverlay.classList.toggle('expanded');
+  }
+  isSwiping = false;
 });
 
 // === Refrescar comentarios cuando cambia el video ===
@@ -1911,6 +1908,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
