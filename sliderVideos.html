@@ -711,41 +711,37 @@ document.addEventListener("DOMContentLoaded", async () => {
   const commentsList = document.getElementById("commentsList");
   const commentInputContainer = document.querySelector(".comment-input-container");
 
-  // 1. Ocultamos comentarios, contador y barra de entrada al inicio (para evitar parpadeo)
+  // Ocultamos todo al inicio para evitar parpadeo
   commentsOverlay.classList.add("hidden-overlay");
   commentsCounter.classList.add("hidden-overlay");
   commentInputContainer.classList.add("hidden-overlay");
 
   try {
-    // 2. Obtenemos primero los datos del usuario
+    // Obtenemos los datos del usuario y la lista de videos
     const usuario = await getUsuarioDataFromUrl();
-
-    // 3. Obtenemos lista de videos
     const videos = await obtenerListaVideos();
 
-    // 4. Cargamos videos inmediatamente para que el slider aparezca rápido
+    // Cargamos los videos inmediatamente para que el slider aparezca rápido
     await cargarVideos(videos);
 
-    // 5. Mostramos comentarios del primer video lo antes posible
+    // Precargamos TODOS los comentarios en segundo plano, y esperamos a que terminen
+    await precargarComentariosTodos(videos);
+    
+    // Y ahora que todos los comentarios están en caché, mostramos la interfaz
+    // y cargamos los del primer video para la primera visualización
     if (videos.length > 0) {
-      await cargarComentarios(videos[0].id);
+      cargarComentarios(videos[0].id);
     }
-
-    // 6. Ahora que los comentarios se cargaron, mostramos todo
+    
     commentsOverlay.classList.remove("hidden-overlay");
     commentsCounter.classList.remove("hidden-overlay");
     commentInputContainer.classList.remove("hidden-overlay");
 
-    // 7. Precargamos el resto de comentarios en segundo plano SIN bloquear la UI
-    precargarComentariosTodos(videos).then(() => {
-      console.log("✅ Todos los comentarios precargados en caché");
-    });
-
-    console.log("🎥 Videos cargados y comentarios visibles sin retardo");
+    console.log("✅ Interfaz de comentarios visible, todos los comentarios precargados.");
   } catch (e) {
     console.error("❌ Error al inicializar:", e);
 
-    // Si ocurre un error, al menos mostramos la interfaz
+    // Si hay un error, al menos mostramos la interfaz para que el usuario pueda usarla
     commentsOverlay.classList.remove("hidden-overlay");
     commentsCounter.classList.remove("hidden-overlay");
     commentInputContainer.classList.remove("hidden-overlay");
@@ -1875,6 +1871,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
