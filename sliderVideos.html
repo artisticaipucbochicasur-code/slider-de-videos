@@ -608,26 +608,12 @@
         background: transparent;
     }
 
-/* Ocultar comentarios y contador mientras precargamos */
-.hidden-before-load {
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
-}
 
         
     </style>
 </head>
 <body>
 
-<div class="comments-overlay-container hidden-before-load" id="commentsOverlay">
-    <ul id="commentsList"></ul>
-</div>
-
-<div class="comments-counter hidden-before-load" id="commentsCounter">
-    <span class="icon">💬</span>
-    <span class="count" id="commentCountValue">0</span>
-</div>
 
 
     
@@ -718,43 +704,8 @@ let activeComment = null;
 let startX = 0;
 let isSwiping = false;
 
-// === Inicialización general ===
-document.addEventListener("DOMContentLoaded", async () => {
-  const commentsOverlay = document.getElementById("commentsOverlay");
-  const commentsCounter = document.getElementById("commentsCounter");
-  const commentsList = document.getElementById("commentsList");
-
-  // 1. Ocultamos comentarios y contador mientras precargamos
-  commentsOverlay.style.visibility = "hidden";
-  commentsOverlay.style.opacity = "0";
-  commentsCounter.style.visibility = "hidden";
-  commentsCounter.style.opacity = "0";
-
-  // 2. Obtenemos primero los datos del usuario
-  await getUsuarioDataFromUrl();
-
-  // 3. Obtenemos la lista de videos
-  const videos = await obtenerListaVideos();
-
-  // 4. Precargamos TODOS los comentarios en caché
-  await precargarComentariosTodos(videos);
-
-  // 5. Si estamos en un video inicial, mostramos sus comentarios
-  if (videos.length > 0) {
-    await cargarComentarios(videos[0].id); // <- Mostramos los comentarios del primer video al inicio
-  }
-
-  // 6. Cargamos los videos normalmente
-  await cargarVideos();
-
-  // 7. Mostramos comentarios y contador cuando todo está listo
-  commentsOverlay.style.visibility = "visible";
-  commentsOverlay.style.opacity = "1";
-  commentsCounter.style.visibility = "visible";
-  commentsCounter.style.opacity = "1";
-
-  console.log("✅ Comentarios precargados y visibles");
-});
+// Llamar a la función al cargar la página para obtener los datos
+document.addEventListener("DOMContentLoaded", getUsuarioDataFromUrl);
 
 
 
