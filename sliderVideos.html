@@ -1673,7 +1673,7 @@ function cleanupIframesExceptActive() {
 
         
 
-// 🚀 Cargar videos + comentarios en paralelo con caché
+// 🚀 Cargar videos + comentarios optimizado
 async function cargarVideos(checkNew = false) {
   const loader = document.getElementById("loader");
   if (!checkNew) loader.style.display = "flex";
@@ -1696,15 +1696,27 @@ async function cargarVideos(checkNew = false) {
       });
     }
 
-    // 🚀 Precargar TODOS los comentarios ANTES de crear los slides
-    await Promise.all(
-      newVideos.map(v => cargarComentarios(v.id))
-    );
-    console.log("✅ Todos los comentarios precargados en caché");
+    // ⚡ Primero cargamos SOLO el primer video y sus comentarios
+    if (newVideos.length > 0) {
+      const primerVideo = newVideos[0];
+      await cargarComentarios(primerVideo.id); // Comentarios listos en caché
+      if (!checkNew) {
+        wrapper.appendChild(
+          createSlide(primerVideo.title, primerVideo.link, primerVideo.desc, primerVideo.id)
+        );
+      }
+    }
 
-    // Ahora sí, creamos los slides (con comentarios ya listos)
+    // 🔄 Precargar comentarios del resto de videos en segundo plano
+    Promise.all(
+      newVideos.slice(1).map(v => cargarComentarios(v.id))
+    ).then(() => {
+      console.log("✅ Comentarios de los demás videos precargados");
+    });
+
+    // Ahora agregamos los demás slides
     if (!checkNew) {
-      newVideos.forEach(v => {
+      newVideos.slice(1).forEach(v => {
         wrapper.appendChild(createSlide(v.title, v.link, v.desc, v.id));
       });
     }
@@ -1733,7 +1745,7 @@ async function cargarVideos(checkNew = false) {
 
     lastVideos = newVideos;
 
-    // Solo inicializamos Swiper cuando TODO está listo
+    // ✅ Solo iniciamos Swiper cuando todo está preparado
     if (!checkNew) {
       if (swiper) swiper.destroy(true, true);
       swiper = new Swiper(".swiper", {
@@ -1823,6 +1835,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
