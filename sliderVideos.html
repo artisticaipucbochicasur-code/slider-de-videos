@@ -704,7 +704,6 @@ let activeComment = null;
 let startX = 0;
 let isSwiping = false;
 
-// === Inicialización general ===
 document.addEventListener("DOMContentLoaded", async () => {
   const commentsOverlay = document.getElementById("commentsOverlay");
   const commentsCounter = document.getElementById("commentsCounter");
@@ -857,13 +856,14 @@ function getActiveVideoId() {
 const comentariosCache = {}; // { videoId: [comentarios] }
 
 // === Cargar comentarios desde Google Sheets con caché ===
-async function cargarComentarios(videoId) {
+// === Cargar comentarios desde Google Sheets con caché ===
+async function cargarComentarios(videoId, render = true) {
   if (!videoId) return;
 
-  // Si ya está en caché → renderiza instantáneamente
+  // Si ya está en caché → opcional render
   if (comentariosCache[videoId]) {
     comentariosPorVideo[videoId] = comentariosCache[videoId];
-    renderComentarios(videoId);
+    if (render) renderComentarios(videoId);
     return;
   }
 
@@ -884,15 +884,14 @@ async function cargarComentarios(videoId) {
     // Guardar en caché para acceso instantáneo
     comentariosCache[videoId] = comentariosPorVideo[videoId];
 
-    renderComentarios(videoId);
+    if (render) renderComentarios(videoId);
   } catch (e) {
     console.error("Error cargando comentarios:", e);
     comentariosPorVideo[videoId] = [];
     comentariosCache[videoId] = [];
-    renderComentarios(videoId);
+    if (render) renderComentarios(videoId);
   }
 }
-
 // === Renderizar comentarios en el DOM ===
 function renderComentarios(videoId) {
   if (!videoId) return;
@@ -1002,13 +1001,13 @@ async function enviarComentario() {
 
 // === Precargar todos los comentarios al inicio ===
 async function precargarComentariosTodos(videos) {
-  try {
-    await Promise.all(videos.map(video => cargarComentarios(video.id)));
-    console.log("✅ Todos los comentarios precargados en caché");
-  } catch (e) {
-    console.error("Error precargando comentarios:", e);
+  for (const v of videos) {
+    // ⚡ Carga los comentarios pero NO renderiza si no es el video activo
+    await cargarComentarios(v.id, false);
   }
+  console.log("✅ Todos los comentarios precargados en caché");
 }
+
 // === Eliminar comentario ===
 async function eliminarComentario(videoId, comentario, correo) {
   if (!videoId || !comentario || !correo) return;
@@ -1753,9 +1752,13 @@ async function cargarVideos(checkNew = false) {
       });
     }
 
-    // ⚡ Primero precargamos TODOS los comentarios ANTES de mostrar los videos
+    // ⚡ Primero precargamos TODOS los comentarios en segundo plano (sin renderizar)
     if (!checkNew && newVideos.length > 0) {
-      await precargarComentariosTodos(newVideos);
+      for (const v of newVideos) {
+        // Solo renderizamos los comentarios del primer video activo
+        const render = (v === newVideos[0]);
+        await cargarComentarios(v.id, render);
+      }
     }
 
     // ⚡ Cargar los slides de los videos
@@ -1836,7 +1839,6 @@ async function cargarVideos(checkNew = false) {
   }
 }
 
-        
 
 function activarSwipeParaBorrar() {
   const comentarios = document.querySelectorAll(".comentario-propio"); // clase para tus comentarios
@@ -1873,6 +1875,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
