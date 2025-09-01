@@ -1701,16 +1701,14 @@ async function cargarVideos(checkNew = false) {
       refrescarComentariosSlide();
       activarSwipeParaBorrar();
     }
-
-    // ✅ LLAMAMOS LA FUNCIÓN PARA CARGAR COMENTARIOS AL FINAL
-    cargarComentarios();
-
   } catch (e) {
     console.error("Error cargando videos:", e);
   } finally {
-    loader.style.display = "none";
+    loader.style.display = "none";  // ⬅️ Cuando termina de cargar videos…
+    cargarComentarios();            // ⬅️ …se cargan los comentarios
   }
 }
+
 
         
 
@@ -1749,6 +1747,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
