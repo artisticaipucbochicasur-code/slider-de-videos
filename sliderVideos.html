@@ -877,9 +877,11 @@ async function cargarComentarios(videoId, render = true, options = {}) {
     return;
   }
 
-  // ⚡ Si no hay datos o se forzó → fetch directo al servidor
+  // ⚡ Si no hay datos o se forzó → fetch directo al servidor (con cache-buster)
   try {
-    const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}`);
+    const res = await fetch(
+      `${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}&_=${Date.now()}`
+    );
     const data = await res.json();
 
     comentariosPorVideo[videoId] = Array.isArray(data.data)
@@ -991,6 +993,8 @@ async function enviarComentario() {
       // 🔄 Forzar recarga real desde servidor
       await cargarComentarios(videoId, true, { force: true });
 
+      // ✅ Actualizar timestamp local y notificar a otros dispositivos
+      ultimaActualizacionComentarios = String(Date.now());
       // 🚀 Notificar a otros dispositivos
       notificarCambioComentarios();
     } else {
@@ -1002,6 +1006,7 @@ async function enviarComentario() {
     sendCommentBtn.disabled = false;
   }
 }
+
 
 // === Listeners del input ===
 sendCommentBtn.addEventListener('click', enviarComentario);
@@ -1056,6 +1061,8 @@ async function eliminarComentario(videoId, comentario, correo) {
       // 🔄 Forzar recarga real desde servidor
       await cargarComentarios(videoId, true, { force: true });
 
+      // ✅ Actualizar timestamp local y notificar a otros dispositivos
+      ultimaActualizacionComentarios = String(Date.now());
       // 🚀 Notificar a otros dispositivos
       notificarCambioComentarios();
     } else {
@@ -1066,23 +1073,35 @@ async function eliminarComentario(videoId, comentario, correo) {
   }
 }
 
-// Última marca de tiempo conocida de comentarios
+
+// === 🔄 Sincronización de comentarios en tiempo casi real ===
 let ultimaActualizacionComentarios = "";
 
-// 🔹 Consulta al servidor si hubo cambios en los comentarios
+// Inicializa el timestamp al cargar (evita primer “false positive”)
+async function initSyncComentarios() {
+  try {
+    const res = await fetch(`${SCRIPT_URL}?accion=ultimaActualizacionComentarios&_=${Date.now()}`);
+    const data = await res.json();
+    ultimaActualizacionComentarios = data.timestamp || "";
+  } catch (e) {
+    console.warn("No se pudo inicializar sync de comentarios:", e);
+  }
+}
+document.addEventListener('DOMContentLoaded', initSyncComentarios);
+
+// Verifica en el servidor si hubo cambios (con cache-buster)
 async function verificarComentariosVideos() {
   try {
-    const res = await fetch(`${SCRIPT_URL}?accion=ultimaActualizacionComentarios`);
+    const res = await fetch(`${SCRIPT_URL}?accion=ultimaActualizacionComentarios&_=${Date.now()}`);
     const data = await res.json();
 
     if (data.timestamp && data.timestamp !== ultimaActualizacionComentarios) {
       ultimaActualizacionComentarios = data.timestamp;
 
-      // 🔹 Refrescar comentarios del video actualmente activo
       const videoId = getActiveVideoId();
       if (videoId) {
-        await cargarComentarios(videoId, true);
-        renderComentarios(videoId);
+        // 👇 fuerza carga fresca desde servidor
+        await cargarComentarios(videoId, true, { force: true });
       }
     }
   } catch (err) {
@@ -1090,15 +1109,14 @@ async function verificarComentariosVideos() {
   }
 }
 
-// 🔹 Cada 5 segundos verificamos si hubo cambios
+// Cada 5 segundos verificamos si hubo cambios
 setInterval(verificarComentariosVideos, 5000);
 
-// --- HOOKS en enviar/eliminar comentario ---
-// Llama a esta función después de éxito al agregar o borrar
+// --- HOOK para disparar verificación inmediata tras alta/baja ---
 function notificarCambioComentarios() {
-  // Forzamos actualización inmediata en todos
   verificarComentariosVideos();
 }
+
 
 
 
@@ -1914,6 +1932,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
