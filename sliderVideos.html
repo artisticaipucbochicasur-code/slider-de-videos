@@ -886,7 +886,8 @@ async function cargarComentarios(videoId, render = true, options = {}) {
       ? data.data.map(c => ({
           autor: c[2] || "Anónimo",
           comentario: c[1] || "",
-          fecha: c[4] || "",
+          // 🔹 Formatear fecha siempre a local string
+          fecha: c[4] ? new Date(c[4]).toLocaleString() : "",
           correo: c[3] || ""
         }))
       : [];
@@ -901,6 +902,7 @@ async function cargarComentarios(videoId, render = true, options = {}) {
     if (render) renderComentarios(videoId);
   }
 }
+
 
 
 // === Renderizar comentarios en el DOM ===
@@ -1875,6 +1877,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
