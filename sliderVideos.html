@@ -990,6 +990,9 @@ async function enviarComentario() {
       commentInput.value = "";
       // 🔄 Forzar recarga real desde servidor
       await cargarComentarios(videoId, true, { force: true });
+
+      // 🚀 Notificar a otros dispositivos
+      notificarCambioComentarios();
     } else {
       console.error("❌ No se pudo guardar:", data.message);
     }
@@ -1053,6 +1056,9 @@ async function eliminarComentario(videoId, comentario, correo) {
     if (data.status === "success") {
       // 🔄 Forzar recarga real desde servidor
       await cargarComentarios(videoId, true, { force: true });
+
+      // 🚀 Notificar a otros dispositivos
+      notificarCambioComentarios();
     } else {
       console.error("❌ No se eliminó:", data.message);
     }
@@ -1062,6 +1068,41 @@ async function eliminarComentario(videoId, comentario, correo) {
 }
 
 
+// === 🔄 Sincronización de comentarios en tiempo casi real ===
+
+// Última marca de tiempo conocida de comentarios
+let ultimaActualizacionComentarios = "";
+
+// 🔹 Consulta al servidor si hubo cambios en los comentarios
+async function verificarComentariosVideos() {
+  try {
+    const res = await fetch(`${SCRIPT_URL}?accion=ultimaActualizacionComentarios`);
+    const data = await res.json();
+
+    if (data.timestamp && data.timestamp !== ultimaActualizacionComentarios) {
+      ultimaActualizacionComentarios = data.timestamp;
+
+      // 🔹 Refrescar comentarios del video actualmente activo
+      const videoId = getActiveVideoId();
+      if (videoId) {
+        await cargarComentarios(videoId, true);
+        renderComentarios(videoId);
+      }
+    }
+  } catch (err) {
+    console.warn("No se pudo verificar comentarios:", err);
+  }
+}
+
+// 🔹 Cada 5 segundos verificamos si hubo cambios
+setInterval(verificarComentariosVideos, 5000);
+
+// --- HOOKS en enviar/eliminar comentario ---
+// Llama a esta función después de éxito al agregar o borrar
+function notificarCambioComentarios() {
+  // Forzamos actualización inmediata en todos
+  verificarComentariosVideos();
+}
 
 
 
@@ -1877,6 +1918,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
