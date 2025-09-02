@@ -1003,7 +1003,6 @@ async function enviarComentario() {
   }
 }
 
-
 // === Listeners del input ===
 sendCommentBtn.addEventListener('click', enviarComentario);
 
@@ -1066,9 +1065,6 @@ async function eliminarComentario(videoId, comentario, correo) {
     console.error("Error al eliminar comentario:", e);
   }
 }
-
-
-// === 🔄 Sincronización de comentarios en tiempo casi real ===
 
 // Última marca de tiempo conocida de comentarios
 let ultimaActualizacionComentarios = "";
@@ -1918,6 +1914,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
