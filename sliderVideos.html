@@ -716,13 +716,7 @@ let isSwiping = false;
 
 
 
-// === Expandir / Colapsar comentarios ===
-commentsOverlay.addEventListener('click', (e) => {
-  if (!isSwiping) {
-    commentsOverlay.classList.toggle('expanded');
-  }
-  isSwiping = false;
-});
+
 
 // === Swipe-to-delete en móviles ===
 commentsList.addEventListener('touchstart', (e) => {
@@ -1852,6 +1846,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
