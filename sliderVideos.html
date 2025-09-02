@@ -857,30 +857,31 @@ const comentariosCache = {}; // { videoId: [comentarios] }
 
 // === Cargar comentarios desde Google Sheets con caché ===
 // === Cargar comentarios desde Google Sheets con caché ===
-// 🚀 Optimización: evitar fetch innecesarios y render instantáneo si ya hay caché
-async function cargarComentarios(videoId, render = true) {
+// 🚀 Optimización: evitar fetch innecesarios y permitir forzar recarga
+async function cargarComentarios(videoId, render = true, options = {}) {
   if (!videoId) return;
 
-  // ✅ Si ya tenemos los comentarios en caché → render instantáneo y salir
-  if (comentariosCache[videoId]) {
+  const force = options.force || false;
+
+  // ✅ Si ya tenemos en caché y no forzamos → render instantáneo
+  if (!force && comentariosCache[videoId]) {
     comentariosPorVideo[videoId] = comentariosCache[videoId];
     if (render) renderComentarios(videoId);
     return;
   }
 
-  // ✅ Si ya existen en memoria aunque no estén cacheados, los usamos igual
-  if (comentariosPorVideo[videoId]) {
+  // ✅ Si ya tenemos en memoria y no forzamos → usar eso
+  if (!force && comentariosPorVideo[videoId]) {
     comentariosCache[videoId] = comentariosPorVideo[videoId];
     if (render) renderComentarios(videoId);
     return;
   }
 
-  // ⚡ Si no hay datos → hacemos fetch solo una vez
+  // ⚡ Si no hay datos o se forzó → fetch directo al servidor
   try {
     const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}`);
     const data = await res.json();
 
-    // Guardar comentarios en variables y cachearlos
     comentariosPorVideo[videoId] = Array.isArray(data.data)
       ? data.data.map(c => ({
           autor: c[2] || "Anónimo",
@@ -890,20 +891,17 @@ async function cargarComentarios(videoId, render = true) {
         }))
       : [];
 
-    // Guardar en caché para acceso instantáneo
     comentariosCache[videoId] = comentariosPorVideo[videoId];
 
     if (render) renderComentarios(videoId);
   } catch (e) {
     console.error("Error cargando comentarios:", e);
-
-    // Si falla, dejamos caché vacío para evitar futuros fetchs innecesarios
     comentariosPorVideo[videoId] = [];
     comentariosCache[videoId] = [];
-
     if (render) renderComentarios(videoId);
   }
 }
+
 
 // === Renderizar comentarios en el DOM ===
 function renderComentarios(videoId) {
@@ -974,24 +972,7 @@ async function enviarComentario() {
   sendCommentBtn.disabled = true;
 
   try {
-    // 🟢 Crear comentario temporal
-    const nuevoComentario = {
-      autor: usuarioAutor,
-      comentario: texto,
-      fecha: new Date().toLocaleString(),
-      correo: usuarioCorreo,
-      pending: true // 🔹 bandera temporal
-    };
-
-    if (!comentariosPorVideo[videoId]) comentariosPorVideo[videoId] = [];
-    if (!comentariosCache[videoId]) comentariosCache[videoId] = [];
-
-    // Mostrar enseguida en la lista
-    comentariosPorVideo[videoId].push(nuevoComentario);
-    renderComentarios(videoId);
-
-    // Guardar en el servidor
-    await fetch(SCRIPT_URL, {
+    const res = await fetch(SCRIPT_URL, {
       method: "POST",
       body: new URLSearchParams({
         accion: "agregarComentarioVideo",
@@ -1001,20 +982,21 @@ async function enviarComentario() {
         correo: usuarioCorreo,
       })
     });
+    const data = await res.json();
 
-    // Limpiar input
-    commentInput.value = "";
-
-    // 🔄 Refrescar desde servidor para reemplazar los temporales
-    await cargarComentarios(videoId, true);
-
+    if (data.status === "success") {
+      commentInput.value = "";
+      // 🔄 Forzar recarga real desde servidor
+      await cargarComentarios(videoId, true, { force: true });
+    } else {
+      console.error("❌ No se pudo guardar:", data.message);
+    }
   } catch (e) {
     console.error("Error al enviar comentario:", e);
   } finally {
     sendCommentBtn.disabled = false;
   }
 }
-
 
 
 // === Listeners del input ===
@@ -1055,22 +1037,7 @@ async function eliminarComentario(videoId, comentario, correo) {
   if (!videoId || !comentario || !correo) return;
 
   try {
-    // 🟢 Eliminar localmente al instante
-    if (comentariosPorVideo[videoId]) {
-      comentariosPorVideo[videoId] = comentariosPorVideo[videoId].filter(
-        c => !(c.comentario === comentario && c.correo === correo)
-      );
-    }
-    if (comentariosCache[videoId]) {
-      comentariosCache[videoId] = comentariosCache[videoId].filter(
-        c => !(c.comentario === comentario && c.correo === correo)
-      );
-    }
-
-    renderComentarios(videoId); // refrescar vista enseguida
-
-    // 🟢 Eliminar en el servidor
-    await fetch(SCRIPT_URL, {
+    const res = await fetch(SCRIPT_URL, {
       method: "POST",
       body: new URLSearchParams({
         accion: "eliminarComentario",
@@ -1079,10 +1046,14 @@ async function eliminarComentario(videoId, comentario, correo) {
         correo
       })
     });
+    const data = await res.json();
 
-    // 🔄 Recargar desde servidor para sincronizar
-    await cargarComentarios(videoId, true);
-
+    if (data.status === "success") {
+      // 🔄 Forzar recarga real desde servidor
+      await cargarComentarios(videoId, true, { force: true });
+    } else {
+      console.error("❌ No se eliminó:", data.message);
+    }
   } catch (e) {
     console.error("Error al eliminar comentario:", e);
   }
@@ -1904,6 +1875,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
