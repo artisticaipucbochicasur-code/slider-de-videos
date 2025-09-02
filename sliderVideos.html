@@ -1046,39 +1046,17 @@ commentInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') enviarComentario();
 });
 
-// Detectar cuando el teclado aparece en móviles
+// ✅ Manejo del teclado en móviles (tipo WhatsApp)
 commentInput.addEventListener("focus", () => {
-  // Fijar input en la parte visible inferior
-  commentInputContainer.style.position = "fixed";
-  commentInputContainer.style.bottom = "0";
-  commentInputContainer.style.left = "0";
-  commentInputContainer.style.width = "100%";
-  commentInputContainer.style.zIndex = "1000";
-
-  // 🔹 Si el navegador soporta visualViewport (la mayoría)
-  if (window.visualViewport) {
-    const ajustar = () => {
-      const offset = window.visualViewport.height;
-      commentInputContainer.style.top = (offset - commentInputContainer.offsetHeight) + "px";
-    };
-    window.visualViewport.addEventListener("resize", ajustar);
-    ajustar();
-  }
+  setTimeout(() => {
+    commentInputContainer.style.bottom = `${window.innerHeight - document.documentElement.clientHeight}px`;
+  }, 300);
 });
 
 commentInput.addEventListener("blur", () => {
-  commentInputContainer.style.position = "";
-  commentInputContainer.style.bottom = "";
-  commentInputContainer.style.left = "";
-  commentInputContainer.style.width = "";
-  commentInputContainer.style.zIndex = "";
-  commentInputContainer.style.top = "";
-
-  // Limpiar listener extra
-  if (window.visualViewport) {
-    window.visualViewport.onresize = null;
-  }
+  commentInputContainer.style.bottom = "0px";
 });
+
 
 
 // === Refrescar comentarios cuando cambia el video ===
@@ -1923,4 +1901,5 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
