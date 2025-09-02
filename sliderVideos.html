@@ -1086,32 +1086,7 @@ commentInput.addEventListener('blur', () => {
   document.body.style.transform = `translateY(0)`;
 });
 
-// === Refrescar comentarios cuando cambia el video ===
-// ❌ ESTA FUNCIÓN ESTÁ CAUSANDO EL PROBLEMA Y DEBE SER ELIMINADA ❌
-function refrescarComentariosSlide() {
-  const videoId = getActiveVideoId();
-  const lista = comentariosPorVideo[videoId] || [];
 
-  const commentsList = document.getElementById("commentsList");
-  const commentCountValue = document.getElementById("commentCountValue");
-
-  // El problema está en esta línea:
-  commentsList.innerHTML = ""; 
-
-  if (lista.length > 0) {
-    lista.forEach((c) => {
-      const li = document.createElement("li");
-      li.textContent = `${c.autor} (${c.fecha}) - ${c.comentario}`;
-      commentsList.appendChild(li);
-    });
-    commentCountValue.textContent = lista.length;
-  } else {
-    const li = document.createElement("li");
-    li.textContent = "No hay comentarios aún.";
-    commentsList.appendChild(li);
-    commentCountValue.textContent = 0;
-  }
-}
 
 
 
@@ -1928,4 +1903,5 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
