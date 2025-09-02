@@ -1043,28 +1043,18 @@ async function eliminarComentario(videoId, comentario, correo) {
 // === Listeners del input ===
 sendCommentBtn.addEventListener('click', enviarComentario);
 commentInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') enviarComentario();
+  if (e.key === 'Enter') {
+    e.preventDefault(); // 🚀 evita que el input pierda el foco y se baje
+    enviarComentario();
+  }
 });
 
-// 🚀 Subir la caja a la mitad de la pantalla cuando se toca el input
 commentInput.addEventListener('focus', () => {
-  commentInputContainer.style.position = "fixed";
-  commentInputContainer.style.top = "50%";
-  commentInputContainer.style.left = "0";
-  commentInputContainer.style.width = "100%";
-  commentInputContainer.style.zIndex = "1000";
+  document.body.style.transform = `translateY(-50%)`;
 });
-
 commentInput.addEventListener('blur', () => {
-  commentInputContainer.style.position = "fixed";
-  commentInputContainer.style.bottom = "0";
-  commentInputContainer.style.top = "";
-  commentInputContainer.style.left = "0";
-  commentInputContainer.style.width = "100%";
-  commentInputContainer.style.zIndex = "1000";
+  document.body.style.transform = `translateY(0)`;
 });
-
-
 
 // === Refrescar comentarios cuando cambia el video ===
 // ❌ ESTA FUNCIÓN ESTÁ CAUSANDO EL PROBLEMA Y DEBE SER ELIMINADA ❌
@@ -1908,6 +1898,4 @@ setInterval(() => {
     </script>
 </body>
 </html>
-
-
 
