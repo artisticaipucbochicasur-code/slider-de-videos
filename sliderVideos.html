@@ -704,6 +704,13 @@ let activeComment = null;
 let startX = 0;
 let isSwiping = false;
 
+        // 🔒 Control de sincronización y cooldown por video
+let isSyncingComentarios = false;
+let pendingSyncComentarios = false;
+const recentlyTouchedVideos = new Map(); // videoId -> timestamp (ms)
+const LOCAL_TOUCH_COOLDOWN_MS = 2500;    // margen para evitar pisar cambios locales recientes
+
+
 document.addEventListener("DOMContentLoaded", async () => {
   const commentsOverlay = document.getElementById("commentsOverlay");
   const commentsCounter = document.getElementById("commentsCounter");
@@ -990,13 +997,18 @@ async function enviarComentario() {
 
     if (data.status === "success") {
       commentInput.value = "";
-      // 🔄 Forzar recarga real desde servidor
+
+      // 🔄 Recarga fuerte y render inmediato del activo
       await cargarComentarios(videoId, true, { force: true });
 
-      // ✅ Actualizar timestamp local y notificar a otros dispositivos
-      ultimaActualizacionComentarios = String(Date.now());
-      // 🚀 Notificar a otros dispositivos
-      notificarCambioComentarios();
+      // 🏷️ Marca este video como actualizado localmente
+      recentlyTouchedVideos.set(videoId, Date.now());
+
+      // ⏲️ Da un margen antes de notificar a otros dispositivos (evita pisar cambios locales)
+      setTimeout(() => {
+        ultimaActualizacionComentarios = String(Date.now());
+        notificarCambioComentarios();
+      }, 400);
     } else {
       console.error("❌ No se pudo guardar:", data.message);
     }
@@ -1058,13 +1070,17 @@ async function eliminarComentario(videoId, comentario, correo) {
     const data = await res.json();
 
     if (data.status === "success") {
-      // 🔄 Forzar recarga real desde servidor
+      // 🔄 Recarga fuerte y render inmediato del activo
       await cargarComentarios(videoId, true, { force: true });
 
-      // ✅ Actualizar timestamp local y notificar a otros dispositivos
-      ultimaActualizacionComentarios = String(Date.now());
-      // 🚀 Notificar a otros dispositivos
-      notificarCambioComentarios();
+      // 🏷️ Marca este video como actualizado localmente
+      recentlyTouchedVideos.set(videoId, Date.now());
+
+      // ⏲️ Da un margen antes de notificar a otros dispositivos
+      setTimeout(() => {
+        ultimaActualizacionComentarios = String(Date.now());
+        notificarCambioComentarios();
+      }, 400);
     } else {
       console.error("❌ No se eliminó:", data.message);
     }
@@ -1089,31 +1105,65 @@ async function initSyncComentarios() {
 }
 document.addEventListener('DOMContentLoaded', initSyncComentarios);
 
-// Verifica en el servidor si hubo cambios (con cache-buster)
 async function verificarComentariosVideos() {
+  // 🔒 Evita solapamientos
+  if (isSyncingComentarios) {
+    pendingSyncComentarios = true;
+    return;
+  }
+  isSyncingComentarios = true;
+
   try {
     const res = await fetch(`${SCRIPT_URL}?accion=ultimaActualizacionComentarios&_=${Date.now()}`);
     const data = await res.json();
 
-    if (data.timestamp && data.timestamp !== ultimaActualizacionComentarios) {
-      ultimaActualizacionComentarios = data.timestamp;
+    if (!data.timestamp || data.timestamp === ultimaActualizacionComentarios) return;
 
-      // 🔥 Recorremos todos los videos que ya se precargaron
-      const videoIds = Object.keys(comentariosCache);
+    // Hubo cambios en el servidor
+    ultimaActualizacionComentarios = data.timestamp;
 
-      // 🚀 Recargamos todos los comentarios en segundo plano
-      await Promise.all(videoIds.map(vId => cargarComentarios(vId, false, { force: true })));
+    const activeId = getActiveVideoId();
+    const now = Date.now();
 
-      // 👇 Y solo renderizamos el video actualmente visible
-      const activeId = getActiveVideoId();
-      if (activeId) renderComentarios(activeId);
+    // 🎯 Recarga TODOS los videos ya en caché EXCEPTO el activo si fue “tocado” por mí hace poco
+    const ids = Object.keys(comentariosCache);
+    const tasks = [];
+
+    for (const id of ids) {
+      const touchedAt = recentlyTouchedVideos.get(id) || 0;
+      const isActive = id === activeId;
+      const recentlyTouched = now - touchedAt < LOCAL_TOUCH_COOLDOWN_MS;
+
+      if (isActive && recentlyTouched) {
+        // ⏳ Saltamos este, ya se actualizó localmente y aún está fresco
+        continue;
+      }
+      tasks.push(cargarComentarios(id, false, { force: true }));
+    }
+
+    // 🔄 Ejecutamos todas las recargas en paralelo
+    await Promise.all(tasks);
+
+    // 🖼️ Renderiza el activo solo si no fue tocado hace poco
+    if (activeId) {
+      const touchedActiveAt = recentlyTouchedVideos.get(activeId) || 0;
+      const recentlyTouchedActive = now - touchedActiveAt < LOCAL_TOUCH_COOLDOWN_MS;
+
+      if (!recentlyTouchedActive) {
+        await cargarComentarios(activeId, true, { force: true });
+      }
     }
   } catch (err) {
     console.warn("No se pudo verificar comentarios:", err);
+  } finally {
+    isSyncingComentarios = false;
+    if (pendingSyncComentarios) {
+      pendingSyncComentarios = false;
+      // Reintenta enseguida si quedó algo pendiente
+      setTimeout(verificarComentariosVideos, 0);
+    }
   }
 }
-
-
 
 
 
@@ -1942,6 +1992,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
