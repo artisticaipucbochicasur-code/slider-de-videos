@@ -1098,6 +1098,10 @@ async function verificarComentariosVideos() {
     if (data.timestamp && data.timestamp !== ultimaActualizacionComentarios) {
       ultimaActualizacionComentarios = data.timestamp;
 
+      // 🧹 Limpia caché global de comentarios
+      comentariosCache = {};
+      comentariosPorVideo = {};
+
       const videoId = getActiveVideoId();
       if (videoId) {
         // 👇 fuerza carga fresca desde servidor
@@ -1108,6 +1112,7 @@ async function verificarComentariosVideos() {
     console.warn("No se pudo verificar comentarios:", err);
   }
 }
+
 
 // Cada 5 segundos verificamos si hubo cambios
 setInterval(verificarComentariosVideos, 5000);
@@ -1932,6 +1937,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
