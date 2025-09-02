@@ -1100,8 +1100,23 @@ async function verificarComentariosVideos() {
 
       const videoId = getActiveVideoId();
       if (videoId) {
-        // 👇 fuerza carga fresca desde servidor
+        // 👇 fuerza carga fresca desde servidor para el video actual
         await cargarComentarios(videoId, true, { force: true });
+      }
+
+      // 🔹 Además, actualizamos en segundo plano todos los videos para mantener cache al día
+      if (typeof obtenerListaVideos === "function") {
+        try {
+          const videos = await obtenerListaVideos();
+          for (const v of videos) {
+            if (!videoId || v.id !== videoId) {
+              // 👇 refresco silencioso en cache (sin render)
+              await cargarComentarios(v.id, false, { force: true });
+            }
+          }
+        } catch (e) {
+          console.warn("No se pudieron precargar comentarios en segundo plano:", e);
+        }
       }
     }
   } catch (err) {
@@ -1935,4 +1950,5 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
