@@ -440,16 +440,12 @@
     overflow-y: auto;
     transition: opacity 0.3s ease, visibility 0.3s ease, max-height 0.3s ease;
     max-height: 4em;
-
-        white-space: normal;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
 }
 
 
     /* Estado expandido del contenedor de comentarios */
     .comments-overlay-container.expanded {
-      max-height: 75vh;
+      max-height: 25vh;
     }
 
     /* Estilos para la lista de comentarios */
@@ -527,9 +523,8 @@
     
     /* Clase para ocultar los overlays */
 .hidden-overlay {
-  opacity: 0 !important;
-  pointer-events: none !important;
-  transition: opacity 0.3s;
+    opacity: 0;
+    visibility: hidden;
 }
 
 
@@ -537,12 +532,12 @@
     /* Estilos del nuevo contador de comentarios */
  .comments-counter {
     position: fixed;
-    bottom: 135px;
+    bottom: 80px;
     right: 10px;
-    background: transparent;
+    background: rgba(0, 0, 0, 0.6);
     color: white;
     padding: 8px 12px;
-    border-radius: 60px;
+    border-radius: 5px;
     font-size: 14px;
     font-weight: bold;
     z-index: 999;
@@ -552,7 +547,6 @@
     gap: 2px;
     cursor: pointer;
     transition: opacity 0.3s ease, visibility 0.3s ease;
-     box-shadow: 0 4px 10px rgba(0,0,0,0.4);
 }
 
     
@@ -571,7 +565,7 @@
     bottom: 0;
     left: 0;
     width: 100%;
-    background: transparent;
+    background: #1a1a1a;
     padding: 10px 15px;
     box-sizing: border-box;
     display: flex;
@@ -584,7 +578,7 @@
 
   .comment-input-container input {
     flex-grow: 1;
-    background: transparent;
+    background: #333;
     border: 1px solid #555;
     border-radius: 25px; /* más redondeado */
     padding: 12px 20px;  /* 🔥 más alto y largo */
@@ -608,7 +602,6 @@
     .comment-input-container .send-comment-btn:hover {
         background: transparent;
     }
-
 
         
     </style>
@@ -1861,6 +1854,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
