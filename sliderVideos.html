@@ -704,36 +704,6 @@ let activeComment = null;
 let startX = 0;
 let isSwiping = false;
 
-document.addEventListener("DOMContentLoaded", async () => {
-
-
-  try {
-    const usuario = await getUsuarioDataFromUrl();
-    const videos = await obtenerListaVideos();
-
-    // Carga solo los slides del slider rápido
-    await cargarVideos(videos);
-
-    // 🔹 Precargamos todos los comentarios en segundo plano
-    await precargarComentariosTodos(videos);
-
-    // 🔹 Solo ahora mostramos la interfaz de comentarios
-   
-
-    // 🔹 Renderizamos los comentarios del primer video para la visualización inicial
-    if (videos.length > 0) {
-      const primerVideoId = getActiveVideoId() || videos[0].id;
-      renderComentarios(primerVideoId);
-    }
-
-    console.log("✅ Todos los comentarios precargados, interfaz visible.");
-
-  } catch (e) {
-    console.error("❌ Error al inicializar:", e);
-    // En caso de error, mostramos la interfaz de todas formas
-   
-  }
-});
 
 
 
@@ -1889,4 +1859,5 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
