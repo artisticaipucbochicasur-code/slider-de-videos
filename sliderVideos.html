@@ -1098,9 +1098,12 @@ async function verificarComentariosVideos() {
     if (data.timestamp && data.timestamp !== ultimaActualizacionComentarios) {
       ultimaActualizacionComentarios = data.timestamp;
 
+      // 🧹 Limpiamos caché para que cualquier video se recargue fresco al volver a abrirlo
+      comentariosCache = {};
+
       const videoId = getActiveVideoId();
       if (videoId) {
-        // 👇 fuerza carga fresca desde servidor
+        // 👇 fuerza carga fresca desde servidor para el video actual
         await cargarComentarios(videoId, true, { force: true });
       }
     }
@@ -1108,6 +1111,7 @@ async function verificarComentariosVideos() {
     console.warn("No se pudo verificar comentarios:", err);
   }
 }
+
 
 
 
@@ -1935,6 +1939,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
