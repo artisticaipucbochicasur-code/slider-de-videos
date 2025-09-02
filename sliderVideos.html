@@ -1090,6 +1090,8 @@ async function initSyncComentarios() {
 document.addEventListener('DOMContentLoaded', initSyncComentarios);
 
 // Verifica en el servidor si hubo cambios (con cache-buster)
+// Verifica en el servidor si hubo cambios (con cache-buster)
+// Refresca el activo y, en paralelo, precarga (cache) del resto
 async function verificarComentariosVideos() {
   try {
     const res = await fetch(`${SCRIPT_URL}?accion=ultimaActualizacionComentarios&_=${Date.now()}`);
@@ -1098,31 +1100,43 @@ async function verificarComentariosVideos() {
     if (data.timestamp && data.timestamp !== ultimaActualizacionComentarios) {
       ultimaActualizacionComentarios = data.timestamp;
 
-      const videoId = getActiveVideoId();
-      if (videoId) {
-        // 👇 fuerza carga fresca desde servidor para el video actual
-        await cargarComentarios(videoId, true, { force: true });
+      const activeId = getActiveVideoId();
+
+      // 1) Actualiza y renderiza el video activo (si existe)
+      if (activeId) {
+        await cargarComentarios(activeId, true, { force: true });
       }
 
-      // 🔹 Además, actualizamos en segundo plano todos los videos para mantener cache al día
-      if (typeof obtenerListaVideos === "function") {
-        try {
-          const videos = await obtenerListaVideos();
-          for (const v of videos) {
-            if (!videoId || v.id !== videoId) {
-              // 👇 refresco silencioso en cache (sin render)
-              await cargarComentarios(v.id, false, { force: true });
-            }
-          }
-        } catch (e) {
-          console.warn("No se pudieron precargar comentarios en segundo plano:", e);
-        }
+      // 2) Refresca en segundo plano el resto (solo cache, sin render)
+      let ids = [];
+
+      // Preferimos la lista que ya tienes en memoria
+      if (Array.isArray(lastVideos) && lastVideos.length) {
+        ids = lastVideos.map(v => v.id).filter(Boolean);
+      } 
+      // Fallback: leer IDs de los slides del Swiper
+      else if (swiper && swiper.slides && swiper.slides.length) {
+        swiper.slides.forEach(s => {
+          const id = s && s.dataset ? s.dataset.videoid : null;
+          if (id) ids.push(id);
+        });
+      }
+
+      // Unicos y sin el activo
+      ids = Array.from(new Set(ids));
+      const others = activeId ? ids.filter(id => id !== activeId) : ids;
+
+      if (others.length) {
+        await Promise.allSettled(
+          others.map(id => cargarComentarios(id, false, { force: true }))
+        );
       }
     }
   } catch (err) {
     console.warn("No se pudo verificar comentarios:", err);
   }
 }
+
 
 
 
@@ -1950,5 +1964,6 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
