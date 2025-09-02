@@ -436,7 +436,7 @@
     padding: 10px;
     border-radius: 5px;
     box-sizing: border-box;
-    z-index: 1200;
+    z-index: 998;
     overflow-y: auto;
     transition: opacity 0.3s ease, visibility 0.3s ease, max-height 0.3s ease;
     max-height: 4em;
@@ -545,7 +545,7 @@
     border-radius: 60px;
     font-size: 14px;
     font-weight: bold;
-    z-index: 1500;
+    z-index: 999;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -566,22 +566,20 @@
     }
 
     /* Nuevo: Estilos para la barra de entrada de comentarios */
-.comment-input-container {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  background: transparent;
-  padding: 10px 15px;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  z-index: 2000; /* antes 1000 */
-  transition: opacity 0.3s ease, visibility 0.3s ease;
-  pointer-events: auto; /* asegura que capture clicks */
+ .comment-input-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: transparent;
+    padding: 10px 15px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 1000;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
 }
-
 
 
   .comment-input-container input {
@@ -619,22 +617,18 @@
 
 
 
-    
-<div class="comments-overlay-container" id="commentsOverlay">
-  <ul id="commentsList"></ul>
-</div>
-
-<div class="comments-counter" id="commentsCounter">
-    <span class="icon">💬</span>
-    <span class="count" id="commentCountValue">0</span>
-</div>
-
-<!-- 📌 Barra de comentarios: debe estar afuera del overlay -->
-<div class="comment-input-container">
-    <input type="text" id="commentInput" placeholder="Escribe un comentario...">
-    <button class="send-comment-btn"><i class="fas fa-paper-plane"></i></button>
-</div>
-
+  <div class="comments-overlay-container" id="commentsOverlay">
+    <ul id="commentsList"></ul>
+  </div>
+  <div class="comments-counter" id="commentsCounter">
+      <span class="icon">💬</span>
+      <span class="count" id="commentCountValue">0</span>
+  </div>
+  
+  <div class="comment-input-container">
+      <input type="text" id="commentInput" placeholder="Escribe un comentario...">
+      <button class="send-comment-btn"><i class="fas fa-paper-plane"></i></button>
+  </div>
 
     
 <!-- Notificaciones -->
@@ -704,24 +698,6 @@ const sendCommentBtn = document.querySelector('.send-comment-btn');
 const notificationWrapper = document.getElementById('notification-wrapper');
 const notificationList = document.getElementById('notification-list');
 
-        // Evitar que los taps/clicks en la barra de comentarios propaguen al swiper
-['click','touchstart','touchend'].forEach(evt => {
-  commentInput.addEventListener(evt, e => { e.stopPropagation(); }, { passive: true });
-  sendCommentBtn.addEventListener(evt, e => { e.stopPropagation(); }, { passive: true });
-  commentInputContainer.addEventListener(evt, e => { e.stopPropagation(); }, { passive: true });
-  commentsCounter.addEventListener(evt, e => { e.stopPropagation(); }, { passive: true });
-});
-
-// También el overlay de lista de comentarios para que no dispare el toggle del swiper
-commentsOverlay.addEventListener('click', (e) => {
-  e.stopPropagation();
-  if (!isSwiping) {
-    commentsOverlay.classList.toggle('expanded');
-  }
-  isSwiping = false;
-});
-
-
 let comentariosPorVideo = {}; // videoId: [ {autor, correo, fecha, comentario} ]
 let lastTapTime = 0;
 let activeComment = null;
@@ -729,14 +705,7 @@ let startX = 0;
 let isSwiping = false;
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const commentsOverlay = document.getElementById("commentsOverlay");
-  const commentsCounter = document.getElementById("commentsCounter");
-  const commentInputContainer = document.querySelector(".comment-input-container");
 
-  // Todo empieza oculto
-  commentsOverlay.classList.add("hidden-overlay");
-  commentsCounter.classList.add("hidden-overlay");
-  commentInputContainer.classList.add("hidden-overlay");
 
   try {
     const usuario = await getUsuarioDataFromUrl();
@@ -749,9 +718,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     await precargarComentariosTodos(videos);
 
     // 🔹 Solo ahora mostramos la interfaz de comentarios
-    commentsOverlay.classList.remove("hidden-overlay");
-    commentsCounter.classList.remove("hidden-overlay");
-    commentInputContainer.classList.remove("hidden-overlay");
+   
 
     // 🔹 Renderizamos los comentarios del primer video para la visualización inicial
     if (videos.length > 0) {
@@ -764,9 +731,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   } catch (e) {
     console.error("❌ Error al inicializar:", e);
     // En caso de error, mostramos la interfaz de todas formas
-    commentsOverlay.classList.remove("hidden-overlay");
-    commentsCounter.classList.remove("hidden-overlay");
-    commentInputContainer.classList.remove("hidden-overlay");
+   
   }
 });
 
@@ -774,19 +739,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
 // Mostrar/ocultar overlays al tocar el slider
-document.querySelector('.swiper').addEventListener('click', (e) => {
-  // Si el tap vino de elementos de UI, no hagas toggle
-  if (
-    e.target.closest('.comment-input-container') ||
-    e.target.closest('#commentsOverlay') ||
-    e.target.closest('#commentsCounter') ||
-    e.target.closest('#notification-wrapper') ||
-    e.target.closest('#notification-list') ||
-    e.target.closest('#notification-btn')
-  ) {
-    return;
-  }
-
+document.querySelector('.swiper').addEventListener('click', () => {
   const currentTime = new Date().getTime();
   if (currentTime - lastTapTime > 300) {
     commentsOverlay.classList.toggle('hidden-overlay');
@@ -795,11 +748,10 @@ document.querySelector('.swiper').addEventListener('click', (e) => {
 
     // 🔔 Ocultar botón y lista de notificaciones
     notificationWrapper.classList.toggle('hidden-overlay');
-    notificationList.classList.add('hidden');
+    notificationList.classList.add('hidden'); // Cierra la lista si estaba abierta
   }
   lastTapTime = currentTime;
 });
-
 
 
 
@@ -1080,12 +1032,8 @@ async function eliminarComentario(videoId, comentario, correo) {
 // === Listeners del input ===
 sendCommentBtn.addEventListener('click', enviarComentario);
 commentInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    e.preventDefault(); // 🚀 evita que el input pierda el foco y se baje
-    enviarComentario();
-  }
+  if (e.key === 'Enter') enviarComentario();
 });
-
 commentInput.addEventListener('focus', () => {
   document.body.style.transform = `translateY(-50%)`;
 });
@@ -1935,6 +1883,3 @@ setInterval(() => {
     </script>
 </body>
 </html>
-
-
-
