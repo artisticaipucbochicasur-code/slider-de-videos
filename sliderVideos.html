@@ -1046,15 +1046,22 @@ commentInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') enviarComentario();
 });
 
-// ✅ Manejo del teclado en móviles (tipo WhatsApp)
-commentInput.addEventListener("focus", () => {
-  setTimeout(() => {
-    commentInputContainer.style.bottom = `${window.innerHeight - document.documentElement.clientHeight}px`;
-  }, 300);
+// 🚀 Subir la caja a la mitad de la pantalla cuando se toca el input
+commentInput.addEventListener('focus', () => {
+  commentInputContainer.style.position = "fixed";
+  commentInputContainer.style.top = "50%";
+  commentInputContainer.style.left = "0";
+  commentInputContainer.style.width = "100%";
+  commentInputContainer.style.zIndex = "1000";
 });
 
-commentInput.addEventListener("blur", () => {
-  commentInputContainer.style.bottom = "0px";
+commentInput.addEventListener('blur', () => {
+  commentInputContainer.style.position = "fixed";
+  commentInputContainer.style.bottom = "0";
+  commentInputContainer.style.top = "";
+  commentInputContainer.style.left = "0";
+  commentInputContainer.style.width = "100%";
+  commentInputContainer.style.zIndex = "1000";
 });
 
 
@@ -1901,5 +1908,6 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
