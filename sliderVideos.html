@@ -732,16 +732,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     // 🔹 Renderizamos los comentarios del primer video para la visualización inicial
     if (videos.length > 0) {
       const primerVideoId = getActiveVideoId() || videos[0].id;
+
+      // ✅ Forzamos a cargar del servidor antes de renderizar
+      await cargarComentarios(primerVideoId);
       renderComentarios(primerVideoId);
     }
 
     console.log("✅ Todos los comentarios precargados, interfaz visible.");
 
-    // 🚀 Refrescar cada 5 segundos el video activo
-    setInterval(() => {
+    // 🚀 Refrescar cada 5 segundos el video activo (sin bloquear inicial)
+    setInterval(async () => {
       const videoId = getActiveVideoId();
       if (videoId) {
-        cargarComentarios(videoId);
+        await cargarComentarios(videoId);
+        renderComentarios(videoId);
       }
     }, 5000);
 
@@ -753,6 +757,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     commentInputContainer.classList.remove("hidden-overlay");
   }
 });
+
 
 
 
@@ -1874,6 +1879,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
