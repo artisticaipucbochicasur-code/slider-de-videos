@@ -1045,22 +1045,41 @@ sendCommentBtn.addEventListener('click', enviarComentario);
 commentInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') enviarComentario();
 });
-// Mantener el input fijo al fondo cuando el teclado aparece
-commentInput.addEventListener('focus', () => {
+
+// Detectar cuando el teclado aparece en móviles
+commentInput.addEventListener("focus", () => {
+  // Fijar input en la parte visible inferior
   commentInputContainer.style.position = "fixed";
   commentInputContainer.style.bottom = "0";
   commentInputContainer.style.left = "0";
   commentInputContainer.style.width = "100%";
-  commentInputContainer.style.zIndex = "1000"; // asegurar que quede arriba
+  commentInputContainer.style.zIndex = "1000";
+
+  // 🔹 Si el navegador soporta visualViewport (la mayoría)
+  if (window.visualViewport) {
+    const ajustar = () => {
+      const offset = window.visualViewport.height;
+      commentInputContainer.style.top = (offset - commentInputContainer.offsetHeight) + "px";
+    };
+    window.visualViewport.addEventListener("resize", ajustar);
+    ajustar();
+  }
 });
 
-commentInput.addEventListener('blur', () => {
+commentInput.addEventListener("blur", () => {
   commentInputContainer.style.position = "";
   commentInputContainer.style.bottom = "";
   commentInputContainer.style.left = "";
   commentInputContainer.style.width = "";
   commentInputContainer.style.zIndex = "";
+  commentInputContainer.style.top = "";
+
+  // Limpiar listener extra
+  if (window.visualViewport) {
+    window.visualViewport.onresize = null;
+  }
 });
+
 
 // === Refrescar comentarios cuando cambia el video ===
 // ❌ ESTA FUNCIÓN ESTÁ CAUSANDO EL PROBLEMA Y DEBE SER ELIMINADA ❌
@@ -1904,3 +1923,4 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
