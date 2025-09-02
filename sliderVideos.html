@@ -974,24 +974,23 @@ async function enviarComentario() {
   sendCommentBtn.disabled = true;
 
   try {
-    // 🟢 Crear el nuevo comentario localmente (instantáneo)
+    // 🟢 Crear comentario temporal
     const nuevoComentario = {
       autor: usuarioAutor,
       comentario: texto,
       fecha: new Date().toLocaleString(),
-      correo: usuarioCorreo
+      correo: usuarioCorreo,
+      pending: true // 🔹 bandera temporal
     };
 
     if (!comentariosPorVideo[videoId]) comentariosPorVideo[videoId] = [];
     if (!comentariosCache[videoId]) comentariosCache[videoId] = [];
 
+    // Mostrar enseguida en la lista
     comentariosPorVideo[videoId].push(nuevoComentario);
-    comentariosCache[videoId].push(nuevoComentario);
-
-    // Renderizar al instante
     renderComentarios(videoId);
 
-    // 🟢 Guardar en servidor
+    // Guardar en el servidor
     await fetch(SCRIPT_URL, {
       method: "POST",
       body: new URLSearchParams({
@@ -1006,8 +1005,8 @@ async function enviarComentario() {
     // Limpiar input
     commentInput.value = "";
 
-    // 🔄 Recargar desde servidor para sincronizar y evitar duplicados
-    setTimeout(() => cargarComentarios(videoId, true), 1500);
+    // 🔄 Refrescar desde servidor para reemplazar los temporales
+    await cargarComentarios(videoId, true);
 
   } catch (e) {
     console.error("Error al enviar comentario:", e);
@@ -1898,5 +1897,6 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
