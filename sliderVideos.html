@@ -988,7 +988,7 @@ async function enviarComentario() {
     // Limpiar input
     commentInput.value = "";
 
-    // 🟢 Agregar el nuevo comentario directamente a caché
+    // 🟢 Crear el nuevo comentario
     const nuevoComentario = {
       autor: usuarioAutor,
       comentario: texto,
@@ -996,13 +996,22 @@ async function enviarComentario() {
       correo: usuarioCorreo
     };
 
+    // Evitar duplicados: solo lo añadimos si no existe ya
     if (!comentariosPorVideo[videoId]) comentariosPorVideo[videoId] = [];
     if (!comentariosCache[videoId]) comentariosCache[videoId] = [];
 
-    comentariosPorVideo[videoId].push(nuevoComentario);
-    comentariosCache[videoId].push(nuevoComentario);
+    const yaExiste = comentariosPorVideo[videoId].some(c => 
+      c.comentario === nuevoComentario.comentario &&
+      c.correo === nuevoComentario.correo &&
+      Math.abs(new Date(c.fecha) - new Date(nuevoComentario.fecha)) < 2000
+    );
 
-    // Renderizar instantáneamente sin volver a pedir datos
+    if (!yaExiste) {
+      comentariosPorVideo[videoId].push(nuevoComentario);
+      comentariosCache[videoId].push(nuevoComentario);
+    }
+
+    // Renderizar instantáneamente sin duplicar
     renderComentarios(videoId);
 
   } catch (e) {
@@ -1011,6 +1020,7 @@ async function enviarComentario() {
     sendCommentBtn.disabled = false;
   }
 }
+
 
 // === Listeners del input ===
 sendCommentBtn.addEventListener('click', enviarComentario);
@@ -1918,3 +1928,4 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
