@@ -732,22 +732,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     // 🔹 Renderizamos los comentarios del primer video para la visualización inicial
     if (videos.length > 0) {
       const primerVideoId = getActiveVideoId() || videos[0].id;
-
-      // ✅ Forzamos a cargar del servidor antes de renderizar
-      await cargarComentarios(primerVideoId);
       renderComentarios(primerVideoId);
     }
 
     console.log("✅ Todos los comentarios precargados, interfaz visible.");
-
-    // 🚀 Refrescar cada 5 segundos el video activo (sin bloquear inicial)
-    setInterval(async () => {
-      const videoId = getActiveVideoId();
-      if (videoId) {
-        await cargarComentarios(videoId);
-        renderComentarios(videoId);
-      }
-    }, 5000);
 
   } catch (e) {
     console.error("❌ Error al inicializar:", e);
@@ -757,8 +745,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     commentInputContainer.classList.remove("hidden-overlay");
   }
 });
-
-
 
 
 
@@ -869,37 +855,56 @@ function getActiveVideoId() {
 // 🗂️ Caché de comentarios
 const comentariosCache = {}; // { videoId: [comentarios] }
 
-// === Cargar comentarios desde el servidor === 
-async function cargarComentarios(videoId) {
+// === Cargar comentarios desde Google Sheets con caché ===
+// === Cargar comentarios desde Google Sheets con caché ===
+// 🚀 Optimización: evitar fetch innecesarios y render instantáneo si ya hay caché
+async function cargarComentarios(videoId, render = true) {
+  if (!videoId) return;
+
+  // ✅ Si ya tenemos los comentarios en caché → render instantáneo y salir
+  if (comentariosCache[videoId]) {
+    comentariosPorVideo[videoId] = comentariosCache[videoId];
+    if (render) renderComentarios(videoId);
+    return;
+  }
+
+  // ✅ Si ya existen en memoria aunque no estén cacheados, los usamos igual
+  if (comentariosPorVideo[videoId]) {
+    comentariosCache[videoId] = comentariosPorVideo[videoId];
+    if (render) renderComentarios(videoId);
+    return;
+  }
+
+  // ⚡ Si no hay datos → hacemos fetch solo una vez
   try {
-    const response = await fetch(`${SCRIPT_URL}?accion=listarComentariosVideo&videoId=${videoId}`);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const res = await fetch(`${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}`);
+    const data = await res.json();
 
-    const data = await response.json();
+    // Guardar comentarios en variables y cachearlos
+    comentariosPorVideo[videoId] = Array.isArray(data.data)
+      ? data.data.map(c => ({
+          autor: c[2] || "Anónimo",
+          comentario: c[1] || "",
+          fecha: c[4] || "",
+          correo: c[3] || ""
+        }))
+      : [];
 
-    // 🔹 Asegurar que tenemos estructura para este video
-    if (!comentariosPorVideo[videoId]) comentariosPorVideo[videoId] = [];
-    if (!comentariosCache[videoId]) comentariosCache[videoId] = [];
+    // Guardar en caché para acceso instantáneo
+    comentariosCache[videoId] = comentariosPorVideo[videoId];
 
-    // 🔹 Convertir datos en objetos de comentario
-    const nuevosComentarios = data.map(c => ({
-      autor: c.autor,
-      comentario: c.comentario,
-      fecha: c.fecha,
-      correo: c.correo
-    }));
+    if (render) renderComentarios(videoId);
+  } catch (e) {
+    console.error("Error cargando comentarios:", e);
 
-    // 🔹 Actualizar cache
-    comentariosPorVideo[videoId] = nuevosComentarios;
-    comentariosCache[videoId] = [...nuevosComentarios];
+    // Si falla, dejamos caché vacío para evitar futuros fetchs innecesarios
+    comentariosPorVideo[videoId] = [];
+    comentariosCache[videoId] = [];
 
-    // 🔹 Refrescar DOM inmediatamente
-    renderComentarios(videoId);
-
-  } catch (error) {
-    console.error("Error al cargar comentarios:", error);
+    if (render) renderComentarios(videoId);
   }
 }
+
 // === Renderizar comentarios en el DOM ===
 function renderComentarios(videoId) {
   if (!videoId) return;
@@ -983,10 +988,30 @@ async function enviarComentario() {
     // Limpiar input
     commentInput.value = "";
 
-    // ✅ Paso 1: Refrescar lista de comentarios desde el servidor
-    await cargarComentarios(videoId);
+    // 🟢 Crear el nuevo comentario
+    const nuevoComentario = {
+      autor: usuarioAutor,
+      comentario: texto,
+      fecha: new Date().toLocaleString(),
+      correo: usuarioCorreo
+    };
 
-    // ✅ Paso 2: Renderizar inmediatamente
+    // Evitar duplicados: solo lo añadimos si no existe ya
+    if (!comentariosPorVideo[videoId]) comentariosPorVideo[videoId] = [];
+    if (!comentariosCache[videoId]) comentariosCache[videoId] = [];
+
+    const yaExiste = comentariosPorVideo[videoId].some(c => 
+      c.comentario === nuevoComentario.comentario &&
+      c.correo === nuevoComentario.correo &&
+      Math.abs(new Date(c.fecha) - new Date(nuevoComentario.fecha)) < 2000
+    );
+
+    if (!yaExiste) {
+      comentariosPorVideo[videoId].push(nuevoComentario);
+      comentariosCache[videoId].push(nuevoComentario);
+    }
+
+    // Renderizar instantáneamente sin duplicar
     renderComentarios(videoId);
 
   } catch (e) {
@@ -995,7 +1020,6 @@ async function enviarComentario() {
     sendCommentBtn.disabled = false;
   }
 }
-
 
 
 // === Listeners del input ===
@@ -1062,7 +1086,32 @@ commentInput.addEventListener('blur', () => {
   document.body.style.transform = `translateY(0)`;
 });
 
+// === Refrescar comentarios cuando cambia el video ===
+// ❌ ESTA FUNCIÓN ESTÁ CAUSANDO EL PROBLEMA Y DEBE SER ELIMINADA ❌
+function refrescarComentariosSlide() {
+  const videoId = getActiveVideoId();
+  const lista = comentariosPorVideo[videoId] || [];
 
+  const commentsList = document.getElementById("commentsList");
+  const commentCountValue = document.getElementById("commentCountValue");
+
+  // El problema está en esta línea:
+  commentsList.innerHTML = ""; 
+
+  if (lista.length > 0) {
+    lista.forEach((c) => {
+      const li = document.createElement("li");
+      li.textContent = `${c.autor} (${c.fecha}) - ${c.comentario}`;
+      commentsList.appendChild(li);
+    });
+    commentCountValue.textContent = lista.length;
+  } else {
+    const li = document.createElement("li");
+    li.textContent = "No hay comentarios aún.";
+    commentsList.appendChild(li);
+    commentCountValue.textContent = 0;
+  }
+}
 
 
 
@@ -1879,8 +1928,3 @@ setInterval(() => {
     </script>
 </body>
 </html>
-
-
-
-
-
