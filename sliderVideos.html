@@ -440,12 +440,16 @@
     overflow-y: auto;
     transition: opacity 0.3s ease, visibility 0.3s ease, max-height 0.3s ease;
     max-height: 4em;
+
+        white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 
     /* Estado expandido del contenedor de comentarios */
     .comments-overlay-container.expanded {
-      max-height: 25vh;
+      max-height: 75vh;
     }
 
     /* Estilos para la lista de comentarios */
@@ -523,8 +527,9 @@
     
     /* Clase para ocultar los overlays */
 .hidden-overlay {
-    opacity: 0;
-    visibility: hidden;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.3s;
 }
 
 
@@ -532,12 +537,12 @@
     /* Estilos del nuevo contador de comentarios */
  .comments-counter {
     position: fixed;
-    bottom: 80px;
+    bottom: 135px;
     right: 10px;
-    background: rgba(0, 0, 0, 0.6);
+    background: transparent;
     color: white;
     padding: 8px 12px;
-    border-radius: 5px;
+    border-radius: 60px;
     font-size: 14px;
     font-weight: bold;
     z-index: 999;
@@ -547,6 +552,7 @@
     gap: 2px;
     cursor: pointer;
     transition: opacity 0.3s ease, visibility 0.3s ease;
+     box-shadow: 0 4px 10px rgba(0,0,0,0.4);
 }
 
     
@@ -565,7 +571,7 @@
     bottom: 0;
     left: 0;
     width: 100%;
-    background: #1a1a1a;
+    background: transparent;
     padding: 10px 15px;
     box-sizing: border-box;
     display: flex;
@@ -578,7 +584,7 @@
 
   .comment-input-container input {
     flex-grow: 1;
-    background: #333;
+    background: transparent;
     border: 1px solid #555;
     border-radius: 25px; /* más redondeado */
     padding: 12px 20px;  /* 🔥 más alto y largo */
@@ -603,6 +609,7 @@
         background: transparent;
     }
 
+
         
     </style>
 </head>
@@ -610,18 +617,18 @@
 
 
 
-  <div class="comments-overlay-container" id="commentsOverlay">
-    <ul id="commentsList"></ul>
-  </div>
-  <div class="comments-counter" id="commentsCounter">
-      <span class="icon">💬</span>
-      <span class="count" id="commentCountValue">0</span>
-  </div>
-  
-  <div class="comment-input-container">
-      <input type="text" id="commentInput" placeholder="Escribe un comentario...">
-      <button class="send-comment-btn"><i class="fas fa-paper-plane"></i></button>
-  </div>
+    
+<div class="comments-overlay-container hidden-overlay" id="commentsOverlay">
+  <ul id="commentsList"></ul>
+</div>
+<div class="comments-counter hidden-overlay" id="commentsCounter">
+  <span class="icon">💬</span>
+  <span class="count" id="commentCountValue">0</span>
+</div>
+<div class="comment-input-container hidden-overlay">
+  <input type="text" id="commentInput" placeholder="Escribe un comentario...">
+  <button class="send-comment-btn"><i class="fas fa-paper-plane"></i></button>
+</div>
 
     
 <!-- Notificaciones -->
@@ -697,26 +704,75 @@ let activeComment = null;
 let startX = 0;
 let isSwiping = false;
 
+document.addEventListener("DOMContentLoaded", async () => {
+  const commentsOverlay = document.getElementById("commentsOverlay");
+  const commentsCounter = document.getElementById("commentsCounter");
+  const commentInputContainer = document.querySelector(".comment-input-container");
+
+  // Todo empieza oculto
+  commentsOverlay.classList.add("hidden-overlay");
+  commentsCounter.classList.add("hidden-overlay");
+  commentInputContainer.classList.add("hidden-overlay");
+
+  try {
+    const usuario = await getUsuarioDataFromUrl();
+    const videos = await obtenerListaVideos();
+
+    // Carga solo los slides del slider rápido
+    await cargarVideos(videos);
+
+    // 🔹 Precargamos todos los comentarios en segundo plano
+    await precargarComentariosTodos(videos);
+
+    // 🔹 Solo ahora mostramos la interfaz de comentarios
+    commentsOverlay.classList.remove("hidden-overlay");
+    commentsCounter.classList.remove("hidden-overlay");
+    commentInputContainer.classList.remove("hidden-overlay");
+
+    // 🔹 Renderizamos los comentarios del primer video para la visualización inicial
+    if (videos.length > 0) {
+      const primerVideoId = getActiveVideoId() || videos[0].id;
+      renderComentarios(primerVideoId);
+    }
+
+    console.log("✅ Todos los comentarios precargados, interfaz visible.");
+
+  } catch (e) {
+    console.error("❌ Error al inicializar:", e);
+    // En caso de error, mostramos la interfaz de todas formas
+    commentsOverlay.classList.remove("hidden-overlay");
+    commentsCounter.classList.remove("hidden-overlay");
+    commentInputContainer.classList.remove("hidden-overlay");
+  }
+});
 
 
 
 
- // Toggle para ocultar/mostrar overlays al tocar la imagen
-    document.querySelector('.swiper').addEventListener('click', () => {
-        const currentTime = new Date().getTime();
-        if (currentTime - lastTapTime > 300) {
-            contentOverlay.classList.toggle('hidden-overlay');
-            commentsOverlay.classList.toggle('hidden-overlay');
-            commentsCounter.classList.toggle('hidden-overlay');
-            commentInputContainer.classList.toggle('hidden-overlay');
-        }
-        lastTapTime = currentTime;
-    });
+// Mostrar/ocultar overlays al tocar el slider
+document.querySelector('.swiper').addEventListener('click', () => {
+  const currentTime = new Date().getTime();
+  if (currentTime - lastTapTime > 300) {
+    commentsOverlay.classList.toggle('hidden-overlay');
+    commentsCounter.classList.toggle('hidden-overlay');
+    commentInputContainer.classList.toggle('hidden-overlay');
+
+    // 🔔 Ocultar botón y lista de notificaciones
+    notificationWrapper.classList.toggle('hidden-overlay');
+    notificationList.classList.add('hidden'); // Cierra la lista si estaba abierta
+  }
+  lastTapTime = currentTime;
+});
 
 
 
-
-
+// === Expandir / Colapsar comentarios ===
+commentsOverlay.addEventListener('click', (e) => {
+  if (!isSwiping) {
+    commentsOverlay.classList.toggle('expanded');
+  }
+  isSwiping = false;
+});
 
 // === Swipe-to-delete en móviles ===
 commentsList.addEventListener('touchstart', (e) => {
@@ -956,24 +1012,30 @@ async function enviarComentario() {
   }
 }
 
- sendCommentBtn.addEventListener('click', enviarComentario);
-    commentInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            enviarComentario();
-        }
-    });
+// === Listeners del input ===
+sendCommentBtn.addEventListener('click', enviarComentario);
 
-    // Lógica para subir la barra de comentarios
-    commentInput.addEventListener('focus', () => {
-        // Mueve el cuerpo del documento para que el input sea visible
-        document.body.style.transform = `translateY(-50%)`;
-    });
+commentInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') enviarComentario();
+});
 
-    commentInput.addEventListener('blur', () => {
-        // Vuelve el cuerpo del documento a su posición original
-        document.body.style.transform = 'translateY(0)';
-    });
-        
+commentInput.addEventListener('focus', () => {
+  document.body.style.transform = `translateY(-50%)`;
+});
+
+// 🔹 Cuando el input baja (pierde foco), se envía automáticamente si tiene texto
+commentInput.addEventListener('blur', () => {
+  document.body.style.transform = `translateY(0)`;
+
+  // Verificar si hay texto para enviar
+  const comentarioTexto = commentInput.value.trim();
+  if (comentarioTexto !== "") {
+    enviarComentario();
+  }
+});
+
+
+
 // === Precargar todos los comentarios al inicio ===
 async function precargarComentariosTodos(videos) {
   for (const v of videos) {
@@ -1002,7 +1064,17 @@ async function eliminarComentario(videoId, comentario, correo) {
   }
 }
 
-
+// === Listeners del input ===
+sendCommentBtn.addEventListener('click', enviarComentario);
+commentInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') enviarComentario();
+});
+commentInput.addEventListener('focus', () => {
+  document.body.style.transform = `translateY(-50%)`;
+});
+commentInput.addEventListener('blur', () => {
+  document.body.style.transform = `translateY(0)`;
+});
 
 // === Refrescar comentarios cuando cambia el video ===
 // ❌ ESTA FUNCIÓN ESTÁ CAUSANDO EL PROBLEMA Y DEBE SER ELIMINADA ❌
@@ -1846,9 +1918,3 @@ setInterval(() => {
     </script>
 </body>
 </html>
-
-
-
-
-
-
