@@ -704,6 +704,13 @@ let activeComment = null;
 let startX = 0;
 let isSwiping = false;
 
+        // Evita que una respuesta vieja sobrescriba el cache del video
+const inflightComentarios = {}; // { [videoId]: token }
+
+// Evita verificar en paralelo (setInterval + acciones locales)
+let verificandoComentarios = false;
+
+
 document.addEventListener("DOMContentLoaded", async () => {
   const commentsOverlay = document.getElementById("commentsOverlay");
   const commentsCounter = document.getElementById("commentsCounter");
@@ -858,6 +865,9 @@ const comentariosCache = {}; // { videoId: [comentarios] }
 // === Cargar comentarios desde Google Sheets con caché ===
 // === Cargar comentarios desde Google Sheets con caché ===
 // 🚀 Optimización: evitar fetch innecesarios y permitir forzar recarga
+// =====================================
+// 🚀 cargarComentarios con anti-carrera
+// =====================================
 async function cargarComentarios(videoId, render = true, options = {}) {
   if (!videoId) return;
 
@@ -877,18 +887,23 @@ async function cargarComentarios(videoId, render = true, options = {}) {
     return;
   }
 
-  // ⚡ Si no hay datos o se forzó → fetch directo al servidor (con cache-buster)
+  // ⚡ Fetch directo al servidor (con cache-buster) + token anti-carrera
+  const token = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  inflightComentarios[videoId] = token;
+
   try {
     const res = await fetch(
       `${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}&_=${Date.now()}`
     );
     const data = await res.json();
 
+    // 💡 Si llegó una respuesta vieja, la ignoramos
+    if (inflightComentarios[videoId] !== token) return;
+
     comentariosPorVideo[videoId] = Array.isArray(data.data)
       ? data.data.map(c => ({
           autor: c[2] || "Anónimo",
           comentario: c[1] || "",
-          // 🔹 Formatear fecha siempre a local string
           fecha: c[4] ? new Date(c[4]).toLocaleString() : "",
           correo: c[3] || ""
         }))
@@ -899,11 +914,19 @@ async function cargarComentarios(videoId, render = true, options = {}) {
     if (render) renderComentarios(videoId);
   } catch (e) {
     console.error("Error cargando comentarios:", e);
-    comentariosPorVideo[videoId] = [];
-    comentariosCache[videoId] = [];
-    if (render) renderComentarios(videoId);
+
+    if (inflightComentarios[videoId] === token) {
+      comentariosPorVideo[videoId] = [];
+      comentariosCache[videoId] = [];
+      if (render) renderComentarios(videoId);
+    }
+  } finally {
+    if (inflightComentarios[videoId] === token) {
+      delete inflightComentarios[videoId];
+    }
   }
 }
+
 
 
 
@@ -1089,10 +1112,13 @@ async function initSyncComentarios() {
 }
 document.addEventListener('DOMContentLoaded', initSyncComentarios);
 
-// Verifica en el servidor si hubo cambios (con cache-buster)
-// Verifica en el servidor si hubo cambios (con cache-buster)
-// Refresca el activo y, en paralelo, precarga (cache) del resto
+// ==============================================
+// 🚀 verificarComentariosVideos con lock + cache
+// ==============================================
 async function verificarComentariosVideos() {
+  if (verificandoComentarios) return; // 🔒 evita solapes
+  verificandoComentarios = true;
+
   try {
     const res = await fetch(`${SCRIPT_URL}?accion=ultimaActualizacionComentarios&_=${Date.now()}`);
     const data = await res.json();
@@ -1110,19 +1136,15 @@ async function verificarComentariosVideos() {
       // 2) Refresca en segundo plano el resto (solo cache, sin render)
       let ids = [];
 
-      // Preferimos la lista que ya tienes en memoria
       if (Array.isArray(lastVideos) && lastVideos.length) {
         ids = lastVideos.map(v => v.id).filter(Boolean);
-      } 
-      // Fallback: leer IDs de los slides del Swiper
-      else if (swiper && swiper.slides && swiper.slides.length) {
+      } else if (swiper && swiper.slides && swiper.slides.length) {
         swiper.slides.forEach(s => {
           const id = s && s.dataset ? s.dataset.videoid : null;
           if (id) ids.push(id);
         });
       }
 
-      // Unicos y sin el activo
       ids = Array.from(new Set(ids));
       const others = activeId ? ids.filter(id => id !== activeId) : ids;
 
@@ -1134,9 +1156,10 @@ async function verificarComentariosVideos() {
     }
   } catch (err) {
     console.warn("No se pudo verificar comentarios:", err);
+  } finally {
+    verificandoComentarios = false; // 🔓 libera el lock
   }
 }
-
 
 
 
@@ -1964,6 +1987,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
