@@ -971,6 +971,24 @@ async function enviarComentario() {
   }
 }
 
+ sendCommentBtn.addEventListener('click', enviarComentario);
+    commentInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            enviarComentario();
+        }
+    });
+
+    // Lógica para subir la barra de comentarios
+    commentInput.addEventListener('focus', () => {
+        // Mueve el cuerpo del documento para que el input sea visible
+        document.body.style.transform = `translateY(-50%)`;
+    });
+
+    commentInput.addEventListener('blur', () => {
+        // Vuelve el cuerpo del documento a su posición original
+        document.body.style.transform = 'translateY(0)';
+    });
+        
 // === Precargar todos los comentarios al inicio ===
 async function precargarComentariosTodos(videos) {
   for (const v of videos) {
@@ -999,23 +1017,7 @@ async function eliminarComentario(videoId, comentario, correo) {
   }
 }
 
- sendCommentBtn.addEventListener('click', enviarComentario);
-    commentInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            enviarComentario();
-        }
-    });
 
-    // Lógica para subir la barra de comentarios
-    commentInput.addEventListener('focus', () => {
-        // Mueve el cuerpo del documento para que el input sea visible
-        document.body.style.transform = `translateY(-50%)`;
-    });
-
-    commentInput.addEventListener('blur', () => {
-        // Vuelve el cuerpo del documento a su posición original
-        document.body.style.transform = 'translateY(0)';
-    });
 
 // === Refrescar comentarios cuando cambia el video ===
 // ❌ ESTA FUNCIÓN ESTÁ CAUSANDO EL PROBLEMA Y DEBE SER ELIMINADA ❌
@@ -1859,5 +1861,6 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
