@@ -1907,7 +1907,7 @@ function cleanupIframesExceptActive() {
 
         // --- FIN DE LA CORRECCIÓN ---
 
-     function updateFixedTitle(swiperInstance) {
+   function updateFixedTitle(swiperInstance) {
     const fixedBox = document.getElementById("video-title-fixed");
     if (!fixedBox || !swiperInstance) return;
 
@@ -1933,49 +1933,51 @@ function cleanupIframesExceptActive() {
     // Transición suave al cambiar de título
     fixedBox.style.opacity = 0;
 
-setTimeout(() => {
-    // Función genérica para manejar el truncamiento y expansión
-    const setupExpandableText = (element, text) => {
-        // Eliminar contenido anterior para evitar duplicados
-        element.innerHTML = `<span class="text-container">${text}</span>`;
-        const container = element.querySelector('.text-container');
-        
-        // Usar setTimeout para asegurar que la renderización está completa antes de medir
-        setTimeout(() => {
-            if (container.scrollHeight > container.clientHeight) {
-                const toggleButton = document.createElement('span');
-                toggleButton.className = 'toggle-text';
-                toggleButton.textContent = '...más';
-                element.appendChild(toggleButton);
+    setTimeout(() => {
+        // Función genérica para manejar el truncamiento y expansión
+        const setupExpandableText = (element, text) => {
+            // Eliminar contenido anterior para evitar duplicados
+            element.innerHTML = `<span class="text-container">${text}</span>`;
+            const container = element.querySelector('.text-container');
+            
+            // Usar setTimeout para asegurar que la renderización está completa antes de medir
+            setTimeout(() => {
+                if (container.scrollHeight > container.clientHeight) {
+                    const toggleButton = document.createElement('span');
+                    toggleButton.className = 'toggle-text';
+                    toggleButton.textContent = '...más';
+                    element.appendChild(toggleButton);
 
-                // 👉 Evitar que el click llegue al .swiper
-                element.addEventListener('click', (e) => {
-                    e.stopPropagation(); // 🔥 evita ocultar overlays
-                    const isExpanded = container.classList.contains('expanded');
-                    if (isExpanded) {
-                        container.classList.remove('expanded');
-                        toggleButton.textContent = '...más';
-                    } else {
-                        container.classList.add('expanded');
-                        toggleButton.textContent = 'mostrar menos';
-                    }
-                });
-            } else {
-                const existingButton = element.querySelector('.toggle-text');
-                if (existingButton) existingButton.remove();
-                const clonedElement = element.cloneNode(true);
-                element.parentNode.replaceChild(clonedElement, element);
-            }
-        }, 50);
-    };
+                    // Añadir el listener para expandir/contraer
+                    element.addEventListener('click', (e) => {
+                        e.stopPropagation(); // ✅ evita cerrar overlays al expandir
+                        const isExpanded = container.classList.contains('expanded');
+                        if (isExpanded) {
+                            container.classList.remove('expanded');
+                            toggleButton.textContent = '...más';
+                        } else {
+                            container.classList.add('expanded');
+                            toggleButton.textContent = 'mostrar menos';
+                        }
+                    });
+                } else {
+                    const existingButton = element.querySelector('.toggle-text');
+                    if (existingButton) existingButton.remove();
+                    const clonedElement = element.cloneNode(true);
+                    element.parentNode.replaceChild(clonedElement, element);
+                }
+            }, 50);
+        };
 
-    // Aplicar la lógica al título y la descripción
-    setupExpandableText(titleEl, newTitle);
-    setupExpandableText(descEl, newDesc);
+        // Aplicar la lógica al título y la descripción
+        setupExpandableText(titleEl, newTitle);
+        setupExpandableText(descEl, newDesc);
 
-    // Mostrar el contenedor de nuevo
-    fixedBox.style.opacity = 1;
-}, 120);
+        // Mostrar el contenedor de nuevo
+        fixedBox.style.opacity = 1;
+    }, 120);
+}
+
 
         
 
@@ -2132,6 +2134,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
