@@ -851,16 +851,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     commentInputContainer.classList.remove("hidden-overlay");
   }
 
-  // 👇 Enviar "success" a App Inventor al cargar completamente
-  try {
-    if (typeof AppInventor !== "undefined" && AppInventor.setWebViewString) {
-      AppInventor.setWebViewString("success");
+  // 👇 Aquí añadimos el envío de "success" a App Inventor
+  setTimeout(() => {
+    try {
+      if (typeof AppInventor !== "undefined" && AppInventor.setWebViewString) {
+        AppInventor.setWebViewString("success");
+        console.log("✅ Se envió 'success' a App Inventor");
+      }
+    } catch (err) {
+      console.warn("No se pudo enviar 'success' a App Inventor:", err);
     }
-  } catch (e) {
-    console.warn("No se pudo enviar 'success' a App Inventor:", e);
-  }
+  }, 1000);
 
   // ⬇️⬇️ Buscador integrado (App Inventor + modal emergente) ⬇️⬇️
+
   const searchModal = document.getElementById("search-modal");
   const searchInput = document.getElementById("search-input");
   const searchResults = document.getElementById("search-results");
@@ -913,7 +917,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                   container.classList.remove("highlight-container");
                 }, 3000);
               }
-            }, 300);
+            }, 300); // delay pequeño para asegurar que se actualice el título
           }
           closeSearchModal();
         };
@@ -923,6 +927,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 });
+
 
 
 
@@ -2175,4 +2180,5 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
