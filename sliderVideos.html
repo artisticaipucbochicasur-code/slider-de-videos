@@ -212,19 +212,20 @@
 }
 
 #video-title-fixed {
-    position: absolute;
-    bottom: 10px; /* 👈 ahora sobre el video en la parte inferior */
-    left: 10px;
-    right: 10px;
-    z-index: 1000;
-    background: rgba(0,0,0,0.45); /* más oscuro para leer mejor */
-    padding: 8px 12px;
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    transition: background 0.3s ease, opacity 0.18s ease;
+  position: absolute;
+  bottom: 10px; /* 👈 aparece sobre el video */
+  left: 10px;
+  right: 10px;
+  z-index: 1000;
+  background: rgba(0,0,0,0.45);
+  padding: 8px 12px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: background 0.3s ease, opacity 0.18s ease;
 }
+
 
 
 #video-title-fixed .video-title {
@@ -757,19 +758,15 @@
 
   
 
- <div class="swiper">
+<div class="swiper">
   <div class="swiper-wrapper" id="slides">
-    <div class="swiper-slide">
-      <div class="player-card">
-        <iframe class="player-iframe" ...></iframe>
+    <!-- aquí solo van los slides -->
+  </div>
 
-        <!-- 👇 aquí pegamos el contenedor de título -->
-        <div id="video-title-fixed">
-          <div class="video-title"></div>
-          <div class="video-desc"></div>
-        </div>
-      </div>
-    </div>
+  <!-- 👇 contenedor global del título, fuera de los slides -->
+  <div id="video-title-fixed">
+    <div class="video-title"></div>
+    <div class="video-desc"></div>
   </div>
 </div>
 
@@ -2111,6 +2108,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
