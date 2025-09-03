@@ -680,6 +680,11 @@
   border-radius: 5px;
   cursor: pointer;
 }
+/* Clase para resaltar título al saltar desde buscador */
+.highlight-title {
+  color: #4da3ff !important;   /* azul suave */
+  transition: color 0.5s ease;
+}
 
         
     </style>
@@ -864,13 +869,26 @@ document.addEventListener("DOMContentLoaded", async () => {
       li.style.cursor = "pointer";
       li.onmouseover = () => (li.style.background = "#333");
       li.onmouseout = () => (li.style.background = "transparent");
-      li.onclick = () => {
-        const index = lastVideos.findIndex(v => v.id === video.id);
-        if (index !== -1 && swiper) {
-          swiper.slideToLoop(index, 0);
-        }
-        closeSearchModal();
-      };
+    li.onclick = () => {
+  const index = lastVideos.findIndex(v => v.id === video.id);
+  if (index !== -1 && swiper) {
+    swiper.slideToLoop(index, 0);
+
+    // 👇 Esperamos a que el swiper cambie de slide y resaltamos el título
+    setTimeout(() => {
+      const titleEl = document.querySelector("#video-title-fixed .video-title");
+      if (titleEl) {
+        titleEl.classList.add("highlight-title");
+        // Quitar el resaltado después de 3 segundos
+        setTimeout(() => {
+          titleEl.classList.remove("highlight-title");
+        }, 3000);
+      }
+    }, 300); // delay pequeño para asegurar que se actualice el título
+  }
+  closeSearchModal();
+};
+
       searchResults.appendChild(li);
     });
   }
@@ -2083,5 +2101,6 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
