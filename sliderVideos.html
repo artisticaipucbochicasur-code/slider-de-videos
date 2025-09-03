@@ -213,21 +213,19 @@
 
 #video-title-fixed {
     position: absolute;
-    top: 0;
+    bottom: 10px; /* 👈 ahora sobre el video en la parte inferior */
     left: 10px;
-    width: auto;
-    max-width: 80%;
+    right: 10px;
     z-index: 1000;
-    background: rgba(0,0,0,0.3);
-    transition: opacity 0.18s ease;
-    opacity: 1;
+    background: rgba(0,0,0,0.45); /* más oscuro para leer mejor */
+    padding: 8px 12px;
+    border-radius: 8px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    padding: 6px 10px;
-    margin: 0;
-    right: auto;
+    transition: background 0.3s ease, opacity 0.18s ease;
 }
+
 
 #video-title-fixed .video-title {
     font-size: 18px;
@@ -759,13 +757,22 @@
 
   
 
-  <div class="swiper">
-  <div id="video-title-fixed">
-    <div class="video-title"></div>
-    <div class="video-desc"></div>
+ <div class="swiper">
+  <div class="swiper-wrapper" id="slides">
+    <div class="swiper-slide">
+      <div class="player-card">
+        <iframe class="player-iframe" ...></iframe>
+
+        <!-- 👇 aquí pegamos el contenedor de título -->
+        <div id="video-title-fixed">
+          <div class="video-title"></div>
+          <div class="video-desc"></div>
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="swiper-wrapper" id="slides"></div>
 </div>
+
 
 
     <div id="loader"><span class="spinner">⏳</span></div>
@@ -2104,6 +2111,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
