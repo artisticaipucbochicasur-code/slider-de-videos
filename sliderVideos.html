@@ -432,7 +432,7 @@
 /* Contenedor de comentarios */
 .comments-overlay-container {
   position: fixed;
-  bottom: 89px; /* 👈 ahora justo arriba de la barra de escribir */
+  bottom: 90px; /* 👈 ahora justo arriba de la barra de escribir */
   left: 10px;
   width: calc(80% - 20px);
   background: rgba(0, 0, 0, 0.2); /* más transparente */
@@ -570,7 +570,7 @@
 /* Barra de entrada de comentarios */
 .comment-input-container {
   position: fixed;
-  bottom: 40px;
+  bottom: 39px;
   left: 0;
   width: 100%;
   background: transparent;
@@ -593,7 +593,8 @@
   background: transparent;
   border: 1px solid #888;
   border-radius: 25px;   /* ovalado completo */
-  width: 100%;
+  width: 80%;            /* 👈 solo ocupa el 80% */
+  margin: 0 auto;        /* 👈 centrado */
   padding: 4px 8px;      /* 👈 menos alto */
 }
 
@@ -2128,6 +2129,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
