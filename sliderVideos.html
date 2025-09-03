@@ -940,7 +940,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
 // Mostrar/ocultar overlays al tocar el slider
-document.querySelector('.swiper').addEventListener('click', () => {
+document.querySelector('.swiper').addEventListener('click', (e) => {
+  // 👉 Evitar que se cierre si se hace click en el título o descripción
+  if (e.target.closest('#video-title-fixed')) {
+    return; // no hacer nada
+  }
+
   const currentTime = new Date().getTime();
   if (currentTime - lastTapTime > 300) {
     commentsOverlay.classList.toggle('hidden-overlay');
@@ -956,6 +961,7 @@ document.querySelector('.swiper').addEventListener('click', () => {
   }
   lastTapTime = currentTime;
 });
+
 
 
 
@@ -2129,6 +2135,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
