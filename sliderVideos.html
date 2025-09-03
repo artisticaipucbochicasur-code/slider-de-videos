@@ -195,21 +195,18 @@
     padding-right: 15px;
 }
 
-/* Estilo para el botón de 'más' o 'menos' */
 #video-title-fixed .toggle-text {
     color: #ccc;
     font-size: 12px;
     font-weight: bold;
     user-select: none;
     display: inline-block;
-    position: absolute;
-    bottom: 0;
-    right: 20px;
-    background: rgba(0, 0, 0, 0.5);
-    padding: 2px 5px;
-    border-radius: 3px;
-    backdrop-filter: blur(2px);
+    margin-left: 6px;
+    cursor: pointer;
+    background: none !important; /* 👈 sin fondo */
+    padding: 0;
 }
+
 
 #video-title-fixed {
     position: absolute;
@@ -1930,13 +1927,13 @@ function cleanupIframesExceptActive() {
     fixedBox.style.opacity = 0;
 
     setTimeout(() => {
-        const setupExpandableText = (element, text) => {
-            // reiniciar el contenido
+        const setupExpandableText = (element, text, allowExpand = true) => {
             element.innerHTML = `<span class="text-container">${text}</span>`;
             const container = element.querySelector('.text-container');
 
             setTimeout(() => {
-                // 👉 clonar el contenido sin clamp para medir bien
+                if (!allowExpand) return; // 👈 título siempre completo
+
                 const temp = container.cloneNode(true);
                 temp.style.display = "inline-block";
                 temp.style.webkitLineClamp = "unset";
@@ -1953,8 +1950,7 @@ function cleanupIframesExceptActive() {
                     toggleButton.textContent = '...más';
                     element.appendChild(toggleButton);
 
-                    toggleButton.addEventListener('click', (e) => {
-                        e.stopPropagation(); // no cerrar overlays
+                    const toggleExpand = () => {
                         const isExpanded = container.classList.contains('expanded');
                         if (isExpanded) {
                             container.classList.remove('expanded');
@@ -1963,13 +1959,23 @@ function cleanupIframesExceptActive() {
                             container.classList.add('expanded');
                             toggleButton.textContent = 'mostrar menos';
                         }
+                    };
+
+                    // 👉 clic en botón o en el contenedor
+                    toggleButton.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        toggleExpand();
+                    });
+                    container.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        toggleExpand();
                     });
                 }
             }, 50);
         };
 
-        setupExpandableText(titleEl, newTitle);
-        setupExpandableText(descEl, newDesc);
+        setupExpandableText(titleEl, newTitle, false); // 👈 título no truncado
+        setupExpandableText(descEl, newDesc, true);   // 👈 descripción expandible
 
         fixedBox.style.opacity = 1;
     }, 120);
@@ -2132,6 +2138,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
