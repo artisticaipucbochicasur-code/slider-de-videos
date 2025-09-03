@@ -927,8 +927,32 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       if (typeof window.AppInventor !== "undefined") {
         const msg = AppInventor.getWebViewString();
+
         if (msg === "buscar") {
           openSearchModal();
+          AppInventor.setWebViewString(""); // reset
+        }
+
+        // 👇 Nuevo: comando "pausa"
+        if (msg === "pausa") {
+          console.log("⏸ Recibido comando pausa desde App Inventor");
+
+          const activeCard = document.querySelector(".swiper-slide-active .player-card");
+          if (activeCard) {
+            const src = activeCard.dataset.embed;
+            const player = players[src];
+
+            if (player) {
+              if (typeof player.pauseVideo === "function") {
+                player.pauseVideo(); // YouTube
+                console.log("YouTube pausado");
+              } else if (typeof player.pause === "function") {
+                player.pause(); // MP4
+                console.log("Video MP4 pausado");
+              }
+            }
+          }
+
           AppInventor.setWebViewString(""); // reset
         }
       }
@@ -937,6 +961,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }, 500);
 });
+
 
 
 // Mostrar/ocultar overlays al tocar el slider
@@ -2183,6 +2208,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
