@@ -435,7 +435,7 @@
   bottom: 55px; /* 👈 ahora justo arriba de la barra de escribir */
   left: 10px;
   width: calc(80% - 20px);
-  background: rgba(0, 0, 0, 0.4); /* más transparente */
+  background: rgba(0, 0, 0, 0.2); /* más transparente */
   color: #eee;
   padding: 8px;
   border-radius: 5px;
@@ -613,6 +613,38 @@
         background: transparent;
     }
 
+        .comment-input-wrapper {
+  display: flex;
+  align-items: center;
+  background: transparent;
+  border: 1px solid #888;
+  border-radius: 25px;   /* 🔥 ovalado completo */
+  width: 100%;
+  padding: 6px 10px;
+}
+
+.comment-input-wrapper input {
+  flex-grow: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 8px 10px;
+  font-size: 0.95rem;
+  color: white;
+}
+
+.comment-input-wrapper input::placeholder {
+  color: rgba(255,255,255,0.7);
+}
+
+.comment-input-wrapper button {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: 6px 8px;
+}
 /* Oculta el modal por defecto */
 .hidden {
   display: none !important;
@@ -714,13 +746,17 @@
 <div class="comments-overlay-container hidden-overlay" id="commentsOverlay">
   <ul id="commentsList"></ul>
 </div>
+
 <div class="comments-counter hidden-overlay" id="commentsCounter">
   <span class="icon">💬</span>
   <span class="count" id="commentCountValue">0</span>
 </div>
+
 <div class="comment-input-container hidden-overlay">
-  <input type="text" id="commentInput" placeholder="Escribe un comentario...">
-  <button class="send-comment-btn"><i class="fas fa-paper-plane"></i></button>
+  <div class="comment-input-wrapper">
+    <input type="text" id="commentInput" placeholder="Escribe un comentario...">
+    <button class="send-comment-btn"><i class="fas fa-paper-plane"></i></button>
+  </div>
 </div>
 
     
@@ -2116,6 +2152,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
