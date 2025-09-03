@@ -18,11 +18,22 @@
             let html = "";
             rows.forEach((row) => {
               if (row.link) {
+                // convertimos uc?export=download a /preview si hace falta
+                let previewLink = row.link.replace(
+                  /uc\?export=download&id=/,
+                  "file/d/"
+                ) + "/preview";
+
                 html += `
                   <div style="margin-bottom:20px;">
-                    <video width="320" height="240" controls>
-                      <source src="${row.link}" type="video/mp4">
-                    </video>
+                    <iframe 
+                      src="${previewLink}" 
+                      width="320" 
+                      height="240" 
+                      allow="autoplay"
+                      frameborder="0"
+                      allowfullscreen>
+                    </iframe>
                   </div>
                 `;
               }
