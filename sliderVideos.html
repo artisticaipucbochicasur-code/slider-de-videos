@@ -851,8 +851,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     commentInputContainer.classList.remove("hidden-overlay");
   }
 
-  // ⬇️⬇️ Buscador integrado (App Inventor + modal emergente) ⬇️⬇️
+  // 👇 Enviar "success" a App Inventor al cargar completamente
+  try {
+    if (typeof AppInventor !== "undefined" && AppInventor.setWebViewString) {
+      AppInventor.setWebViewString("success");
+    }
+  } catch (e) {
+    console.warn("No se pudo enviar 'success' a App Inventor:", e);
+  }
 
+  // ⬇️⬇️ Buscador integrado (App Inventor + modal emergente) ⬇️⬇️
   const searchModal = document.getElementById("search-modal");
   const searchInput = document.getElementById("search-input");
   const searchResults = document.getElementById("search-results");
@@ -869,52 +877,53 @@ document.addEventListener("DOMContentLoaded", async () => {
     searchModal.classList.add("hidden");
   }
 
- searchInput.addEventListener("input", () => {
-  const query = searchInput.value.toLowerCase().trim(); // 👈 normalizamos
-  searchResults.innerHTML = "";
+  searchInput.addEventListener("input", () => {
+    const query = searchInput.value.toLowerCase().trim(); // 👈 normalizamos
+    searchResults.innerHTML = "";
 
-  if (!query) return;
+    if (!query) return;
 
-  // 👇 normalizamos también los títulos para comparar sin importar mayúsculas/espacios
-  const matches = lastVideos.filter(v =>
-    v.title.toLowerCase().trim().includes(query)
-  );
+    // 👇 normalizamos también los títulos para comparar sin importar mayúsculas/espacios
+    const matches = lastVideos.filter(v =>
+      v.title.toLowerCase().trim().includes(query)
+    );
 
-  if (matches.length === 0) {
-    searchResults.innerHTML = "<li style='padding:6px; color:#aaa;'>Sin resultados</li>";
-  } else {
-    matches.forEach(video => {
-      const li = document.createElement("li");
-      li.textContent = video.title;
-      li.style.padding = "6px";
-      li.style.cursor = "pointer";
-      li.onmouseover = () => (li.style.background = "#333");
-      li.onmouseout = () => (li.style.background = "transparent");
-    li.onclick = () => {
-  const index = lastVideos.findIndex(v => v.id === video.id);
-  if (index !== -1 && swiper) {
-    swiper.slideToLoop(index, 0);
+    if (matches.length === 0) {
+      searchResults.innerHTML = "<li style='padding:6px; color:#aaa;'>Sin resultados</li>";
+    } else {
+      matches.forEach(video => {
+        const li = document.createElement("li");
+        li.textContent = video.title;
+        li.style.padding = "6px";
+        li.style.cursor = "pointer";
+        li.onmouseover = () => (li.style.background = "#333");
+        li.onmouseout = () => (li.style.background = "transparent");
+        li.onclick = () => {
+          const index = lastVideos.findIndex(v => v.id === video.id);
+          if (index !== -1 && swiper) {
+            swiper.slideToLoop(index, 0);
 
-    // 👇 Esperamos a que el swiper cambie de slide y resaltamos el título
-   setTimeout(() => {
-  const container = document.getElementById("video-title-fixed");
-  if (container) {
-    container.classList.add("highlight-container");
-    // Quitar el resaltado después de 3 segundos
-    setTimeout(() => {
-      container.classList.remove("highlight-container");
-    }, 3000);
-  }
-}, 300);
- // delay pequeño para asegurar que se actualice el título
-  }
-  closeSearchModal();
-};
+            // 👇 Esperamos a que el swiper cambie de slide y resaltamos el título
+            setTimeout(() => {
+              const container = document.getElementById("video-title-fixed");
+              if (container) {
+                container.classList.add("highlight-container");
+                // Quitar el resaltado después de 3 segundos
+                setTimeout(() => {
+                  container.classList.remove("highlight-container");
+                }, 3000);
+              }
+            }, 300);
+          }
+          closeSearchModal();
+        };
 
-      searchResults.appendChild(li);
-    });
-  }
+        searchResults.appendChild(li);
+      });
+    }
+  });
 });
+
 
 
   searchClose.onclick = closeSearchModal;
@@ -2166,3 +2175,4 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
