@@ -1928,12 +1928,18 @@ function cleanupIframesExceptActive() {
 
     setTimeout(() => {
         const setupExpandableText = (element, text, allowExpand = true) => {
-            element.innerHTML = `<span class="text-container">${text}</span>`;
-            const container = element.querySelector('.text-container');
+            // ✅ limpiar cualquier rastro previo (importante en la primera carga)
+            element.innerHTML = "";
+            
+            const container = document.createElement("span");
+            container.className = "text-container";
+            container.textContent = text;
+            element.appendChild(container);
 
             setTimeout(() => {
-                if (!allowExpand) return; // 👈 título siempre completo
+                if (!allowExpand) return; // 👈 el título no se expande
 
+                // crear copia para medir sin clamp
                 const temp = container.cloneNode(true);
                 temp.style.display = "inline-block";
                 temp.style.webkitLineClamp = "unset";
@@ -1945,28 +1951,31 @@ function cleanupIframesExceptActive() {
                 temp.remove();
 
                 if (needsClamp) {
-                    const toggleButton = document.createElement('span');
-                    toggleButton.className = 'toggle-text';
-                    toggleButton.textContent = '...más';
+                    // ✅ asegurar que no se dupliquen botones
+                    element.querySelectorAll(".toggle-text").forEach(btn => btn.remove());
+
+                    const toggleButton = document.createElement("span");
+                    toggleButton.className = "toggle-text";
+                    toggleButton.textContent = "...más";
                     element.appendChild(toggleButton);
 
                     const toggleExpand = () => {
-                        const isExpanded = container.classList.contains('expanded');
+                        const isExpanded = container.classList.contains("expanded");
                         if (isExpanded) {
-                            container.classList.remove('expanded');
-                            toggleButton.textContent = '...más';
+                            container.classList.remove("expanded");
+                            toggleButton.textContent = "...más";
                         } else {
-                            container.classList.add('expanded');
-                            toggleButton.textContent = 'mostrar menos';
+                            container.classList.add("expanded");
+                            toggleButton.textContent = "mostrar menos";
                         }
                     };
 
-                    // 👉 clic en botón o en el contenedor
-                    toggleButton.addEventListener('click', (e) => {
+                    // clic en el botón o en el contenedor
+                    toggleButton.addEventListener("click", (e) => {
                         e.stopPropagation();
                         toggleExpand();
                     });
-                    container.addEventListener('click', (e) => {
+                    container.addEventListener("click", (e) => {
                         e.stopPropagation();
                         toggleExpand();
                     });
@@ -1974,7 +1983,7 @@ function cleanupIframesExceptActive() {
             }, 50);
         };
 
-        setupExpandableText(titleEl, newTitle, false); // 👈 título no truncado
+        setupExpandableText(titleEl, newTitle, false); // 👈 título siempre completo
         setupExpandableText(descEl, newDesc, true);   // 👈 descripción expandible
 
         fixedBox.style.opacity = 1;
@@ -2138,6 +2147,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
