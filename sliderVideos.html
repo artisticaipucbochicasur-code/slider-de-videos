@@ -7,7 +7,7 @@
     <script>
       function loadVideos() {
         const sheetId = "1RBTn5zmKoLEpBRJ5K5zI54fDAtHLEFh9ZmIpfALyDFo"; // tu hoja de cálculo
-        const api = `https://opensheet.elk.sh/${sheetId}/videos`; // 👈 pestaña "videos"
+        const api = `https://opensheet.elk.sh/${sheetId}/videos`; // pestaña "videos"
 
         fetch(api)
           .then((res) => res.json())
@@ -20,10 +20,14 @@
               if (row.link) {
                 html += `
                   <div style="margin-bottom:20px;">
-                    <video width="320" height="240" controls>
-                      <source src="${row.link}" type="video/mp4">
-                      Tu navegador no soporta video.
-                    </video>
+                    <iframe 
+                      src="${row.link}" 
+                      width="100%" 
+                      height="240" 
+                      allow="autoplay" 
+                      frameborder="0" 
+                      allowfullscreen>
+                    </iframe>
                   </div>
                 `;
               }
