@@ -926,7 +926,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 
-
 // Mostrar/ocultar overlays al tocar el slider
 document.querySelector('.swiper').addEventListener('click', () => {
   const currentTime = new Date().getTime();
@@ -938,9 +937,13 @@ document.querySelector('.swiper').addEventListener('click', () => {
     // 🔔 Ocultar botón y lista de notificaciones
     notificationWrapper.classList.toggle('hidden-overlay');
     notificationList.classList.add('hidden'); // Cierra la lista si estaba abierta
+
+    // 👇 También alternar el título
+    document.getElementById("video-title-fixed").classList.toggle("hidden-overlay");
   }
   lastTapTime = currentTime;
 });
+
 
 
 
@@ -2113,6 +2116,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
