@@ -1,44 +1,51 @@
 <!DOCTYPE html>
 <html>
+  <head>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+      }
+      video {
+        width: 100%;
+        max-width: 400px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      }
+    </style>
+  </head>
   <body>
     <h2>Lista de Videos</h2>
-    <div id="videos"></div>
+    <div id="videos">⏳ Cargando videos...</div>
 
     <script>
       function loadVideos() {
-        const sheetId = "1RBTn5zmKoLEpBRJ5K5zI54fDAtHLEFh9ZmIpfALyDFo"; // tu hoja de cálculo
-        const api = `https://opensheet.elk.sh/${sheetId}/videos`; // pestaña "videos"
+        const sheetId = "1RBTn5zmKoLEpBRJ5K5zI54fDAtHLEFh9ZmIpfALyDFo";
+        const api = `https://opensheet.elk.sh/${sheetId}/videos`;
 
         fetch(api)
           .then((res) => res.json())
           .then((rows) => {
-            if (!Array.isArray(rows)) {
-              throw new Error("Respuesta inesperada: " + JSON.stringify(rows));
-            }
             let html = "";
             rows.forEach((row) => {
               if (row.link) {
                 html += `
-                  <div style="margin-bottom:20px;">
-                    <iframe 
-                      src="${row.link}" 
-                      width="100%" 
-                      height="240" 
-                      allow="autoplay" 
-                      frameborder="0" 
-                      allowfullscreen>
-                    </iframe>
-                  </div>
+                  <video controls>
+                    <source src="${row.link}" type="video/mp4">
+                    Tu navegador no soporta el tag video.
+                  </video>
                 `;
               }
             });
-            document.getElementById("videos").innerHTML = html;
+            document.getElementById("videos").innerHTML =
+              html || "⚠️ No hay videos en la hoja.";
           })
           .catch((err) => {
             document.getElementById("videos").innerHTML =
               "❌ Error al cargar videos: " + err;
           });
       }
+
       loadVideos();
     </script>
   </body>
