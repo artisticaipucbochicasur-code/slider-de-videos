@@ -6,9 +6,9 @@
 
     <script>
       function loadVideos() {
-        const sheetId = "1RBTn5zmKoLEpBRJ5K5zI54fDAtHLEFh9ZmIpfALyDFo"; // 👈 el mismo de antes
-        const api = `https://opensheet.elk.sh/${sheetId}/Hoja1`; 
-        // opensheet convierte tu hoja pública en JSON
+        const sheetId = "1RBTn5zmKoLEpBRJ5K5zI54fDAtHLEFh9ZmIpfALyDFo"; // tu hoja de cálculo
+        const api = `https://opensheet.elk.sh/${sheetId}/videos`; 
+        // opensheet convierte la pestaña "videos" en JSON
 
         fetch(api)
           .then((res) => res.json())
@@ -16,12 +16,19 @@
             let html = "";
             rows.forEach((row) => {
               if (row.link) {
-                html += `<video width="320" height="240" controls>
-                           <source src="${row.link}" type="video/mp4">
-                         </video><br>`;
+                html += `
+                  <div style="margin-bottom:20px;">
+                    <video width="320" height="240" controls>
+                      <source src="${row.link}" type="video/mp4">
+                    </video>
+                  </div>
+                `;
               }
             });
             document.getElementById("videos").innerHTML = html;
+          })
+          .catch((err) => {
+            document.getElementById("videos").innerHTML = "❌ Error al cargar videos: " + err;
           });
       }
       loadVideos();
