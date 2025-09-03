@@ -20,14 +20,10 @@
               if (row.link) {
                 html += `
                   <div style="margin-bottom:20px;">
-                    <iframe 
-                      src="${row.link}" 
-                      width="320" 
-                      height="240" 
-                      allow="autoplay" 
-                      frameborder="0" 
-                      allowfullscreen>
-                    </iframe>
+                    <video width="320" height="240" controls>
+                      <source src="${row.link}" type="video/mp4">
+                      Tu navegador no soporta video.
+                    </video>
                   </div>
                 `;
               }
