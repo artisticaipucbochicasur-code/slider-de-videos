@@ -1360,6 +1360,15 @@ function renderNotifications() {
     list.innerHTML = "<div>Sin notificaciones</div>";
     count.textContent = "";             // 👈 aseguramos que no quede número
     count.style.display = "none";       // 👈 escondemos el circulito rojo
+    
+    // 👇 también enviamos "0" a App Inventor
+    try {
+      if (typeof AppInventor !== "undefined" && AppInventor.setWebViewString) {
+        AppInventor.setWebViewString("0");
+      }
+    } catch (e) {
+      console.warn("No se pudo enviar a App Inventor:", e);
+    }
     return;
   }
 
@@ -1420,7 +1429,17 @@ function renderNotifications() {
 
     list.appendChild(item);
   });
+
+  // 👇 al final, enviar el número de notificaciones a App Inventor
+  try {
+    if (typeof AppInventor !== "undefined" && AppInventor.setWebViewString) {
+      AppInventor.setWebViewString(String(notifications.length));
+    }
+  } catch (e) {
+    console.warn("No se pudo enviar a App Inventor:", e);
+  }
 }
+
 
 
 
@@ -2147,28 +2166,3 @@ setInterval(() => {
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
