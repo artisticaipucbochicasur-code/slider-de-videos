@@ -1911,9 +1911,7 @@ function cleanupIframesExceptActive() {
     const fixedBox = document.getElementById("video-title-fixed");
     if (!fixedBox || !swiperInstance) return;
 
-    // Obtener el slide activo
     const activeSlide = swiperInstance.slides[swiperInstance.activeIndex] || document.querySelector('.swiper-slide-active');
-
     if (!activeSlide) return;
 
     const newTitle = activeSlide.dataset.title || "Video";
@@ -1922,7 +1920,6 @@ function cleanupIframesExceptActive() {
     const titleEl = fixedBox.querySelector(".video-title");
     const descEl = fixedBox.querySelector(".video-desc");
 
-    // Verificar si el contenido ya es el mismo para evitar parpadeos innecesarios
     const currentTitle = titleEl.querySelector('.text-container')?.textContent;
     const currentDesc = descEl.querySelector('.text-container')?.textContent;
     
@@ -1930,27 +1927,34 @@ function cleanupIframesExceptActive() {
         return;
     }
 
-    // Transición suave al cambiar de título
     fixedBox.style.opacity = 0;
 
     setTimeout(() => {
-        // Función genérica para manejar el truncamiento y expansión
         const setupExpandableText = (element, text) => {
-            // Eliminar contenido anterior para evitar duplicados
+            // reiniciar el contenido
             element.innerHTML = `<span class="text-container">${text}</span>`;
             const container = element.querySelector('.text-container');
-            
-            // Usar setTimeout para asegurar que la renderización está completa antes de medir
+
             setTimeout(() => {
-                if (container.scrollHeight > container.clientHeight) {
+                // 👉 clonar el contenido sin clamp para medir bien
+                const temp = container.cloneNode(true);
+                temp.style.display = "inline-block";
+                temp.style.webkitLineClamp = "unset";
+                temp.style.maxHeight = "none";
+                temp.style.visibility = "hidden";
+                element.appendChild(temp);
+
+                const needsClamp = temp.scrollHeight > container.clientHeight;
+                temp.remove();
+
+                if (needsClamp) {
                     const toggleButton = document.createElement('span');
                     toggleButton.className = 'toggle-text';
                     toggleButton.textContent = '...más';
                     element.appendChild(toggleButton);
 
-                    // Añadir el listener para expandir/contraer
-                    element.addEventListener('click', (e) => {
-                        e.stopPropagation(); // ✅ evita cerrar overlays al expandir
+                    toggleButton.addEventListener('click', (e) => {
+                        e.stopPropagation(); // no cerrar overlays
                         const isExpanded = container.classList.contains('expanded');
                         if (isExpanded) {
                             container.classList.remove('expanded');
@@ -1960,23 +1964,17 @@ function cleanupIframesExceptActive() {
                             toggleButton.textContent = 'mostrar menos';
                         }
                     });
-                } else {
-                    const existingButton = element.querySelector('.toggle-text');
-                    if (existingButton) existingButton.remove();
-                    const clonedElement = element.cloneNode(true);
-                    element.parentNode.replaceChild(clonedElement, element);
                 }
             }, 50);
         };
 
-        // Aplicar la lógica al título y la descripción
         setupExpandableText(titleEl, newTitle);
         setupExpandableText(descEl, newDesc);
 
-        // Mostrar el contenedor de nuevo
         fixedBox.style.opacity = 1;
     }, 120);
 }
+
 
 
         
@@ -2134,6 +2132,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
