@@ -623,10 +623,12 @@
   height: 100%;
   background: rgba(0,0,0,0.7);
   display: flex;
-  align-items: center;
+  align-items: flex-start; /* 👈 arriba */
   justify-content: center;
+  padding-top: 40px;       /* 👈 separación desde arriba */
   z-index: 9999;
 }
+
 
 /* Contenedor del modal */
 #search-modal .modal-content {
@@ -841,35 +843,39 @@ document.addEventListener("DOMContentLoaded", async () => {
     searchModal.classList.add("hidden");
   }
 
-  searchInput.addEventListener("input", () => {
-    const query = searchInput.value.toLowerCase().trim();
-    searchResults.innerHTML = "";
+ searchInput.addEventListener("input", () => {
+  const query = searchInput.value.toLowerCase().trim(); // 👈 normalizamos
+  searchResults.innerHTML = "";
 
-    if (!query) return;
+  if (!query) return;
 
-    const matches = lastVideos.filter(v => v.title.toLowerCase().includes(query));
+  // 👇 normalizamos también los títulos para comparar sin importar mayúsculas/espacios
+  const matches = lastVideos.filter(v =>
+    v.title.toLowerCase().trim().includes(query)
+  );
 
-    if (matches.length === 0) {
-      searchResults.innerHTML = "<li style='padding:6px; color:#aaa;'>Sin resultados</li>";
-    } else {
-      matches.forEach(video => {
-        const li = document.createElement("li");
-        li.textContent = video.title;
-        li.style.padding = "6px";
-        li.style.cursor = "pointer";
-        li.onmouseover = () => (li.style.background = "#333");
-        li.onmouseout = () => (li.style.background = "transparent");
-        li.onclick = () => {
-          const index = lastVideos.findIndex(v => v.id === video.id);
-          if (index !== -1 && swiper) {
-            swiper.slideToLoop(index, 0);
-          }
-          closeSearchModal();
-        };
-        searchResults.appendChild(li);
-      });
-    }
-  });
+  if (matches.length === 0) {
+    searchResults.innerHTML = "<li style='padding:6px; color:#aaa;'>Sin resultados</li>";
+  } else {
+    matches.forEach(video => {
+      const li = document.createElement("li");
+      li.textContent = video.title;
+      li.style.padding = "6px";
+      li.style.cursor = "pointer";
+      li.onmouseover = () => (li.style.background = "#333");
+      li.onmouseout = () => (li.style.background = "transparent");
+      li.onclick = () => {
+        const index = lastVideos.findIndex(v => v.id === video.id);
+        if (index !== -1 && swiper) {
+          swiper.slideToLoop(index, 0);
+        }
+        closeSearchModal();
+      };
+      searchResults.appendChild(li);
+    });
+  }
+});
+
 
   searchClose.onclick = closeSearchModal;
 
@@ -2077,4 +2083,5 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
