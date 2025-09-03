@@ -681,10 +681,12 @@
   cursor: pointer;
 }
 /* Clase para resaltar título al saltar desde buscador */
-.highlight-title {
-  color: #4da3ff !important;   /* azul suave */
-  transition: color 0.5s ease;
+/* Resaltado temporal para el contenedor de título */
+#video-title-fixed.highlight-container {
+  background: rgba(77, 163, 255, 0.35); /* azul suave translúcido */
+  transition: background 0.5s ease;
 }
+
 
         
     </style>
@@ -875,16 +877,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     swiper.slideToLoop(index, 0);
 
     // 👇 Esperamos a que el swiper cambie de slide y resaltamos el título
+   setTimeout(() => {
+  const container = document.getElementById("video-title-fixed");
+  if (container) {
+    container.classList.add("highlight-container");
+    // Quitar el resaltado después de 3 segundos
     setTimeout(() => {
-      const titleEl = document.querySelector("#video-title-fixed .video-title");
-      if (titleEl) {
-        titleEl.classList.add("highlight-title");
-        // Quitar el resaltado después de 3 segundos
-        setTimeout(() => {
-          titleEl.classList.remove("highlight-title");
-        }, 3000);
-      }
-    }, 300); // delay pequeño para asegurar que se actualice el título
+      container.classList.remove("highlight-container");
+    }, 3000);
+  }
+}, 300);
+ // delay pequeño para asegurar que se actualice el título
   }
   closeSearchModal();
 };
@@ -2101,6 +2104,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
