@@ -1052,6 +1052,20 @@ function getActiveVideoId() {
   return activeSlide.dataset.videoid || null;
 }
 
+// 🚀 Apenas carga la página, enviamos "success" a App Inventor
+window.addEventListener("load", () => {
+  try {
+    if (typeof AppInventor !== "undefined" && AppInventor.setWebViewString) {
+      AppInventor.setWebViewString("success");
+      console.log("✅ Se envió 'success' a App Inventor");
+    }
+  } catch (err) {
+    console.warn("No se pudo enviar 'success' a App Inventor:", err);
+  }
+});
+
+
+        
 // 🗂️ Caché de comentarios
 const comentariosCache = {}; // { videoId: [comentarios] }
 
@@ -2169,6 +2183,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
