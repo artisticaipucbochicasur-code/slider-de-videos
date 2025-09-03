@@ -429,33 +429,31 @@
     color: #fff;
 }
 
-  /* Contenedor de comentarios (reducido por defecto) */
-   .comments-overlay-container {
-    position: fixed;
-    bottom: 60px;
-    left: 10px;
-    width: calc(80% - 20px);
-    background: rgba(0, 0, 0, 0.6);
-    color: #eee;
-    padding: 10px;
-    border-radius: 5px;
-    box-sizing: border-box;
-    z-index: 998;
-    overflow-y: auto;
-    transition: opacity 0.3s ease, visibility 0.3s ease, max-height 0.3s ease;
-    max-height: 4em;
-
-        white-space: normal;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
+/* Contenedor de comentarios */
+.comments-overlay-container {
+  position: fixed;
+  bottom: 55px; /* 👈 ahora justo arriba de la barra de escribir */
+  left: 10px;
+  width: calc(80% - 20px);
+  background: rgba(0, 0, 0, 0.4); /* más transparente */
+  color: #eee;
+  padding: 8px;
+  border-radius: 5px;
+  box-sizing: border-box;
+  z-index: 998;
+  overflow-y: auto;
+  transition: opacity 0.3s ease, visibility 0.3s ease, max-height 0.3s ease;
+  max-height: 4em;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 
-    /* Estado expandido del contenedor de comentarios */
-    .comments-overlay-container.expanded {
-      max-height: 75vh;
-    }
-
+  /* expandido */
+.comments-overlay-container.expanded {
+  max-height: 70vh;
+}
     /* Estilos para la lista de comentarios */
     .comments-overlay-container ul {
         list-style: none;
@@ -569,45 +567,47 @@
         font-size: 0.9rem;
     }
 
-    /* Nuevo: Estilos para la barra de entrada de comentarios */
- .comment-input-container {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background: transparent;
-    padding: 10px 15px;
-    box-sizing: border-box;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    z-index: 1000;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
+/* Barra de entrada de comentarios */
+.comment-input-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: transparent;   /* sin caja extra */
+  padding: 8px 12px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 1000;
+}
+
+/* 🔥 hint (placeholder) en blanco */
+.comment-input-container input::placeholder {
+  color: rgba(255,255,255,0.7);
+}
+
+.comment-input-container input {
+  flex-grow: 1;
+  background: transparent;
+  border: 1px solid #888; /* un poco más delgado */
+  border-radius: 20px;     /* ovalado */
+  padding: 8px 14px;
+  color: white;
+  font-size: 0.95rem;
+  outline: none;
 }
 
 
-  .comment-input-container input {
-    flex-grow: 1;
-    background: transparent;
-    border: 1px solid #555;
-    border-radius: 25px; /* más redondeado */
-    padding: 12px 20px;  /* 🔥 más alto y largo */
-    color: white;
-    font-size: 1rem;
-    outline: none;
+ .comment-input-container .send-comment-btn {
+  background: transparent;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.6rem;
 }
-
-
-    .comment-input-container .send-comment-btn {
-        background: transparent;
-        color: white;
-        border: none;
-        padding: 12px 17px;
-        border-radius: 20px;
-        cursor: pointer;
-        font-weight: bold;
-        font-size: 1.8rem;
-    }
     
     .comment-input-container .send-comment-btn:hover {
         background: transparent;
@@ -2116,6 +2116,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
