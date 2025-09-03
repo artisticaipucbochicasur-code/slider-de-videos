@@ -7,12 +7,14 @@
     <script>
       function loadVideos() {
         const sheetId = "1RBTn5zmKoLEpBRJ5K5zI54fDAtHLEFh9ZmIpfALyDFo"; // tu hoja de cálculo
-        const api = `https://opensheet.elk.sh/${sheetId}/videos`; 
-        // opensheet convierte la pestaña "videos" en JSON
+        const api = `https://opensheet.elk.sh/${sheetId}/videos`; // 👈 pestaña "videos"
 
         fetch(api)
           .then((res) => res.json())
           .then((rows) => {
+            if (!Array.isArray(rows)) {
+              throw new Error("Respuesta inesperada: " + JSON.stringify(rows));
+            }
             let html = "";
             rows.forEach((row) => {
               if (row.link) {
@@ -28,7 +30,8 @@
             document.getElementById("videos").innerHTML = html;
           })
           .catch((err) => {
-            document.getElementById("videos").innerHTML = "❌ Error al cargar videos: " + err;
+            document.getElementById("videos").innerHTML =
+              "❌ Error al cargar videos: " + err;
           });
       }
       loadVideos();
