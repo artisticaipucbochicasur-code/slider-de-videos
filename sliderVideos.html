@@ -609,48 +609,91 @@
         background: transparent;
     }
 
-
-        #search-container {
-  position: relative;
-  margin: 10px;
+/* Oculta el modal por defecto */
+.hidden {
+  display: none !important;
 }
 
+/* Fondo oscuro al abrir modal */
+#search-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+/* Contenedor del modal */
+#search-modal .modal-content {
+  background: #111;
+  color: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+/* Input */
 #search-input {
   width: 100%;
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
+  padding: 6px;
+  margin-bottom: 10px;
+  background: #222;
+  border: 1px solid #444;
+  color: white;
+  border-radius: 5px;
 }
 
+/* Lista de resultados */
 #search-results {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: white;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  max-height: 200px;
+  max-height: 150px;
   overflow-y: auto;
-  z-index: 1000;
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 #search-results li {
   padding: 8px;
   cursor: pointer;
+  border-bottom: 1px solid #333;
 }
 
 #search-results li:hover {
-  background: #f0f0f0;
+  background: #333;
 }
 
+/* Botón cerrar */
+#search-close {
+  background: #444;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+        
     </style>
 </head>
 <body>
 
-<div id="search-container">
-  <input type="text" id="search-input" placeholder="Buscar videos..." />
-  <ul id="search-results" class="hidden"></ul>
+<!-- 🔍 Modal de búsqueda -->
+<div id="search-modal" class="hidden">
+  <div class="modal-content">
+    <h3 style="margin:0 0 10px; font-size:18px;">Buscar video</h3>
+    <input type="text" id="search-input" placeholder="Escribe el título...">
+    <ul id="search-results"></ul>
+    <div class="modal-actions" style="margin-top:10px; text-align:right;">
+      <button id="search-close">Cerrar</button>
+    </div>
+  </div>
 </div>
 
 
@@ -724,54 +767,6 @@
         const SCRIPT_URL =
             "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
 
-
-const searchInput = document.getElementById("search-input");
-const searchResults = document.getElementById("search-results");
-
-// Escuchar escritura en el input
-searchInput.addEventListener("input", () => {
-  const query = searchInput.value.toLowerCase().trim();
-  searchResults.innerHTML = "";
-
-  if (!query) {
-    searchResults.classList.add("hidden");
-    return;
-  }
-
-  // Buscar coincidencias en los títulos
-  const matches = lastVideos.filter(v => v.title.toLowerCase().includes(query));
-
-  if (matches.length === 0) {
-    searchResults.innerHTML = "<li>No se encontraron resultados</li>";
-  } else {
-    matches.forEach(video => {
-      const li = document.createElement("li");
-      li.textContent = video.title;
-      li.onclick = () => {
-        // Encontrar el índice del video en el swiper
-        const index = lastVideos.findIndex(v => v.id === video.id);
-        if (index !== -1 && swiper) {
-          swiper.slideToLoop(index, 0); // 👈 salta directo al video
-        }
-        searchResults.classList.add("hidden");
-        searchInput.value = "";
-      };
-      searchResults.appendChild(li);
-    });
-  }
-
-  searchResults.classList.remove("hidden");
-});
-
-// Ocultar resultados al hacer clic fuera
-document.addEventListener("click", (e) => {
-  if (!searchResults.contains(e.target) && e.target !== searchInput) {
-    searchResults.classList.add("hidden");
-  }
-});
-
-
-        
 // === Comentarios móviles ===
 const commentsOverlay = document.getElementById('commentsOverlay');
 const commentsCounter = document.getElementById('commentsCounter');
@@ -814,23 +809,85 @@ document.addEventListener("DOMContentLoaded", async () => {
     commentsCounter.classList.remove("hidden-overlay");
     commentInputContainer.classList.remove("hidden-overlay");
 
-    // 🔹 Renderizamos los comentarios del primer video para la visualización inicial
+    // 🔹 Renderizamos los comentarios del primer video
     if (videos.length > 0) {
       const primerVideoId = getActiveVideoId() || videos[0].id;
       renderComentarios(primerVideoId);
     }
 
     console.log("✅ Todos los comentarios precargados, interfaz visible.");
-
   } catch (e) {
     console.error("❌ Error al inicializar:", e);
-    // En caso de error, mostramos la interfaz de todas formas
     commentsOverlay.classList.remove("hidden-overlay");
     commentsCounter.classList.remove("hidden-overlay");
     commentInputContainer.classList.remove("hidden-overlay");
   }
-});
 
+  // ⬇️⬇️ Buscador integrado (App Inventor + modal emergente) ⬇️⬇️
+
+  const searchModal = document.getElementById("search-modal");
+  const searchInput = document.getElementById("search-input");
+  const searchResults = document.getElementById("search-results");
+  const searchClose = document.getElementById("search-close");
+
+  function openSearchModal() {
+    searchModal.classList.remove("hidden");
+    searchInput.value = "";
+    searchResults.innerHTML = "";
+    searchInput.focus();
+  }
+
+  function closeSearchModal() {
+    searchModal.classList.add("hidden");
+  }
+
+  searchInput.addEventListener("input", () => {
+    const query = searchInput.value.toLowerCase().trim();
+    searchResults.innerHTML = "";
+
+    if (!query) return;
+
+    const matches = lastVideos.filter(v => v.title.toLowerCase().includes(query));
+
+    if (matches.length === 0) {
+      searchResults.innerHTML = "<li style='padding:6px; color:#aaa;'>Sin resultados</li>";
+    } else {
+      matches.forEach(video => {
+        const li = document.createElement("li");
+        li.textContent = video.title;
+        li.style.padding = "6px";
+        li.style.cursor = "pointer";
+        li.onmouseover = () => (li.style.background = "#333");
+        li.onmouseout = () => (li.style.background = "transparent");
+        li.onclick = () => {
+          const index = lastVideos.findIndex(v => v.id === video.id);
+          if (index !== -1 && swiper) {
+            swiper.slideToLoop(index, 0);
+          }
+          closeSearchModal();
+        };
+        searchResults.appendChild(li);
+      });
+    }
+  });
+
+  searchClose.onclick = closeSearchModal;
+
+  // 🔗 Integración con App Inventor (muestra buscador cuando recibe "buscar")
+  setInterval(() => {
+    try {
+      if (typeof window.AppInventor !== "undefined") {
+        const msg = AppInventor.getWebViewString();
+        if (msg === "buscar") {
+          openSearchModal();
+          AppInventor.setWebViewString(""); // reset
+        }
+      }
+    } catch (e) {
+      console.warn("Error leyendo WebViewString:", e);
+    }
+  }, 500);
+});
 
 
 
@@ -2020,3 +2077,4 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
