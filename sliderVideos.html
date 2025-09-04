@@ -1097,6 +1097,7 @@ const comentariosCache = {}; // { videoId: [comentarios] }
 // === Cargar comentarios desde Google Sheets con caché ===
 // === Cargar comentarios desde Google Sheets con caché ===
 // 🚀 Optimización: evitar fetch innecesarios, permitir forzar recarga y evitar mostrar comentarios incorrectos
+// 🚀 Optimización: evitar mostrar comentarios viejos y asegurar actualización correcta
 async function cargarComentarios(videoId, render = true, options = {}) {
   if (!videoId) return;
 
@@ -1105,28 +1106,28 @@ async function cargarComentarios(videoId, render = true, options = {}) {
   const commentsList = document.getElementById('commentsList');
   const commentCountValue = document.getElementById('commentCountValue');
 
-  // 🧹 Si se va a forzar la carga (nuevo video o actualización manual)
-  // limpiamos la lista para evitar que se muestren comentarios viejos
+  // 🧹 Siempre que el video cambia o se fuerza la recarga,
+  // limpiamos la lista para evitar mostrar comentarios del video anterior
   if (force && commentsList) {
     commentsList.innerHTML = '<li>Cargando comentarios...</li>';
     if (commentCountValue) commentCountValue.textContent = '0';
   }
 
-  // ✅ Si ya tenemos en caché y no forzamos → render instantáneo
+  // ✅ Si no es forzado, pero tenemos datos en caché → usar directamente
   if (!force && comentariosCache[videoId]) {
     comentariosPorVideo[videoId] = comentariosCache[videoId];
     if (render) renderComentarios(videoId);
     return;
   }
 
-  // ✅ Si ya tenemos en memoria y no forzamos → usar eso
+  // ✅ Si no es forzado, pero ya tenemos datos en memoria → usar esos también
   if (!force && comentariosPorVideo[videoId]) {
     comentariosCache[videoId] = comentariosPorVideo[videoId];
     if (render) renderComentarios(videoId);
     return;
   }
 
-  // ⚡ Si no hay datos o se forzó → fetch directo al servidor (con cache-buster)
+  // ⚡ Si no tenemos datos o se forzó la recarga → pedir siempre datos frescos al servidor
   try {
     const res = await fetch(
       `${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}&_=${Date.now()}`
@@ -1137,21 +1138,22 @@ async function cargarComentarios(videoId, render = true, options = {}) {
       ? data.data.map(c => ({
           autor: c[2] || "Anónimo",
           comentario: c[1] || "",
-          // 🔹 Formatear fecha siempre a local string
           fecha: c[4] ? new Date(c[4]).toLocaleString() : "",
           correo: c[3] || ""
         }))
       : [];
 
+    // 🔄 Guardamos siempre la última versión para futuras cargas rápidas
     comentariosCache[videoId] = comentariosPorVideo[videoId];
 
     if (render) renderComentarios(videoId);
   } catch (e) {
     console.error("Error cargando comentarios:", e);
+
     comentariosPorVideo[videoId] = [];
     comentariosCache[videoId] = [];
 
-    // 🟢 Mostramos mensaje de error amigable en la interfaz
+    // 🟢 Mostramos mensaje de error en la interfaz
     if (commentsList) {
       commentsList.innerHTML = '<li>Error al cargar comentarios.</li>';
       if (commentCountValue) commentCountValue.textContent = '0';
@@ -2238,6 +2240,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
