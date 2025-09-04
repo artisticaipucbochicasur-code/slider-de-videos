@@ -1096,11 +1096,21 @@ const comentariosCache = {}; // { videoId: [comentarios] }
 
 // === Cargar comentarios desde Google Sheets con caché ===
 // === Cargar comentarios desde Google Sheets con caché ===
-// 🚀 Optimización: evitar fetch innecesarios y permitir forzar recarga
+// 🚀 Optimización: evitar fetch innecesarios, permitir forzar recarga y evitar mostrar comentarios incorrectos
 async function cargarComentarios(videoId, render = true, options = {}) {
   if (!videoId) return;
 
   const force = options.force || false;
+
+  const commentsList = document.getElementById('commentsList');
+  const commentCountValue = document.getElementById('commentCountValue');
+
+  // 🧹 Si se va a forzar la carga (nuevo video o actualización manual)
+  // limpiamos la lista para evitar que se muestren comentarios viejos
+  if (force && commentsList) {
+    commentsList.innerHTML = '<li>Cargando comentarios...</li>';
+    if (commentCountValue) commentCountValue.textContent = '0';
+  }
 
   // ✅ Si ya tenemos en caché y no forzamos → render instantáneo
   if (!force && comentariosCache[videoId]) {
@@ -1140,13 +1150,19 @@ async function cargarComentarios(videoId, render = true, options = {}) {
     console.error("Error cargando comentarios:", e);
     comentariosPorVideo[videoId] = [];
     comentariosCache[videoId] = [];
+
+    // 🟢 Mostramos mensaje de error amigable en la interfaz
+    if (commentsList) {
+      commentsList.innerHTML = '<li>Error al cargar comentarios.</li>';
+      if (commentCountValue) commentCountValue.textContent = '0';
+    }
+
     if (render) renderComentarios(videoId);
   }
 }
 
 
 
-// === Renderizar comentarios en el DOM ===
 function renderComentarios(videoId) {
   if (!videoId) return;
 
@@ -1154,56 +1170,70 @@ function renderComentarios(videoId) {
   const commentsList = document.getElementById('commentsList');
   const commentCountValue = document.getElementById('commentCountValue');
 
+  // 🧹 Limpiar siempre antes de renderizar
   commentsList.innerHTML = '';
 
+  // 🔄 Si todavía no tenemos comentarios cargados → mostramos "Cargando..."
+  if (!comentariosCache[videoId] && !comentariosPorVideo[videoId]) {
+    const li = document.createElement('li');
+    li.textContent = "Cargando comentarios...";
+    commentsList.appendChild(li);
+    commentCountValue.textContent = "0";
+    return; // 👈 No seguimos, esperamos a que cargarComentarios() termine
+  }
+
+  // 🟢 Si no hay comentarios, mostramos mensaje de invitación
   if (lista.length === 0) {
     const li = document.createElement('li');
     li.textContent = "Sé el primero en comentar...";
     commentsList.appendChild(li);
     commentCountValue.textContent = "0";
-  } else {
-    lista.forEach(c => {
-      const li = document.createElement('li');
-      li.classList.add('deletable');
-
-      const commentContent = document.createElement('div');
-      commentContent.className = 'comment-content';
-      commentContent.textContent = `${c.autor} (${c.fecha}) - ${c.comentario}`;
-      li.appendChild(commentContent);
-
-      li.dataset.correo = c.correo;
-      li.dataset.texto = c.comentario;
-
-      if (normalizeText(c.correo) === normalizeText(usuarioCorreo)) {
-        const deleteBtnContainer = document.createElement('div');
-        deleteBtnContainer.className = 'delete-btn-container';
-        const deleteBtn = document.createElement('div');
-        deleteBtn.className = 'delete-btn';
-        deleteBtn.textContent = 'Borrar';
-        deleteBtnContainer.appendChild(deleteBtn);
-        li.appendChild(deleteBtnContainer);
-
-        deleteBtn.addEventListener('click', async (ev) => {
-          ev.stopPropagation();
-          await eliminarComentario(videoId, c.comentario, c.correo);
-
-          if (comentariosCache[videoId]) {
-            comentariosCache[videoId] = comentariosCache[videoId].filter(
-              com => com.comentario !== c.comentario || com.correo !== c.correo
-            );
-          }
-
-          renderComentarios(videoId);
-        });
-      }
-
-      commentsList.appendChild(li);
-    });
-
-    commentCountValue.textContent = lista.length;
+    return;
   }
-}
 
+  // 📝 Renderizar comentarios normalmente
+  lista.forEach(c => {
+    const li = document.createElement('li');
+    li.classList.add('deletable');
+
+    const commentContent = document.createElement('div');
+    commentContent.className = 'comment-content';
+    commentContent.textContent = `${c.autor} (${c.fecha}) - ${c.comentario}`;
+    li.appendChild(commentContent);
+
+    li.dataset.correo = c.correo;
+    li.dataset.texto = c.comentario;
+
+    // 🗑️ Botón de borrar solo para el autor
+    if (normalizeText(c.correo) === normalizeText(usuarioCorreo)) {
+      const deleteBtnContainer = document.createElement('div');
+      deleteBtnContainer.className = 'delete-btn-container';
+      const deleteBtn = document.createElement('div');
+      deleteBtn.className = 'delete-btn';
+      deleteBtn.textContent = 'Borrar';
+      deleteBtnContainer.appendChild(deleteBtn);
+      li.appendChild(deleteBtnContainer);
+
+      deleteBtn.addEventListener('click', async (ev) => {
+        ev.stopPropagation();
+        await eliminarComentario(videoId, c.comentario, c.correo);
+
+        if (comentariosCache[videoId]) {
+          comentariosCache[videoId] = comentariosCache[videoId].filter(
+            com => com.comentario !== c.comentario || com.correo !== c.correo
+          );
+        }
+
+        renderComentarios(videoId);
+      });
+    }
+
+    commentsList.appendChild(li);
+  });
+
+  // 🔄 Actualizar contador
+  commentCountValue.textContent = lista.length;
+}
 
 
 // === Enviar un nuevo comentario ===
@@ -2208,6 +2238,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
