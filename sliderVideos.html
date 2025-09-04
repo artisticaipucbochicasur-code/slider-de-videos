@@ -1095,23 +1095,22 @@ window.addEventListener("load", () => {
 // 🗂️ Caché de comentarios
 const comentariosCache = {}; // { videoId: [comentarios] }
 
-// 🚀 Optimización: evitar mostrar comentarios viejos y asegurar actualización correcta
+// 🚀 Optimización: siempre mostrar datos frescos si el caché fue invalidado
 async function cargarComentarios(videoId, render = true, options = {}) {
   if (!videoId) return;
 
   const force = options.force || false;
-
   const commentsList = document.getElementById('commentsList');
   const commentCountValue = document.getElementById('commentCountValue');
 
-  // 🧹 Siempre limpiar la lista al cambiar de video o al forzar recarga
+  // 🧹 Mostrar estado de carga cuando cambiamos de video o se forzó actualización
   if (commentsList) {
     commentsList.innerHTML = '<li>Cargando comentarios...</li>';
     if (commentCountValue) commentCountValue.textContent = '0';
   }
 
   try {
-    // ⚡ Si se fuerza o no tenemos datos → pedir siempre datos frescos
+    // ⚡ Si el caché fue invalidado o se fuerza → pedir siempre datos frescos
     if (force || !comentariosCache[videoId]) {
       const res = await fetch(
         `${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}&_=${Date.now()}`
@@ -1127,24 +1126,21 @@ async function cargarComentarios(videoId, render = true, options = {}) {
           }))
         : [];
 
-      // 🔄 Actualizar caché con datos frescos
+      // 🔄 Actualizamos el caché con los datos más recientes
       comentariosCache[videoId] = comentariosPorVideo[videoId];
-
     } else {
-      // 🟢 Si no se fuerza y ya hay datos → usar caché directamente
+      // 🟢 Si tenemos caché válido → usarlo
       comentariosPorVideo[videoId] = comentariosCache[videoId];
     }
 
-    // Renderizamos los comentarios solo si está habilitado
+    // 🖼 Renderizamos los comentarios actualizados
     if (render) renderComentarios(videoId);
 
   } catch (e) {
     console.error("Error cargando comentarios:", e);
-
     comentariosPorVideo[videoId] = [];
     comentariosCache[videoId] = [];
 
-    // 🟢 Mostrar mensaje de error en la interfaz
     if (commentsList) {
       commentsList.innerHTML = '<li>Error al cargar comentarios.</li>';
       if (commentCountValue) commentCountValue.textContent = '0';
@@ -2260,6 +2256,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
