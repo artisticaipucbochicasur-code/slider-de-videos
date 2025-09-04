@@ -1265,10 +1265,9 @@ async function enviarComentario() {
       }
 
       // 🔔 Disparar un evento global para que TODOS los dispositivos eliminen el caché de este video
-      const evento = new CustomEvent("mensajeComentariosActualizados", {
+      window.dispatchEvent(new CustomEvent("mensajeComentariosActualizados", {
         detail: { videoId }
-      });
-      window.dispatchEvent(evento);
+      }));
 
     } else {
       console.error("❌ No se pudo guardar:", data.message);
@@ -1303,6 +1302,15 @@ commentInput.addEventListener('blur', () => {
   }
 });
 
+// === Escuchar cambios de comentarios desde otros dispositivos ===
+window.addEventListener("mensajeComentariosActualizados", (e) => {
+  const videoActualizado = e.detail.videoId;
+
+  // 🧹 Borrar solo el caché de ese video
+  if (comentariosCache[videoActualizado]) {
+    delete comentariosCache[videoActualizado];
+  }
+});
 
 
 // === Precargar todos los comentarios al inicio ===
@@ -2188,23 +2196,21 @@ async function cargarVideos(checkNew = false) {
             const videoId = getActiveVideoId();
             if (videoId) renderComentarios(videoId);
           },
-          slideChange() {
-            cleanupIframesExceptActive();
-            updateFixedTitle(this);
-            activarSwipeParaBorrar();
+        slideChange() {
+  cleanupIframesExceptActive();
+  updateFixedTitle(this);
+  activarSwipeParaBorrar();
 
-            // 🔹 Mostrar comentarios actualizados al cambiar de video
-            const videoId = getActiveVideoId();
-            if (videoId) {
-              // 🧹 Si el caché fue invalidado, forzamos fetch desde servidor
-              if (!comentariosCache[videoId]) {
-                cargarComentarios(videoId, true, { force: true });
-              } else {
-                // 🟢 Si tenemos caché fresco, usamos ese
-                cargarComentarios(videoId, true);
-              }
-            }
-          },
+  const videoId = getActiveVideoId();
+  if (videoId) {
+    if (!comentariosCache[videoId]) {
+      cargarComentarios(videoId, true, { force: true });
+    } else {
+      cargarComentarios(videoId, true);
+    }
+  }
+}
+,
           slideChangeTransitionEnd() {
             updateFixedTitle(this);
           }
@@ -2265,6 +2271,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
