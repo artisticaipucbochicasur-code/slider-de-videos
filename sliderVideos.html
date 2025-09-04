@@ -1267,6 +1267,13 @@ async function enviarComentario() {
       if (typeof notificarCambioComentarios === "function") {
         notificarCambioComentarios(videoId);
       }
+
+      // 🔔 Disparar un evento global para que TODOS los dispositivos eliminen el caché de este video
+      const evento = new CustomEvent("mensajeComentariosActualizados", {
+        detail: { videoId }
+      });
+      window.dispatchEvent(evento);
+
     } else {
       console.error("❌ No se pudo guardar:", data.message);
     }
@@ -1276,6 +1283,7 @@ async function enviarComentario() {
     sendCommentBtn.disabled = false;
   }
 }
+
 
 // === Listeners del input ===
 sendCommentBtn.addEventListener('click', enviarComentario);
@@ -1385,9 +1393,23 @@ async function verificarComentariosVideos() {
 setInterval(verificarComentariosVideos, 5000);
 
 // --- HOOK para disparar verificación inmediata tras alta/baja ---
-function notificarCambioComentarios() {
+// 🚀 Notificar a todos los dispositivos que hay cambios en comentarios
+function notificarCambioComentarios(videoId) {
+  // 🧹 Invalida la caché local de ese video
+  if (comentariosCache[videoId]) {
+    delete comentariosCache[videoId];
+  }
+
+  // ✅ Si el usuario está viendo ese video en este momento → recargar comentarios
+  const videoActual = getActiveVideoId();
+  if (videoActual === videoId) {
+    cargarComentarios(videoId, true, { force: true });
+  }
+
+  // 🔄 Llamamos a la verificación general para mantener todo sincronizado
   verificarComentariosVideos();
 }
+
 
 
 
@@ -2238,6 +2260,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
