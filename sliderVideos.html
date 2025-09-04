@@ -1204,8 +1204,6 @@ function renderComentarios(videoId) {
   }
 }
 
-
-
 // === Enviar un nuevo comentario ===
 async function enviarComentario() {
   const texto = commentInput.value.trim();
@@ -1337,10 +1335,16 @@ async function verificarComentariosVideos() {
     if (data.timestamp && data.timestamp !== ultimaActualizacionComentarios) {
       ultimaActualizacionComentarios = data.timestamp;
 
-      const videoId = getActiveVideoId();
-      if (videoId) {
-        // 👇 fuerza carga fresca desde servidor
-        await cargarComentarios(videoId, true, { force: true });
+      // 🔥 FIX: En lugar de solo recargar el video activo, recargamos TODOS los videos en caché (sin render, para no bloquear UI)
+      // Esto asegura que al deslizar a cualquier video, el caché esté fresco.
+      for (const videoId in comentariosCache) {
+        await cargarComentarios(videoId, false, { force: true }); // No render, solo actualización de caché
+      }
+
+      // Luego, render solo para el activo (si hay uno)
+      const videoIdActivo = getActiveVideoId();
+      if (videoIdActivo) {
+        renderComentarios(videoIdActivo); // Render inmediato con datos frescos
       }
     }
   } catch (err) {
@@ -1819,7 +1823,7 @@ deleteConfirm.onclick = async () => {
             return controlsBar;
         }
 
-        function formatTime(seconds) {
+function formatTime(seconds) {
             const h = Math.floor(seconds / 3600);
             const m = Math.floor((seconds % 3600) / 60);
             const s = Math.floor(seconds % 60);
@@ -2208,8 +2212,3 @@ setInterval(() => {
     </script>
 </body>
 </html>
-
-
-
-
-
