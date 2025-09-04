@@ -813,6 +813,24 @@ let startX = 0;
 let isSwiping = false;
         let comentariosTimestampCache = {};
 
+// === Escuchar cambios de comentarios desde otros dispositivos ===
+window.addEventListener("mensajeComentariosActualizados", async (e) => {
+  const videoActualizado = e.detail.videoId;
+
+  // 🧹 Borrar solo el caché de ese video
+  if (comentariosCache[videoActualizado]) {
+    delete comentariosCache[videoActualizado];
+  }
+
+  // ✅ Si el video actualizado es el que se está viendo actualmente → recargarlo en vivo
+  const videoActual = getActiveVideoId();
+  if (videoActual === videoActualizado) {
+    await cargarComentarios(videoActualizado, true, { force: true });
+  }
+});
+
+
+        
 document.addEventListener("DOMContentLoaded", async () => {
   const commentsOverlay = document.getElementById("commentsOverlay");
   const commentsCounter = document.getElementById("commentsCounter");
@@ -1302,15 +1320,7 @@ commentInput.addEventListener('blur', () => {
   }
 });
 
-// === Escuchar cambios de comentarios desde otros dispositivos ===
-window.addEventListener("mensajeComentariosActualizados", (e) => {
-  const videoActualizado = e.detail.videoId;
 
-  // 🧹 Borrar solo el caché de ese video
-  if (comentariosCache[videoActualizado]) {
-    delete comentariosCache[videoActualizado];
-  }
-});
 
 
 // === Precargar todos los comentarios al inicio ===
@@ -2196,21 +2206,23 @@ async function cargarVideos(checkNew = false) {
             const videoId = getActiveVideoId();
             if (videoId) renderComentarios(videoId);
           },
-        slideChange() {
+slideChange() {
   cleanupIframesExceptActive();
   updateFixedTitle(this);
   activarSwipeParaBorrar();
 
   const videoId = getActiveVideoId();
   if (videoId) {
+    // ⚡ Si no hay caché → forzamos fetch inmediato
     if (!comentariosCache[videoId]) {
       cargarComentarios(videoId, true, { force: true });
     } else {
-      cargarComentarios(videoId, true);
+      // 🟢 Si hay caché → mostrarlo al instante
+      renderComentarios(videoId);
     }
   }
-}
-,
+},
+
           slideChangeTransitionEnd() {
             updateFixedTitle(this);
           }
@@ -2271,6 +2283,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
