@@ -813,21 +813,27 @@ let startX = 0;
 let isSwiping = false;
         let comentariosTimestampCache = {};
 
+// === Videos con comentarios pendientes de actualizar ===
+const videosPendientesActualizar = new Set();
+
 // === Escuchar cambios de comentarios desde otros dispositivos ===
-window.addEventListener("mensajeComentariosActualizados", async (e) => {
+window.addEventListener("mensajeComentariosActualizados", (e) => {
   const videoActualizado = e.detail.videoId;
 
-  // 🧹 Borrar solo el caché de ese video
-  if (comentariosCache[videoActualizado]) {
-    delete comentariosCache[videoActualizado];
-  }
+  // 🧹 Borrar el caché de ese video
+  delete comentariosCache[videoActualizado];
 
-  // ✅ Si el video actualizado es el que se está viendo actualmente → recargarlo en vivo
+  // 🟡 Marcar este video como "pendiente" para forzar fetch la próxima vez que se muestre
+  videosPendientesActualizar.add(videoActualizado);
+
+  // ✅ Si el video actualizado es el que estás viendo ahora → refrescar de inmediato
   const videoActual = getActiveVideoId();
   if (videoActual === videoActualizado) {
-    await cargarComentarios(videoActualizado, true, { force: true });
+    cargarComentarios(videoActualizado, true, { force: true });
+    videosPendientesActualizar.delete(videoActualizado);
   }
 });
+
 
 
         
@@ -2212,16 +2218,24 @@ slideChange() {
   activarSwipeParaBorrar();
 
   const videoId = getActiveVideoId();
-  if (videoId) {
-    // ⚡ Si no hay caché → forzamos fetch inmediato
-    if (!comentariosCache[videoId]) {
-      cargarComentarios(videoId, true, { force: true });
-    } else {
-      // 🟢 Si hay caché → mostrarlo al instante
-      renderComentarios(videoId);
-    }
+  if (!videoId) return;
+
+  // 🔄 Si este video está marcado como "pendiente", forzamos fetch inmediato
+  if (videosPendientesActualizar.has(videoId)) {
+    cargarComentarios(videoId, true, { force: true });
+    videosPendientesActualizar.delete(videoId);
+    return;
+  }
+
+  // ⚡ Si no hay caché → forzamos fetch igual
+  if (!comentariosCache[videoId]) {
+    cargarComentarios(videoId, true, { force: true });
+  } else {
+    renderComentarios(videoId);
   }
 },
+
+
 
           slideChangeTransitionEnd() {
             updateFixedTitle(this);
@@ -2283,6 +2297,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
