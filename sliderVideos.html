@@ -811,6 +811,7 @@ let lastTapTime = 0;
 let activeComment = null;
 let startX = 0;
 let isSwiping = false;
+        let comentariosTimestampCache = {};
 
 document.addEventListener("DOMContentLoaded", async () => {
   const commentsOverlay = document.getElementById("commentsOverlay");
@@ -1128,6 +1129,7 @@ async function cargarComentarios(videoId, render = true, options = {}) {
 
       // 🔄 Actualizar caché con datos frescos
       comentariosCache[videoId] = comentariosPorVideo[videoId];
+
     } else {
       // 🟢 Si no se fuerza y ya hay datos → usar caché directamente
       comentariosPorVideo[videoId] = comentariosCache[videoId];
@@ -1263,7 +1265,7 @@ async function enviarComentario() {
 
       // 🚀 Notificar a otros dispositivos que hay nuevos comentarios
       if (typeof notificarCambioComentarios === "function") {
-        notificarCambioComentarios();
+        notificarCambioComentarios(videoId);
       }
     } else {
       console.error("❌ No se pudo guardar:", data.message);
@@ -2236,6 +2238,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
