@@ -2140,7 +2140,7 @@ async function cargarVideos(checkNew = false) {
         const link = row[1];
         const descripcion = row[4] || "";
         const id = row[5];
-        if (titulo && link && id) { // 🔥 FIX10: Validar datos para evitar videos inválidos
+        if (titulo && link && id) { // 🔥 FIX11: Validar datos para evitar videos inválidos
           newVideos.push({ title: titulo, link, desc: descripcion, id });
         }
       });
@@ -2168,35 +2168,42 @@ async function cargarVideos(checkNew = false) {
       });
     }
 
-    // 🔥 FIX10: Eliminación silenciosa sin afectar slide activo
+    // 🔥 FIX11: Eliminación silenciosa sin afectar slide activo ni deslizamiento
     if (checkNew && swiper) {
       const linksActivos = newVideos.map(v => v.link);
       const activeIndex = swiper.activeIndex;
       const activeSlide = swiper.slides[activeIndex];
       const activeLink = activeSlide ? activeSlide.querySelector('.player-card')?.dataset.embed : null;
 
+      let activeSlideRemoved = false;
       Array.from(wrapper.children).forEach(slide => {
         const card = slide.querySelector(".player-card");
         if (card && !linksActivos.includes(card.dataset.embed)) {
           if (slide === activeSlide) {
-            // 🔥 FIX10: Si el slide eliminado es el activo, pasar al siguiente antes de eliminar
-            if (swiper.slides.length > 1) {
-              swiper.slideNext(0); // Transición inmediata al siguiente slide
-              console.log("✅ Slide activo eliminado, pasando al siguiente");
-            }
-            wrapper.removeChild(slide); // Eliminar después de cambiar
+            // 🔥 FIX11: Si el slide eliminado es el activo, marcar para transición
+            activeSlideRemoved = true;
+            console.log("✅ Slide activo marcado para eliminación");
           } else {
-            // 🔥 FIX10: Eliminar slides no activos directamente del DOM
+            // 🔥 FIX11: Eliminar slides no activos directamente del DOM
             wrapper.removeChild(slide);
             console.log("✅ Slide no activo eliminado silenciosamente");
           }
         }
       });
-      // 🔥 FIX10: Actualizar Swiper solo si hay slides restantes, preservando loop
-      if (swiper.slides.length > 0) {
+
+      // 🔥 FIX11: Manejar eliminación del slide activo al final
+      if (activeSlideRemoved && swiper.slides.length > 1) {
+        swiper.slideNext(0); // Transición inmediata al siguiente slide
+        wrapper.removeChild(activeSlide); // Eliminar después de cambiar
+        console.log("✅ Slide activo eliminado, pasado al siguiente");
+      }
+
+      // 🔥 FIX11: Actualizar Swiper solo si hay slides y loop sigue activo
+      if (swiper.slides.length > 0 && swiper.params.loop) {
+        swiper.loopCreate(); // Reconstruir loop para mantener deslizamiento
         swiper.update();
-        console.log("✅ Swiper actualizado tras eliminación");
-      } else {
+        console.log("✅ Swiper actualizado con loop restaurado");
+      } else if (swiper.slides.length === 0) {
         console.log("⚠️ No quedan slides, Swiper no actualizado");
       }
     }
@@ -2205,7 +2212,7 @@ async function cargarVideos(checkNew = false) {
     if (checkNew && lastVideos.length > 0) { 
       const nuevos = newVideos.filter(v => !lastVideos.find(old => old.link === v.link));
       if (nuevos.length > 0) {
-        // 🔥 FIX10: Filtrar notificaciones vacías/inválidas antes de añadir
+        // 🔥 FIX11: Filtrar notificaciones vacías/inválidas antes de añadir
         const validNuevos = nuevos.filter(v => v.title && v.link && v.id);
         if (validNuevos.length > 0) {
           notifications.unshift(...validNuevos);
@@ -2239,7 +2246,7 @@ async function cargarVideos(checkNew = false) {
           slideChange() {
             cleanupIframesExceptActive();
             updateFixedTitle(this);
-            activarSwipeParaBorrar();
+            activarSwipeParaBorar();
             const videoId = getActiveVideoId();
             if (videoId) {
               if (!comentariosPorVideo[videoId]) {
@@ -2283,6 +2290,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
