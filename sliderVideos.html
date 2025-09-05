@@ -2140,7 +2140,7 @@ async function cargarVideos(checkNew = false) {
         const link = row[1];
         const descripcion = row[4] || "";
         const id = row[5];
-        if (titulo && link && id) { // 🔥 FIX8: Validar datos para evitar videos inválidos
+        if (titulo && link && id) { // 🔥 FIX9: Validar datos para evitar videos inválidos
           newVideos.push({ title: titulo, link, desc: descripcion, id });
         }
       });
@@ -2168,41 +2168,47 @@ async function cargarVideos(checkNew = false) {
       });
     }
 
-    // 🔥 FIX8: Eliminación silenciosa sin afectar slide activo
-    if (checkNew) {
+    // 🔥 FIX9: Eliminación silenciosa sin afectar slide activo
+    if (checkNew && swiper) {
       const linksActivos = newVideos.map(v => v.link);
-      const activeSlide = document.querySelector('.swiper-slide-active');
+      const activeIndex = swiper.activeIndex;
+      const activeSlide = swiper.slides[activeIndex];
       const activeLink = activeSlide ? activeSlide.querySelector('.player-card')?.dataset.embed : null;
-      
-      Array.from(wrapper.children).forEach(slide => {
+
+      const slidesToRemove = [];
+      Array.from(wrapper.children).forEach((slide, index) => {
         const card = slide.querySelector(".player-card");
         if (card && !linksActivos.includes(card.dataset.embed)) {
           if (slide === activeSlide) {
-            // 🔥 FIX8: Si el slide eliminado es el activo, pasar al siguiente slide
-            if (swiper) {
-              swiper.removeSlide(swiper.activeIndex);
-              console.log("✅ Slide activo eliminado, pasando al siguiente");
-              swiper.slideNext(0); // Transición inmediata al siguiente slide
-            }
+            // 🔥 FIX9: Si el slide eliminado es el activo, marcar para eliminación y pasar al siguiente
+            slidesToRemove.push(index);
+            console.log("✅ Slide activo marcado para eliminación, se pasará al siguiente");
           } else {
-            // 🔥 FIX8: Eliminar solo slides no activos, sin actualizar Swiper inmediatamente
+            // 🔥 FIX9: Eliminar slide no activo directamente del DOM
             wrapper.removeChild(slide);
             console.log("✅ Slide no activo eliminado silenciosamente");
           }
         }
       });
-      // 🔥 FIX8: Actualizar Swiper solo después de todas las eliminaciones
-      if (swiper) {
-        swiper.update();
-        console.log("✅ Swiper actualizado tras eliminación");
+
+      // 🔥 FIX9: Eliminar slides marcados y actualizar Swiper solo si es necesario
+      if (slidesToRemove.length > 0) {
+        slidesToRemove.sort((a, b) => b - a); // Orden descendente para evitar cambios de índice
+        slidesToRemove.forEach(index => {
+          swiper.removeSlide(index);
+        });
+        swiper.slideNext(0); // Pasar al siguiente slide si el activo fue eliminado
+        console.log("✅ Slide activo eliminado, Swiper actualizado y pasado al siguiente");
       }
+      // 🔥 FIX9: Actualizar Swiper solo una vez al final
+      swiper.update();
     }
 
     // 🛎️ Notificaciones de nuevos videos
     if (checkNew && lastVideos.length > 0) { 
       const nuevos = newVideos.filter(v => !lastVideos.find(old => old.link === v.link));
       if (nuevos.length > 0) {
-        // 🔥 FIX8: Filtrar notificaciones vacías/inválidas antes de añadir
+        // 🔥 FIX9: Filtrar notificaciones vacías/inválidas antes de añadir
         const validNuevos = nuevos.filter(v => v.title && v.link && v.id);
         if (validNuevos.length > 0) {
           notifications.unshift(...validNuevos);
@@ -2280,6 +2286,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
