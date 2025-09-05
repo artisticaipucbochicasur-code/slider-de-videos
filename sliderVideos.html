@@ -696,6 +696,29 @@
   transition: background 0.5s ease;
 }
 
+.refresh-btn {
+  position: fixed;
+  bottom: 85px; /* Un poco más arriba que la campana */
+  right: 20px;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  border: none;
+  background-color: #2196f3;
+  color: white;
+  font-size: 18px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  z-index: 2000;
+  transition: background-color 0.3s ease;
+}
+
+.refresh-btn:hover {
+  background-color: #1976d2;
+}
 
         
     </style>
@@ -714,6 +737,10 @@
   </div>
 </div>
 
+<!-- 🔄 Botón de actualizar -->
+<button id="refreshBtn" class="refresh-btn" title="Actualizar página">
+  <i class="fas fa-sync-alt"></i>
+</button>
 
     
 <div class="comments-overlay-container hidden-overlay" id="commentsOverlay">
@@ -812,6 +839,16 @@ let activeComment = null;
 let startX = 0;
 let isSwiping = false;
 
+const refreshBtn = document.getElementById("refreshBtn");
+
+if (refreshBtn) {
+  refreshBtn.addEventListener("click", () => {
+    location.reload(); // 🔄 Recarga la página completamente
+  });
+}
+
+
+        
 document.addEventListener("DOMContentLoaded", async () => {
   const commentsOverlay = document.getElementById("commentsOverlay");
   const commentsCounter = document.getElementById("commentsCounter");
@@ -2307,6 +2344,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
