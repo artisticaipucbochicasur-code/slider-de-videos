@@ -2152,51 +2152,47 @@ async function cargarVideos(checkNew = false) {
     // ✅ Inicializamos Swiper solo cuando TODO (videos + comentarios del primero) esté listo
     if (!checkNew) {
       if (swiper) swiper.destroy(true, true);
-      swiper = new Swiper(".swiper", {
-        loop: true,
-        direction: "vertical",
-        slidesPerView: 1,
-        spaceBetween: 10,
-        pagination: false,
-        on: {
-          init() {
-            updateFixedTitle(this);
-            activarSwipeParaBorrar();
+    swiper = new Swiper(".swiper", {
+  loop: true,
+  direction: "vertical",
+  slidesPerView: 1,
+  spaceBetween: 10,
+  pagination: false,
+  on: {
+    init() {
+      updateFixedTitle(this);
+      activarSwipeParaBorrar();
 
-            // 🔹 Mostrar comentarios del video activo (ya precargados)
-            const videoId = getActiveVideoId();
-            if (videoId) renderComentarios(videoId);
-          },
-          slideChange() {
-            cleanupIframesExceptActive();
-            updateFixedTitle(this);
-            activarSwipeParaBorrar();
+      // 🔹 Mostrar comentarios del video activo (ya precargados)
+      const videoId = getActiveVideoId();
+      if (videoId) renderComentarios(videoId);
+    },
+    slideChange() {
+      cleanupIframesExceptActive();
+      updateFixedTitle(this);
+      activarSwipeParaBorrar();
 
-            // 🔹 Mostrar comentarios instantáneamente al cambiar video
-            const videoId = getActiveVideoId();
-            if (videoId) {
-              // 🔥 FIX3: Fallback reforzado - si no hay datos o parecen desfazados, fuerza recarga inmediata
-              if (!comentariosPorVideo[videoId] || comentariosPorVideo[videoId].length === 0) {
-                cargarComentarios(videoId, true, { force: true });
-              } else {
-                renderComentarios(videoId);
-              }
-            }
-          },
-          slideChangeTransitionEnd() {
-            updateFixedTitle(this);
-            // 🔥 FIX3: Re-render comentarios post-end para asegurar consistencia
-            const videoId = getActiveVideoId();
-            if (videoId) {
-              if (!comentariosPorVideo[videoId] || comentariosPorVideo[videoId].length === 0) {
-                cargarComentarios(videoId, true, { force: true });
-              } else {
-                renderComentarios(videoId);
-              }
-            }
-          }
-        },
-      });
+      // 🔹 Mostrar comentarios instantáneamente al cambiar video
+      const videoId = getActiveVideoId();
+      if (videoId) {
+        // 🔥 FIX: Usa caché siempre; solo carga si no existe (sin force para evitar delays)
+        if (!comentariosPorVideo[videoId]) {
+          cargarComentarios(videoId, true); // Carga normal, usa caché si disponible
+        } else {
+          renderComentarios(videoId);
+        }
+      }
+    },
+    slideChangeTransitionEnd() {
+      updateFixedTitle(this);
+      // 🔥 FIX: Re-render solo si necesario, sin carga extra
+      const videoId = getActiveVideoId();
+      if (videoId && comentariosPorVideo[videoId]) {
+        renderComentarios(videoId);
+      }
+    }
+  },
+});
 
       cleanupIframesExceptActive();
       updateFixedTitle(swiper);
@@ -2250,5 +2246,6 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
