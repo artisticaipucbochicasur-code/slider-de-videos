@@ -1392,18 +1392,23 @@ let notifications = [];
 let lastVideos = [];
 
 // Actualiza el listado de notificaciones
+// Actualiza el listado de notificaciones
 function renderNotifications() {
   const list = document.getElementById("notification-list");
   const count = document.getElementById("notification-count");
+
+  if (!list || !count) {
+    console.error("❌ Error: Elementos de notificaciones no encontrados en el DOM");
+    return;
+  }
 
   list.innerHTML = "";
 
   if (notifications.length === 0) {
     list.innerHTML = "<div>Sin notificaciones</div>";
-    count.textContent = "";             // 👈 aseguramos que no quede número
-    count.style.display = "none";       // 👈 escondemos el circulito rojo
-    
-    // 👇 también enviamos "0" a App Inventor
+    count.textContent = "";
+    count.style.display = "none";
+
     try {
       if (typeof AppInventor !== "undefined" && AppInventor.setWebViewString) {
         AppInventor.setWebViewString("0");
@@ -1415,7 +1420,7 @@ function renderNotifications() {
   }
 
   count.textContent = notifications.length;
-  count.style.display = "block";        // 👈 solo aparece si hay notificaciones
+  count.style.display = "block";
 
   notifications.forEach((notif, i) => {
     const item = document.createElement("div");
@@ -1424,6 +1429,10 @@ function renderNotifications() {
 
     item.onclick = () => {
       const wrapper = document.getElementById("slides");
+      if (!wrapper) {
+        console.error("❌ Error: Contenedor de slides no encontrado");
+        return;
+      }
 
       // Buscar si ya existe el slide del anuncio
       let slide = Array.from(wrapper.children).find(s => {
@@ -1435,15 +1444,18 @@ function renderNotifications() {
       // Si no existe, crearlo y agregarlo
       if (!slide) {
         isNewSlide = true;
-        const nuevoSlide = createSlide(notif.title, notif.link, notif.desc, notif.id); // 🔥 FIX3: Usar notif.id para consistencia
+        const nuevoSlide = createSlide(notif.title, notif.link, notif.desc, notif.id);
         wrapper.appendChild(nuevoSlide);
-        // 🔥 FIX3: Update inmediato después de append para recalcular índices y evitar overlap/posición errónea
-        if (swiper) swiper.update();
-        // 🔥 FIX3: Agregar a lastVideos para mantener consistencia
+        // 🔥 FIX4: Update inmediato para recalcular índices
+        if (swiper) {
+          swiper.update();
+          console.log("✅ Nuevo slide añadido, Swiper actualizado");
+        }
+        // 🔥 FIX4: Agregar a lastVideos para mantener consistencia
         lastVideos.push({ title: notif.title, link: notif.link, desc: notif.desc, id: notif.id });
       }
 
-      // Buscar índice real del slide en Swiper (recalcular después de update)
+      // Buscar índice real del slide en Swiper
       let realIndex = -1;
       if (swiper) {
         swiper.slides.forEach((s, idx) => {
@@ -1452,24 +1464,20 @@ function renderNotifications() {
             realIndex = idx;
           }
         });
-        // 🔥 FIX: Si es nuevo, fuerza a la última posición
+        // 🔥 FIX4: Si es nuevo, forzar última posición
         if (isNewSlide && realIndex === -1) {
           realIndex = swiper.slides.length - 1;
+          console.log(`✅ Nuevo video posicionado en índice ${realIndex}`);
         }
       }
 
       if (swiper && realIndex !== -1) {
-        // 🔥 FIX3: Limpiar iframes antes de slideTo para evitar artifacts
         cleanupIframesExceptActive();
-
-        // 🔥 FIX3: SlideTo sin animación (0 ms) para posicionar exactamente al final sin overlap
         swiper.slideTo(realIndex, 0);
-
-        // 🔥 FIX3: Forzar actualización de título y comentarios inmediatamente después de slideTo
         updateFixedTitle(swiper);
+
         const videoId = getActiveVideoId();
         if (videoId) {
-          // 🔥 FIX3: Forzar carga de comentarios si no existen o están vacíos
           if (!comentariosPorVideo[videoId] || comentariosPorVideo[videoId].length === 0) {
             cargarComentarios(videoId, true, { force: true });
           } else {
@@ -1477,14 +1485,12 @@ function renderNotifications() {
           }
         }
 
-        // Listener para cleanup post-transición
         swiper.once('slideChangeTransitionEnd', () => {
           cleanupIframesExceptActive();
           const activeCard = document.querySelector('.swiper-slide-active .player-card');
           if (activeCard && !activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
             mountIframe(activeCard);
           }
-          // 🔥 FIX3: Re-render comentarios post-end para asegurar no "se lleve" de video anterior
           const videoIdFinal = getActiveVideoId();
           if (videoIdFinal) {
             if (!comentariosPorVideo[videoIdFinal] || comentariosPorVideo[videoIdFinal].length === 0) {
@@ -1494,6 +1500,8 @@ function renderNotifications() {
             }
           }
         });
+      } else {
+        console.error("❌ Error: Swiper o índice no válido al intentar navegar al nuevo video");
       }
 
       // Marcar como leída y cerrar panel
@@ -1505,7 +1513,6 @@ function renderNotifications() {
     list.appendChild(item);
   });
 
-  // 👇 al final, enviar el número de notificaciones a App Inventor
   try {
     if (typeof AppInventor !== "undefined" && AppInventor.setWebViewString) {
       AppInventor.setWebViewString(String(notifications.length));
@@ -2089,131 +2096,139 @@ function cleanupIframesExceptActive() {
         
 
 
-// Actualiza el listado de notificaciones
-function renderNotifications() {
-  const list = document.getElementById("notification-list");
-  const count = document.getElementById("notification-count");
-
-  list.innerHTML = "";
-
-  if (notifications.length === 0) {
-    list.innerHTML = "<div>Sin notificaciones</div>";
-    count.textContent = "";             // 👈 aseguramos que no quede número
-    count.style.display = "none";       // 👈 escondemos el circulito rojo
-    
-    // 👇 también enviamos "0" a App Inventor
-    try {
-      if (typeof AppInventor !== "undefined" && AppInventor.setWebViewString) {
-        AppInventor.setWebViewString("0");
-      }
-    } catch (e) {
-      console.warn("No se pudo enviar a App Inventor:", e);
-    }
+// 🚀 Cargar videos + comentarios optimizado con precarga instantánea del primero
+async function cargarVideos(checkNew = false) {
+  const loader = document.getElementById("loader");
+  if (!loader) {
+    console.error("❌ Error: Elemento loader no encontrado en el DOM");
     return;
   }
+  if (!checkNew) loader.style.display = "flex";
 
-  count.textContent = notifications.length;
-  count.style.display = "block";        // 👈 solo aparece si hay notificaciones
+  try {
+    const res = await fetch(`${SCRIPT_URL}?accion=listar&tipo=videos`);
+    const data = await res.json();
 
-  notifications.forEach((notif, i) => {
-    const item = document.createElement("div");
-    item.textContent = notif.title;
-    item.style.cursor = "pointer";
+    const wrapper = document.getElementById("slides");
+    if (!wrapper) {
+      console.error("❌ Error: Contenedor de slides no encontrado");
+      loader.style.display = "none";
+      return;
+    }
+    if (!checkNew) wrapper.innerHTML = "";
 
-    item.onclick = () => {
-      const wrapper = document.getElementById("slides");
-
-      // Buscar si ya existe el slide del anuncio
-      let slide = Array.from(wrapper.children).find(s => {
-        const card = s.querySelector('.player-card');
-        return card && card.dataset.embed === notif.link;
+    let newVideos = [];
+    if (Array.isArray(data.data)) {
+      data.data.forEach((row) => {
+        const titulo = row[0];
+        const link = row[1];
+        const descripcion = row[4] || "";
+        const id = row[5];
+        newVideos.push({ title: titulo, link, desc: descripcion, id });
       });
+    } else {
+      console.warn("⚠️ Advertencia: No se recibieron datos válidos de videos");
+    }
 
-      let isNewSlide = false;
-      // Si no existe, crearlo y agregarlo
-      if (!slide) {
-        isNewSlide = true;
-        const nuevoSlide = createSlide(notif.title, notif.link, notif.desc, notif.id); // 🔥 FIX3: Usar notif.id para consistencia
-        wrapper.appendChild(nuevoSlide);
-        // 🔥 FIX3: Update inmediato después de append para recalcular índices y evitar overlap/posición errónea
-        if (swiper) swiper.update();
-        // 🔥 FIX3: Agregar a lastVideos para mantener consistencia
-        lastVideos.push({ title: notif.title, link: notif.link, desc: notif.desc, id: notif.id });
+    // ⚡ Precargamos primero los comentarios del PRIMER video y los mostramos de inmediato
+    if (!checkNew && newVideos.length > 0) {
+      const primerVideoId = newVideos[0].id;
+      await cargarComentarios(primerVideoId, true);
+      console.log("✅ Comentarios del primer video cargados");
+
+      // 🔹 Precargamos el resto de comentarios en segundo plano
+      const videosRestantes = newVideos.slice(1);
+      if (videosRestantes.length > 0) {
+        Promise.all(videosRestantes.map(v => cargarComentarios(v.id, false)))
+          .catch(e => console.warn("Error precargando comentarios:", e));
       }
+    }
 
-      // Buscar índice real del slide en Swiper (recalcular después de update)
-      let realIndex = -1;
-      if (swiper) {
-        swiper.slides.forEach((s, idx) => {
-          const card = s.querySelector('.player-card');
-          if (card && card.dataset.embed === notif.link) {
-            realIndex = idx;
-          }
-        });
-        // 🔥 FIX: Si es nuevo, fuerza a la última posición
-        if (isNewSlide && realIndex === -1) {
-          realIndex = swiper.slides.length - 1;
-        }
-      }
+    // ⚡ Mostramos los videos
+    if (!checkNew) {
+      newVideos.forEach(v => {
+        wrapper.appendChild(createSlide(v.title, v.link, v.desc, v.id));
+      });
+    }
 
-      if (swiper && realIndex !== -1) {
-        // 🔥 FIX3: Limpiar iframes antes de slideTo para evitar artifacts
-        cleanupIframesExceptActive();
-
-        // 🔥 FIX3: SlideTo sin animación (0 ms) para posicionar exactamente al final sin overlap
-        swiper.slideTo(realIndex, 0);
-
-        // 🔥 FIX3: Forzar actualización de título y comentarios inmediatamente después de slideTo
-        updateFixedTitle(swiper);
-        const videoId = getActiveVideoId();
-        if (videoId) {
-          // 🔥 FIX3: Forzar carga de comentarios si no existen o están vacíos
-          if (!comentariosPorVideo[videoId] || comentariosPorVideo[videoId].length === 0) {
-            cargarComentarios(videoId, true, { force: true });
-          } else {
-            renderComentarios(videoId);
+    // 🔥 FIX4: Eliminación silenciosa sin afectar slide activo
+    if (checkNew) {
+      const linksActivos = newVideos.map(v => v.link);
+      Array.from(wrapper.children).forEach(slide => {
+        const card = slide.querySelector(".player-card");
+        if (card && !linksActivos.includes(card.dataset.embed) && !slide.classList.contains('swiper-slide-active')) {
+          wrapper.removeChild(slide);
+          if (swiper) {
+            swiper.update();
+            console.log("✅ Slide eliminado silenciosamente");
           }
         }
+      });
+    }
 
-        // Listener para cleanup post-transición
-        swiper.once('slideChangeTransitionEnd', () => {
-          cleanupIframesExceptActive();
-          const activeCard = document.querySelector('.swiper-slide-active .player-card');
-          if (activeCard && !activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
-            mountIframe(activeCard);
-          }
-          // 🔥 FIX3: Re-render comentarios post-end para asegurar no "se lleve" de video anterior
-          const videoIdFinal = getActiveVideoId();
-          if (videoIdFinal) {
-            if (!comentariosPorVideo[videoIdFinal] || comentariosPorVideo[videoIdFinal].length === 0) {
-              cargarComentarios(videoIdFinal, true, { force: true });
-            } else {
-              renderComentarios(videoIdFinal);
+    // 🛎️ Notificaciones de nuevos videos
+    if (checkNew && lastVideos.length > 0) { 
+      const nuevos = newVideos.filter(v => !lastVideos.find(old => old.link === v.link));
+      if (nuevos.length > 0) {
+        notifications.unshift(...nuevos);
+        renderNotifications();
+      }
+    }
+
+    lastVideos = newVideos;
+
+    // ✅ Inicializamos Swiper solo cuando TODO esté listo
+    if (!checkNew) {
+      if (swiper) swiper.destroy(true, true);
+      swiper = new Swiper(".swiper", {
+        loop: true,
+        direction: "vertical",
+        slidesPerView: 1,
+        spaceBetween: 10,
+        pagination: false,
+        on: {
+          init() {
+            updateFixedTitle(this);
+            activarSwipeParaBorrar();
+            const videoId = getActiveVideoId();
+            if (videoId) renderComentarios(videoId);
+            console.log("✅ Swiper inicializado");
+          },
+          slideChange() {
+            cleanupIframesExceptActive();
+            updateFixedTitle(this);
+            activarSwipeParaBorrar();
+            const videoId = getActiveVideoId();
+            if (videoId) {
+              if (!comentariosPorVideo[videoId]) {
+                cargarComentarios(videoId, true);
+              } else {
+                renderComentarios(videoId);
+              }
+            }
+          },
+          slideChangeTransitionEnd() {
+            updateFixedTitle(this);
+            const videoId = getActiveVideoId();
+            if (videoId && comentariosPorVideo[videoId]) {
+              renderComentarios(videoId);
             }
           }
-        });
-      }
+        },
+      });
 
-      // Marcar como leída y cerrar panel
-      notifications.splice(i, 1);
-      renderNotifications();
-      document.getElementById("notification-list").classList.add("hidden");
-    };
-
-    list.appendChild(item);
-  });
-
-  // 👇 al final, enviar el número de notificaciones a App Inventor
-  try {
-    if (typeof AppInventor !== "undefined" && AppInventor.setWebViewString) {
-      AppInventor.setWebViewString(String(notifications.length));
+      cleanupIframesExceptActive();
+      updateFixedTitle(swiper);
+      activarSwipeParaBorrar();
+      const videoId = getActiveVideoId();
+      if (videoId) renderComentarios(videoId);
     }
   } catch (e) {
-    console.warn("No se pudo enviar a App Inventor:", e);
+    console.error("❌ Error cargando videos:", e);
+  } finally {
+    loader.style.display = "none";
   }
 }
-
-
 
 function activarSwipeParaBorrar() {
   const comentarios = document.querySelectorAll(".comentario-propio"); // clase para tus comentarios
