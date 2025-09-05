@@ -1154,6 +1154,11 @@ function renderComentarios(videoId) {
   const commentsList = document.getElementById('commentsList');
   const commentCountValue = document.getElementById('commentCountValue');
 
+  if (!commentsList || !commentCountValue) {
+    console.error("❌ Error: Contenedor de comentarios o contador no encontrado en el DOM");
+    return;
+  }
+
   commentsList.innerHTML = '';
 
   // 🔥 FIX2: Reforzado para siempre mostrar mensaje si length === 0 exacto
@@ -1161,7 +1166,9 @@ function renderComentarios(videoId) {
     commentsList.innerHTML = '<li>Sé el primero en comentar...</li>';
     commentCountValue.textContent = "0";
   } else {
-    lista.forEach(c => {
+    // 🔥 FIX13: Invertir el orden de los comentarios para que el más reciente esté arriba
+    const comentariosInvertidos = [...lista].reverse();
+    comentariosInvertidos.forEach(c => {
       const li = document.createElement('li');
       li.classList.add('deletable');
 
@@ -1185,9 +1192,6 @@ function renderComentarios(videoId) {
         deleteBtn.addEventListener('click', async (ev) => {
           ev.stopPropagation();
           await eliminarComentario(videoId, c.comentario, c.correo);
-
-          // 🔥 FIX2: Eliminado el filter manual, ya que la recarga force lo maneja
-          // Solo render con datos frescos
           renderComentarios(videoId);
         });
       }
@@ -1197,6 +1201,8 @@ function renderComentarios(videoId) {
 
     commentCountValue.textContent = lista.length;
   }
+
+  console.log(`✅ Renderizados ${lista.length} comentarios para video ${videoId} en orden inverso`);
 }
 
 // === Enviar un nuevo comentario ===
@@ -2301,6 +2307,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
