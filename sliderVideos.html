@@ -1156,10 +1156,9 @@ function renderComentarios(videoId) {
 
   commentsList.innerHTML = '';
 
+  // 🔥 FIX2: Reforzado para siempre mostrar mensaje si length === 0 exacto
   if (lista.length === 0) {
-    const li = document.createElement('li');
-    li.textContent = "Sé el primero en comentar...";
-    commentsList.appendChild(li);
+    commentsList.innerHTML = '<li>Sé el primero en comentar...</li>';
     commentCountValue.textContent = "0";
   } else {
     lista.forEach(c => {
@@ -1187,12 +1186,8 @@ function renderComentarios(videoId) {
           ev.stopPropagation();
           await eliminarComentario(videoId, c.comentario, c.correo);
 
-          if (comentariosCache[videoId]) {
-            comentariosCache[videoId] = comentariosCache[videoId].filter(
-              com => com.comentario !== c.comentario || com.correo !== c.correo
-            );
-          }
-
+          // 🔥 FIX2: Eliminado el filter manual, ya que la recarga force lo maneja
+          // Solo render con datos frescos
           renderComentarios(videoId);
         });
       }
@@ -1335,16 +1330,16 @@ async function verificarComentariosVideos() {
     if (data.timestamp && data.timestamp !== ultimaActualizacionComentarios) {
       ultimaActualizacionComentarios = data.timestamp;
 
-      // 🔥 FIX: En lugar de solo recargar el video activo, recargamos TODOS los videos en caché (sin render, para no bloquear UI)
-      // Esto asegura que al deslizar a cualquier video, el caché esté fresco.
-      for (const videoId in comentariosCache) {
-        await cargarComentarios(videoId, false, { force: true }); // No render, solo actualización de caché
+      // 🔥 FIX2: Usar lastVideos para obtener TODOS los videoIds conocidos y recargarlos (sin render, background)
+      const videoIds = lastVideos.map(v => v.id);
+      for (const videoId of videoIds) {
+        await cargarComentarios(videoId, false, { force: true }); // No render, solo caché fresco
       }
 
-      // Luego, render solo para el activo (si hay uno)
+      // Luego, render solo para el activo (con datos frescos)
       const videoIdActivo = getActiveVideoId();
       if (videoIdActivo) {
-        renderComentarios(videoIdActivo); // Render inmediato con datos frescos
+        renderComentarios(videoIdActivo);
       }
     }
   } catch (err) {
@@ -1360,7 +1355,8 @@ setInterval(verificarComentariosVideos, 5000);
 
 // --- HOOK para disparar verificación inmediata tras alta/baja ---
 function notificarCambioComentarios() {
-  verificarComentariosVideos();
+  // 🔥 FIX2: Pequeño delay para asegurar que el servidor actualice el timestamp antes del chequeo
+  setTimeout(verificarComentariosVideos, 0);
 }
 
 
@@ -2151,7 +2147,14 @@ async function cargarVideos(checkNew = false) {
 
             // 🔹 Mostrar comentarios instantáneamente al cambiar video
             const videoId = getActiveVideoId();
-            if (videoId) renderComentarios(videoId);
+            if (videoId) {
+              // 🔥 FIX2: Fallback - si no hay datos (raro), fuerza carga inmediata
+              if (!comentariosPorVideo[videoId]) {
+                cargarComentarios(videoId, true, { force: true });
+              } else {
+                renderComentarios(videoId);
+              }
+            }
           },
           slideChangeTransitionEnd() {
             updateFixedTitle(this);
