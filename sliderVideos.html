@@ -2113,7 +2113,6 @@ function cleanupIframesExceptActive() {
         
 
 
-// 🚀 Cargar videos + comentarios optimizado con precarga instantánea del primero
 async function cargarVideos(checkNew = false) {
   const loader = document.getElementById("loader");
   if (!loader) {
@@ -2141,19 +2140,20 @@ async function cargarVideos(checkNew = false) {
         const link = row[1];
         const descripcion = row[4] || "";
         const id = row[5];
-        newVideos.push({ title: titulo, link, desc: descripcion, id });
+        if (titulo && link && id) { // 🔥 FIX8: Validar datos para evitar videos inválidos
+          newVideos.push({ title: titulo, link, desc: descripcion, id });
+        }
       });
     } else {
       console.warn("⚠️ Advertencia: No se recibieron datos válidos de videos");
     }
 
-    // ⚡ Precargamos primero los comentarios del PRIMER video y los mostramos de inmediato
+    // ⚡ Precargamos primero los comentarios del PRIMER video
     if (!checkNew && newVideos.length > 0) {
       const primerVideoId = newVideos[0].id;
       await cargarComentarios(primerVideoId, true);
       console.log("✅ Comentarios del primer video cargados");
 
-      // 🔹 Precargamos el resto de comentarios en segundo plano
       const videosRestantes = newVideos.slice(1);
       if (videosRestantes.length > 0) {
         Promise.all(videosRestantes.map(v => cargarComentarios(v.id, false)))
@@ -2168,33 +2168,55 @@ async function cargarVideos(checkNew = false) {
       });
     }
 
-    // 🔥 FIX4: Eliminación silenciosa sin afectar slide activo
+    // 🔥 FIX8: Eliminación silenciosa sin afectar slide activo
     if (checkNew) {
       const linksActivos = newVideos.map(v => v.link);
+      const activeSlide = document.querySelector('.swiper-slide-active');
+      const activeLink = activeSlide ? activeSlide.querySelector('.player-card')?.dataset.embed : null;
+      
       Array.from(wrapper.children).forEach(slide => {
         const card = slide.querySelector(".player-card");
-        if (card && !linksActivos.includes(card.dataset.embed) && !slide.classList.contains('swiper-slide-active')) {
-          wrapper.removeChild(slide);
-          if (swiper) {
-            swiper.update();
-            console.log("✅ Slide eliminado silenciosamente");
+        if (card && !linksActivos.includes(card.dataset.embed)) {
+          if (slide === activeSlide) {
+            // 🔥 FIX8: Si el slide eliminado es el activo, pasar al siguiente slide
+            if (swiper) {
+              swiper.removeSlide(swiper.activeIndex);
+              console.log("✅ Slide activo eliminado, pasando al siguiente");
+              swiper.slideNext(0); // Transición inmediata al siguiente slide
+            }
+          } else {
+            // 🔥 FIX8: Eliminar solo slides no activos, sin actualizar Swiper inmediatamente
+            wrapper.removeChild(slide);
+            console.log("✅ Slide no activo eliminado silenciosamente");
           }
         }
       });
+      // 🔥 FIX8: Actualizar Swiper solo después de todas las eliminaciones
+      if (swiper) {
+        swiper.update();
+        console.log("✅ Swiper actualizado tras eliminación");
+      }
     }
 
     // 🛎️ Notificaciones de nuevos videos
     if (checkNew && lastVideos.length > 0) { 
       const nuevos = newVideos.filter(v => !lastVideos.find(old => old.link === v.link));
       if (nuevos.length > 0) {
-        notifications.unshift(...nuevos);
-        renderNotifications();
+        // 🔥 FIX8: Filtrar notificaciones vacías/inválidas antes de añadir
+        const validNuevos = nuevos.filter(v => v.title && v.link && v.id);
+        if (validNuevos.length > 0) {
+          notifications.unshift(...validNuevos);
+          renderNotifications();
+          console.log(`✅ ${validNuevos.length} nuevas notificaciones válidas añadidas`);
+        } else {
+          console.warn("⚠️ No se añadieron notificaciones: datos inválidos");
+        }
       }
     }
 
     lastVideos = newVideos;
 
-    // ✅ Inicializamos Swiper solo cuando TODO esté listo
+    // ✅ Inicializamos Swiper
     if (!checkNew) {
       if (swiper) swiper.destroy(true, true);
       swiper = new Swiper(".swiper", {
@@ -2247,30 +2269,6 @@ async function cargarVideos(checkNew = false) {
   }
 }
 
-function activarSwipeParaBorrar() {
-  const comentarios = document.querySelectorAll(".comentario-propio"); // clase para tus comentarios
-
-  comentarios.forEach(comentario => {
-    let startX = 0;
-    let endX = 0;
-
-    comentario.addEventListener("touchstart", e => {
-      startX = e.touches[0].clientX;
-    });
-
-    comentario.addEventListener("touchmove", e => {
-      endX = e.touches[0].clientX;
-    });
-
-    comentario.addEventListener("touchend", () => {
-      if (startX - endX > 80) {  // si desliza a la izquierda más de 80px
-        eliminarComentario(comentario.dataset.id); // usa el id del comentario
-      }
-    });
-  });
-}
-
-
 
 
 // === AUTO REFRESCO EN SEGUNDO PLANO ===
@@ -2282,6 +2280,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
