@@ -697,28 +697,30 @@
 }
 
 .refresh-btn {
-  position: fixed;
-  bottom: 85px; /* Un poco más arriba que la campana */
-  right: 20px;
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
-  border: none;
-  background-color: #2196f3;
-  color: white;
-  font-size: 18px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-  cursor: pointer;
-  z-index: 2000;
-  transition: background-color 0.3s ease;
+    position: fixed;
+    bottom: 240px; /* 🔹 Un poco más arriba que la campana */
+    right: 18px;
+    width: 40px; /* Igual que .fab */
+    height: 40px; /* Igual que .fab */
+    border-radius: 50%;
+    border: none;
+    background: transparent; /* Fondo transparente */
+    color: white; /* Ícono blanco */
+    font-size: 24px; /* Igual que .fab */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4); /* Igual que .fab */
+    z-index: 2000;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .refresh-btn:hover {
-  background-color: #1976d2;
+    transform: scale(1.1);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.5);
 }
+
 
         
     </style>
@@ -2344,6 +2346,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
