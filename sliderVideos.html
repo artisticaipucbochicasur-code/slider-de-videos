@@ -1421,6 +1421,11 @@ function renderNotifications() {
   count.style.display = "block";
 
   notifications.forEach((notif, i) => {
+    if (!notif || !notif.link || !notif.title || !notif.id) {
+      console.warn("⚠️ Notificación inválida detectada:", notif);
+      return; // 🔥 FIX7: Evitar procesar notificaciones vacías/inválidas
+    }
+
     const item = document.createElement("div");
     item.textContent = notif.title;
     item.style.cursor = "pointer";
@@ -1432,12 +1437,11 @@ function renderNotifications() {
         return;
       }
 
-      // 🔥 FIX6: Guardar el videoId del video actual antes de cualquier cambio
+      // 🔥 FIX7: Guardar y precargar comentarios del video actual solo si no están en caché
       const currentVideoId = getActiveVideoId();
       if (currentVideoId && !comentariosPorVideo[currentVideoId]) {
-        // Forzar precarga de comentarios del video actual si no están en caché
         cargarComentarios(currentVideoId, false, { force: true });
-        console.log(`✅ Precargando comentarios para video actual ${currentVideoId} antes de cambiar`);
+        console.log(`✅ Precargando comentarios para video actual ${currentVideoId}`);
       }
 
       // Buscar si ya existe el slide del anuncio
@@ -1458,9 +1462,11 @@ function renderNotifications() {
           wrapper.appendChild(nuevoSlide);
         }
         lastVideos.push({ title: notif.title, link: notif.link, desc: notif.desc, id: notif.id });
+        // 🔥 FIX7: Precargar comentarios del nuevo video para evitar alternancia
+        cargarComentarios(notif.id, false, { force: true });
       }
 
-      // 🔥 FIX6: Delay para asegurar sincronización del DOM y Swiper
+      // 🔥 FIX7: Delay para sincronización del DOM/Swiper
       setTimeout(() => {
         // Buscar índice real del slide en Swiper
         let realIndex = -1;
@@ -1505,10 +1511,10 @@ function renderNotifications() {
                 renderComentarios(videoIdFinal);
               }
             }
-            // 🔥 FIX6: Restaurar comentarios del video original si el usuario regresa
+            // 🔥 FIX7: Restaurar comentarios del video original si están en caché
             if (currentVideoId && comentariosPorVideo[currentVideoId]) {
-              console.log(`✅ Asegurando caché de comentarios para video original ${currentVideoId}`);
-              renderComentarios(currentVideoId); // Forzar render en caché para evitar "Sé el primero en comentar"
+              console.log(`✅ Restaurando comentarios para video original ${currentVideoId}`);
+              renderComentarios(currentVideoId);
             }
           });
         } else {
@@ -1533,7 +1539,6 @@ function renderNotifications() {
     console.warn("No se pudo enviar a App Inventor:", e);
   }
 }
-
 
 
 
@@ -2277,6 +2282,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
