@@ -1433,10 +1433,12 @@ function renderNotifications() {
 
       // Si no existe, crearlo y agregarlo
       if (!slide) {
-        const nuevoSlide = createSlide(notif.title, notif.link, notif.desc);
+        const nuevoSlide = createSlide(notif.title, notif.link, notif.desc, notif.id); // 🔥 FIX3: Usar notif.id para consistencia
         wrapper.appendChild(nuevoSlide);
         // 🔥 FIX3: Update inmediato después de append para recalcular índices y evitar overlap/posición errónea
         if (swiper) swiper.update();
+        // 🔥 FIX3: Agregar a lastVideos para mantener consistencia
+        lastVideos.push({ title: notif.title, link: notif.link, desc: notif.desc, id: notif.id });
       }
 
       // Buscar índice real del slide en Swiper (recalcular después de update)
@@ -1460,9 +1462,16 @@ function renderNotifications() {
         // 🔥 FIX3: Forzar actualización de título y comentarios inmediatamente después de slideTo
         updateFixedTitle(swiper);
         const videoId = getActiveVideoId();
-        if (videoId) renderComentarios(videoId);
+        if (videoId) {
+          // 🔥 FIX3: Forzar carga de comentarios si no existen o están vacíos
+          if (!comentariosPorVideo[videoId] || comentariosPorVideo[videoId].length === 0) {
+            cargarComentarios(videoId, true, { force: true });
+          } else {
+            renderComentarios(videoId);
+          }
+        }
 
-        // Listener para cleanup post-transición (mantiene original)
+        // Listener para cleanup post-transición
         swiper.once('slideChangeTransitionEnd', () => {
           cleanupIframesExceptActive();
           const activeCard = document.querySelector('.swiper-slide-active .player-card');
@@ -1471,7 +1480,13 @@ function renderNotifications() {
           }
           // 🔥 FIX3: Re-render comentarios post-end para asegurar no "se lleve" de video anterior
           const videoIdFinal = getActiveVideoId();
-          if (videoIdFinal) renderComentarios(videoIdFinal);
+          if (videoIdFinal) {
+            if (!comentariosPorVideo[videoIdFinal] || comentariosPorVideo[videoIdFinal].length === 0) {
+              cargarComentarios(videoIdFinal, true, { force: true });
+            } else {
+              renderComentarios(videoIdFinal);
+            }
+          }
         });
       }
 
@@ -2149,42 +2164,39 @@ async function cargarVideos(checkNew = false) {
             activarSwipeParaBorrar();
 
             // 🔹 Mostrar comentarios del video activo (ya precargados)
-            cswiper = new Swiper(".swiper", {
-  loop: true,
-  direction: "vertical",
-  slidesPerView: 1,
-  spaceBetween: 10,
-  pagination: false,
-  on: {
-    init() {
-      updateFixedTitle(this);
-      activarSwipeParaBorrar();
+            const videoId = getActiveVideoId();
+            if (videoId) renderComentarios(videoId);
+          },
+          slideChange() {
+            cleanupIframesExceptActive();
+            updateFixedTitle(this);
+            activarSwipeParaBorrar();
 
-      // 🔹 Mostrar comentarios del video activo (ya precargados)
-      const videoId = getActiveVideoId();
-      if (videoId) renderComentarios(videoId);
-    },
-    slideChange() {
-      cleanupIframesExceptActive();
-      updateFixedTitle(this);
-      activarSwipeParaBorrar();
-
-      // 🔹 Mostrar comentarios instantáneamente al cambiar video
-      const videoId = getActiveVideoId();
-      if (videoId) {
-        // 🔥 FIX3: Fallback reforzado - si no hay datos o parecen desfazados, fuerza recarga inmediata
-        if (!comentariosPorVideo[videoId] || comentariosPorVideo[videoId].length === 0) {
-          cargarComentarios(videoId, true, { force: true });
-        } else {
-          renderComentarios(videoId);
-        }
-      }
-    },
-    slideChangeTransitionEnd() {
-      updateFixedTitle(this);
-    }
-  },
-});
+            // 🔹 Mostrar comentarios instantáneamente al cambiar video
+            const videoId = getActiveVideoId();
+            if (videoId) {
+              // 🔥 FIX3: Fallback reforzado - si no hay datos o parecen desfazados, fuerza recarga inmediata
+              if (!comentariosPorVideo[videoId] || comentariosPorVideo[videoId].length === 0) {
+                cargarComentarios(videoId, true, { force: true });
+              } else {
+                renderComentarios(videoId);
+              }
+            }
+          },
+          slideChangeTransitionEnd() {
+            updateFixedTitle(this);
+            // 🔥 FIX3: Re-render comentarios post-end para asegurar consistencia
+            const videoId = getActiveVideoId();
+            if (videoId) {
+              if (!comentariosPorVideo[videoId] || comentariosPorVideo[videoId].length === 0) {
+                cargarComentarios(videoId, true, { force: true });
+              } else {
+                renderComentarios(videoId);
+              }
+            }
+          }
+        },
+      });
 
       cleanupIframesExceptActive();
       updateFixedTitle(swiper);
@@ -2200,7 +2212,6 @@ async function cargarVideos(checkNew = false) {
     loader.style.display = "none";
   }
 }
-
 
 
 
@@ -2239,4 +2250,5 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
