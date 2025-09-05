@@ -1392,7 +1392,6 @@ let notifications = [];
 let lastVideos = [];
 
 // Actualiza el listado de notificaciones
-// Actualiza el listado de notificaciones
 function renderNotifications() {
   const list = document.getElementById("notification-list");
   const count = document.getElementById("notification-count");
@@ -1441,68 +1440,71 @@ function renderNotifications() {
       });
 
       let isNewSlide = false;
-      // Si no existe, crearlo y agregarlo
+      // Si no existe, crearlo y agregarlo usando swiper.appendSlide para posicionamiento correcto
       if (!slide) {
         isNewSlide = true;
         const nuevoSlide = createSlide(notif.title, notif.link, notif.desc, notif.id);
-        wrapper.appendChild(nuevoSlide);
-        // 🔥 FIX4: Update inmediato para recalcular índices
         if (swiper) {
-          swiper.update();
-          console.log("✅ Nuevo slide añadido, Swiper actualizado");
+          swiper.appendSlide(nuevoSlide); // 🔥 FIX5: Usar appendSlide de Swiper para añadir al final y recalcular índices automáticamente
+          console.log("✅ Nuevo slide añadido al final con appendSlide");
+        } else {
+          wrapper.appendChild(nuevoSlide);
         }
-        // 🔥 FIX4: Agregar a lastVideos para mantener consistencia
+        // 🔥 FIX5: Agregar a lastVideos para mantener consistencia
         lastVideos.push({ title: notif.title, link: notif.link, desc: notif.desc, id: notif.id });
       }
 
-      // Buscar índice real del slide en Swiper
-      let realIndex = -1;
-      if (swiper) {
-        swiper.slides.forEach((s, idx) => {
-          const card = s.querySelector('.player-card');
-          if (card && card.dataset.embed === notif.link) {
-            realIndex = idx;
-          }
-        });
-        // 🔥 FIX4: Si es nuevo, forzar última posición
-        if (isNewSlide && realIndex === -1) {
-          realIndex = swiper.slides.length - 1;
-          console.log(`✅ Nuevo video posicionado en índice ${realIndex}`);
-        }
-      }
-
-      if (swiper && realIndex !== -1) {
-        cleanupIframesExceptActive();
-        swiper.slideTo(realIndex, 0);
-        updateFixedTitle(swiper);
-
-        const videoId = getActiveVideoId();
-        if (videoId) {
-          if (!comentariosPorVideo[videoId] || comentariosPorVideo[videoId].length === 0) {
-            cargarComentarios(videoId, true, { force: true });
-          } else {
-            renderComentarios(videoId);
+      // 🔥 FIX5: Esperar un pequeño delay para asegurar que el DOM y Swiper se actualicen antes de calcular el índice
+      setTimeout(() => {
+        // Buscar índice real del slide en Swiper
+        let realIndex = -1;
+        if (swiper) {
+          swiper.slides.forEach((s, idx) => {
+            const card = s.querySelector('.player-card');
+            if (card && card.dataset.embed === notif.link) {
+              realIndex = idx;
+            }
+          });
+          // Si es nuevo, forzar última posición
+          if (isNewSlide && realIndex === -1) {
+            realIndex = swiper.slides.length - 1;
+            console.log(`✅ Nuevo video posicionado en índice final: ${realIndex}`);
           }
         }
 
-        swiper.once('slideChangeTransitionEnd', () => {
+        if (swiper && realIndex !== -1) {
           cleanupIframesExceptActive();
-          const activeCard = document.querySelector('.swiper-slide-active .player-card');
-          if (activeCard && !activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
-            mountIframe(activeCard);
-          }
-          const videoIdFinal = getActiveVideoId();
-          if (videoIdFinal) {
-            if (!comentariosPorVideo[videoIdFinal] || comentariosPorVideo[videoIdFinal].length === 0) {
-              cargarComentarios(videoIdFinal, true, { force: true });
+          swiper.slideTo(realIndex, 0);
+          updateFixedTitle(swiper);
+
+          const videoId = getActiveVideoId();
+          if (videoId) {
+            if (!comentariosPorVideo[videoId] || comentariosPorVideo[videoId].length === 0) {
+              cargarComentarios(videoId, true, { force: true });
             } else {
-              renderComentarios(videoIdFinal);
+              renderComentarios(videoId);
             }
           }
-        });
-      } else {
-        console.error("❌ Error: Swiper o índice no válido al intentar navegar al nuevo video");
-      }
+
+          swiper.once('slideChangeTransitionEnd', () => {
+            cleanupIframesExceptActive();
+            const activeCard = document.querySelector('.swiper-slide-active .player-card');
+            if (activeCard && !activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
+              mountIframe(activeCard);
+            }
+            const videoIdFinal = getActiveVideoId();
+            if (videoIdFinal) {
+              if (!comentariosPorVideo[videoIdFinal] || comentariosPorVideo[videoIdFinal].length === 0) {
+                cargarComentarios(videoIdFinal, true, { force: true });
+              } else {
+                renderComentarios(videoIdFinal);
+              }
+            }
+          });
+        } else {
+          console.error("❌ Error: Swiper o índice no válido al intentar navegar al nuevo video");
+        }
+      }, 100); // 🔥 FIX5: Delay de 100ms para sincronizar en diferentes dispositivos
 
       // Marcar como leída y cerrar panel
       notifications.splice(i, 1);
@@ -2265,6 +2267,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
