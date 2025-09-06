@@ -1814,27 +1814,30 @@ function preloadNextVideo() {
   if (!cardEl) return;
 
   const videoId = nextSlide.dataset.videoid;
-
-  // ⚡ Si ya está en caché, no recargamos
-  if (videoCache[videoId]) return;
+  if (videoCache[videoId]) return; // ya precargado
 
   const src = cardEl.dataset.embed;
   const info = getEmbedInfo(src);
 
-  // ⚡ Solo precargamos MP4 y archive.org
+  // ⚡ Solo precargamos MP4 (p.ej. archive.org directo)
   if (info.type === "mp4") {
     const video = document.createElement("video");
+    video.className = "preload-video";   // 👈 clave para reconocerlo luego
     video.preload = "auto";
     video.src = src;
-    video.style.display = "none";
+    video.muted = true;                   // evita bloqueos de autoplay
+    video.playsInline = true;
+    video.style.display = "none";         // invisible
     cardEl.appendChild(video);
 
+    // Opcional: empujar a caché cuando el buffer arranca
     video.addEventListener("loadeddata", () => {
-      videoCache[videoId] = video; // ✅ Guardamos en caché
+      videoCache[videoId] = video;
       console.log("✅ Video precargado:", src);
     });
   }
 }
+
 
 // 🔥 Montar video o iframe en la tarjeta
 function mountIframe(cardEl, videoId) {
@@ -2423,6 +2426,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
