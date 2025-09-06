@@ -890,6 +890,7 @@ function navigateTo(page) {
     window.location.href = page;
     console.log("✅ Navegación directa a:", page);
   }
+}
         
         const SCRIPT_URL =
             "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
@@ -1194,14 +1195,18 @@ function getActiveVideoId() {
 }
 
 // 🚀 Apenas carga la página, enviamos "success" a App Inventor
+let hasLoaded = false; // Bandera para evitar envíos repetidos
 window.addEventListener("load", () => {
-  try {
-    if (typeof AppInventor !== "undefined" && AppInventor.setWebViewString) {
-      AppInventor.setWebViewString("success");
-      console.log("✅ Se envió 'success' a App Inventor");
+  if (!hasLoaded) {
+    try {
+      if (typeof AppInventor !== "undefined" && window.AppInventor.setWebViewString) {
+        window.AppInventor.setWebViewString(window.location.href);
+        console.log("✅ Se envió la URL actual a App Inventor:", window.location.href);
+        hasLoaded = true; // Evita envíos repetidos
+      }
+    } catch (err) {
+      console.warn("No se pudo enviar la URL a App Inventor:", err);
     }
-  } catch (err) {
-    console.warn("No se pudo enviar 'success' a App Inventor:", err);
   }
 });
 
@@ -4108,6 +4113,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
