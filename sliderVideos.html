@@ -3661,9 +3661,18 @@ function cleanupIframesExceptActiveAndAdjacent() {
     swiper.slides.forEach((slide, index) => {
         if (index !== activeIndex && index !== prevIndex && index !== nextIndex) {
             const card = slide.querySelector(".player-card");
-            if (card) restorePoster(card);
-        } else {
-            // Para prev y next, pausar si está reproduciendo
+            if (card) {
+                const src = card.dataset.embed;
+                const player = players[src];
+                if (player) {
+                    if (typeof player.pauseVideo === 'function') player.pauseVideo();
+                    else if (typeof player.pause === 'function') player.pause();
+                    delete players[src]; // Limpiar el reproductor de la memoria
+                }
+                restorePoster(card); // Restaurar el póster solo para slides no adyacentes
+            }
+        } else if (index !== activeIndex) {
+            // Para prev y next, pausar si está reproduciendo, pero mantener el iframe/video
             const card = slide.querySelector(".player-card");
             if (card) {
                 const src = card.dataset.embed;
@@ -3671,6 +3680,12 @@ function cleanupIframesExceptActiveAndAdjacent() {
                 if (player) {
                     if (typeof player.pauseVideo === 'function') player.pauseVideo();
                     else if (typeof player.pause === 'function') player.pause();
+                    // Actualizar botón central para slides adyacentes
+                    const centerPlayPauseBtn = card.querySelector('.center-play-pause-btn');
+                    if (centerPlayPauseBtn) {
+                        centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                        centerPlayPauseBtn.style.opacity = 1;
+                    }
                 }
             }
         }
@@ -3876,6 +3891,7 @@ async function cargarVideos(checkNew = false) {
     // ✅ Inicializamos Swiper
   // Dentro de cargarVideos, reemplaza el bloque de inicialización de Swiper con este:
 // Reemplaza solo el bloque de inicialización de Swiper dentro de cargarVideos
+// Reemplaza solo el bloque de inicialización de Swiper dentro de cargarVideos
 if (!checkNew) {
     if (swiper) swiper.destroy(true, true);
     swiper = new Swiper(".swiper", {
@@ -3891,6 +3907,11 @@ if (!checkNew) {
                 const videoId = getActiveVideoId();
                 if (videoId) renderComentarios(videoId);
                 console.log("✅ Swiper inicializado");
+                // Inicializar el primer video con reproducción automática
+                const activeCard = this.slides[this.activeIndex].querySelector('.player-card');
+                if (activeCard && !activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
+                    mountIframe(activeCard, true);
+                }
             },
             slideChange() {
                 cleanupIframesExceptActiveAndAdjacent();
@@ -3914,14 +3935,24 @@ if (!checkNew) {
                 // Manejar active
                 const activeCard = this.slides[activeIndex].querySelector('.player-card');
                 if (activeCard) {
+                    const src = activeCard.dataset.embed;
                     if (!activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
-                        mountIframe(activeCard, true);
+                        mountIframe(activeCard, true); // Montar con reproducción automática
                     } else {
-                        const src = activeCard.dataset.embed;
                         const player = players[src];
                         if (player) {
-                            if (typeof player.playVideo === 'function') player.playVideo();
-                            else if (typeof player.play === 'function') player.play();
+                            // Asegurar que el video activo se reproduzca
+                            if (typeof player.playVideo === 'function') {
+                                player.playVideo();
+                            } else if (typeof player.play === 'function') {
+                                player.play().catch(e => console.warn("Error al reproducir:", e));
+                            }
+                            // Actualizar estado del botón central
+                            const centerPlayPauseBtn = activeCard.querySelector('.center-play-pause-btn');
+                            if (centerPlayPauseBtn) {
+                                centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                                centerPlayPauseBtn.style.opacity = 0;
+                            }
                         }
                     }
                 }
@@ -3929,13 +3960,25 @@ if (!checkNew) {
                 // Precargar prev
                 const prevCard = this.slides[prevIndex].querySelector('.player-card');
                 if (prevCard && !prevCard.querySelector("iframe") && !prevCard.querySelector("video")) {
-                    mountIframe(prevCard, false);
+                    mountIframe(prevCard, false); // Precargar sin reproducir
+                } else if (prevCard) {
+                    const centerPlayPauseBtn = prevCard.querySelector('.center-play-pause-btn');
+                    if (centerPlayPauseBtn) {
+                        centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                        centerPlayPauseBtn.style.opacity = 1;
+                    }
                 }
 
                 // Precargar next
                 const nextCard = this.slides[nextIndex].querySelector('.player-card');
                 if (nextCard && !nextCard.querySelector("iframe") && !nextCard.querySelector("video")) {
-                    mountIframe(nextCard, false);
+                    mountIframe(nextCard, false); // Precargar sin reproducir
+                } else if (nextCard) {
+                    const centerPlayPauseBtn = nextCard.querySelector('.center-play-pause-btn');
+                    if (centerPlayPauseBtn) {
+                        centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                        centerPlayPauseBtn.style.opacity = 1;
+                    }
                 }
 
                 const videoId = getActiveVideoId();
@@ -3958,6 +4001,10 @@ if (!checkNew) {
     loader.style.display = "none";
   }
 }
+
+
+
+        
         function activarSwipeParaBorrar() {
   const comentarios = document.querySelectorAll(".comentario-propio"); // clase para tus comentarios
 
@@ -3991,6 +4038,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
