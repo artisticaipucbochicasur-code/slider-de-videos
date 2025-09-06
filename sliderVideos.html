@@ -1802,12 +1802,18 @@ deleteConfirm.onclick = async () => {
 
 
 
-       function mountIframe(cardEl, videoId) {
-  // 🔥 Antes de montar, desmonta todo lo demás
+      function mountIframe(cardEl, videoId) {
+  // 🔥 Antes de montar, desmonta todo lo demás excepto el activo
   cleanupIframesExceptActive();
 
-  // Si ya hay un reproductor montado, salimos
+  // Si ya existe un reproductor cargado, no hacemos nada
   if (cardEl.querySelector("iframe") || cardEl.querySelector("video")) return;
+
+  // 🚀 Si ya tenemos el reproductor en caché, reutilízalo
+  if (videoCache[videoId]) {
+    cardEl.appendChild(videoCache[videoId]);
+    return;
+  }
 
   const src = cardEl.dataset.embed;
   const info = getEmbedInfo(src);
@@ -1815,16 +1821,22 @@ deleteConfirm.onclick = async () => {
   const poster = cardEl.querySelector(".poster");
   if (poster) poster.remove();
 
+  // 🎛️ Controles personalizados
   const controls = createControls();
   cardEl.appendChild(controls);
 
-  const centerPlayPauseBtn = document.createElement("div");
-  centerPlayPauseBtn.className = "center-play-pause-btn";
-  centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-  cardEl.appendChild(centerPlayPauseBtn);
+  // 🎯 Botón central Play/Pause → SOLO crear si no existe
+  let centerPlayPauseBtn = cardEl.querySelector(".center-play-pause-btn");
+  if (!centerPlayPauseBtn) {
+    centerPlayPauseBtn = document.createElement("div");
+    centerPlayPauseBtn.className = "center-play-pause-btn";
+    centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+    cardEl.appendChild(centerPlayPauseBtn);
+  }
 
   let player;
 
+  // 🎥 Caso YouTube
   if (info.type === "youtube") {
     const container = document.createElement("div");
     container.className = "player-iframe";
@@ -1854,6 +1866,7 @@ deleteConfirm.onclick = async () => {
     });
     players[src] = player;
 
+  // 🎥 Caso MP4 o archive.org
   } else if (info.type === "mp4") {
     const video = document.createElement("video");
     video.className = "player-iframe";
@@ -1890,6 +1903,7 @@ deleteConfirm.onclick = async () => {
       centerPlayPauseBtn.style.opacity = 1;
     });
 
+  // 🎥 Caso iframe genérico
   } else {
     const iframe = document.createElement("iframe");
     iframe.className = "player-iframe";
@@ -1900,11 +1914,45 @@ deleteConfirm.onclick = async () => {
     cardEl.appendChild(iframe);
   }
 
-  // 🚀 Guardar el reproductor en caché para no recargarlo
+  // 🚀 Guardamos el reproductor en caché
   videoCache[videoId] = cardEl.querySelector("iframe") || cardEl.querySelector("video");
 }
 
+function preloadNextVideo() {
+  if (!swiper) return;
 
+  const nextIndex = (swiper.activeIndex + 1) % swiper.slides.length;
+  const nextSlide = swiper.slides[nextIndex];
+  if (!nextSlide) return;
+
+  const cardEl = nextSlide.querySelector(".player-card");
+  if (!cardEl) return;
+
+  // Si ya está en caché, no hacemos nada
+  const videoId = nextSlide.dataset.videoid;
+  if (videoCache[videoId]) return;
+
+  const src = cardEl.dataset.embed;
+  const info = getEmbedInfo(src);
+
+  // ⚡ Solo precargamos MP4 y archive.org
+  if (info.type === "mp4") {
+    const video = document.createElement("video");
+    video.preload = "auto";
+    video.src = src;
+    video.style.display = "none"; // Invisible, pero cargado
+    cardEl.appendChild(video);
+
+    video.addEventListener("loadeddata", () => {
+      console.log("✅ Video precargado:", src);
+    });
+  }
+}
+
+
+
+
+        
         
         function createControls() {
             const controlsBar = document.createElement("div");
@@ -2303,19 +2351,23 @@ async function cargarVideos(checkNew = false) {
             if (videoId) renderComentarios(videoId);
             console.log("✅ Swiper inicializado");
           },
-          slideChange() {
-            cleanupIframesExceptActive();
-            updateFixedTitle(this);
-            activarSwipeParaBorrar();
-            const videoId = getActiveVideoId();
-            if (videoId) {
-              if (!comentariosPorVideo[videoId]) {
-                cargarComentarios(videoId, true);
-              } else {
-                renderComentarios(videoId);
-              }
-            }
-          },
+        slideChange() {
+  cleanupIframesExceptActive();
+  updateFixedTitle(this);
+  activarSwipeParaBorrar();
+  const videoId = getActiveVideoId();
+  if (videoId) {
+    if (!comentariosPorVideo[videoId]) {
+      cargarComentarios(videoId, true);
+    } else {
+      renderComentarios(videoId);
+    }
+  }
+
+  // ⚡ Precargar el siguiente video automáticamente
+  preloadNextVideo();
+},
+
           slideChangeTransitionEnd() {
             updateFixedTitle(this);
             const videoId = getActiveVideoId();
@@ -2373,6 +2425,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
