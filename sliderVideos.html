@@ -1001,7 +1001,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
 
-// Mostrar/ocultar overlays al tocar el slider
 document.querySelector('.swiper').addEventListener('click', (e) => {
   // 👉 Evitar que se cierre si se hace click en el título o descripción
   if (e.target.closest('#video-title-fixed')) {
@@ -1026,10 +1025,16 @@ document.querySelector('.swiper').addEventListener('click', (e) => {
     if (refreshBtn) {
       refreshBtn.classList.toggle("hidden-overlay");
     }
+
+    // Enviar comando a App Inventor
+    if (commentsOverlay.classList.contains('hidden-overlay')) {
+      window.AppInventor.setWebViewString("ocultar");
+    } else {
+      window.AppInventor.setWebViewString("visible");
+    }
   }
   lastTapTime = currentTime;
 });
-
 
 
 
@@ -2444,6 +2449,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
