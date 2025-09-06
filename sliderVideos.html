@@ -840,6 +840,8 @@ let lastTapTime = 0;
 let activeComment = null;
 let startX = 0;
 let isSwiping = false;
+const videoCache = {}; // 🔹 Almacena los reproductores para no recargar videos
+
 
 const refreshBtn = document.getElementById("refreshBtn");
 
@@ -1761,13 +1763,13 @@ deleteConfirm.onclick = async () => {
             return { type: "other", embedSrc: link, poster: "" };
         }
 
-    function createSlide(titulo, link, descripcion, id) {
+   function createSlide(titulo, link, descripcion, id) {
     const { embedSrc, poster } = getEmbedInfo(link);
     const slide = document.createElement("div");
     slide.className = "swiper-slide";
     slide.dataset.title = titulo || "Video";
     slide.dataset.descripcion = descripcion || "";
-    slide.dataset.videoid = id || ""; // ← AGREGA EL ID ÚNICO AQUÍ
+    slide.dataset.videoid = id || ""; // ← ID único para caché
 
     const card = document.createElement("div");
     card.className = "player-card";
@@ -1782,8 +1784,14 @@ deleteConfirm.onclick = async () => {
     playBtn.innerHTML = '<i class="fas fa-play"></i>';
     posterEl.appendChild(playBtn);
 
+    // 🔹 Si ya vimos este video, reutilizamos el reproductor desde caché
     posterEl.addEventListener("click", () => {
-        mountIframe(card);
+        if (videoCache[id]) {
+            card.innerHTML = "";
+            card.appendChild(videoCache[id]);
+        } else {
+            mountIframe(card, id);
+        }
     });
 
     card.appendChild(posterEl);
@@ -1794,10 +1802,11 @@ deleteConfirm.onclick = async () => {
 
 
 
-        function mountIframe(cardEl) {
+       function mountIframe(cardEl, videoId) {
   // 🔥 Antes de montar, desmonta todo lo demás
   cleanupIframesExceptActive();
 
+  // Si ya hay un reproductor montado, salimos
   if (cardEl.querySelector("iframe") || cardEl.querySelector("video")) return;
 
   const src = cardEl.dataset.embed;
@@ -1805,7 +1814,7 @@ deleteConfirm.onclick = async () => {
 
   const poster = cardEl.querySelector(".poster");
   if (poster) poster.remove();
-  
+
   const controls = createControls();
   cardEl.appendChild(controls);
 
@@ -1813,7 +1822,7 @@ deleteConfirm.onclick = async () => {
   centerPlayPauseBtn.className = "center-play-pause-btn";
   centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
   cardEl.appendChild(centerPlayPauseBtn);
-  
+
   let player;
 
   if (info.type === "youtube") {
@@ -1844,11 +1853,14 @@ deleteConfirm.onclick = async () => {
       }
     });
     players[src] = player;
+
   } else if (info.type === "mp4") {
     const video = document.createElement("video");
     video.className = "player-iframe";
     video.setAttribute("autoplay", "true");
     video.setAttribute("playsinline", "true");
+    video.setAttribute("controls", "true");
+    video.preload = "auto"; // ⚡ Precarga rápida
     video.style.width = "100%";
     video.style.height = "100%";
     video.style.background = "#000";
@@ -1877,15 +1889,21 @@ deleteConfirm.onclick = async () => {
       centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
       centerPlayPauseBtn.style.opacity = 1;
     });
+
   } else {
     const iframe = document.createElement("iframe");
     iframe.className = "player-iframe";
     iframe.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share");
     iframe.setAttribute("allowfullscreen", "true");
+    iframe.loading = "lazy"; // ⚡ Carga diferida
     iframe.src = src + (src.includes("?") ? "&" : "?") + "autoplay=1";
     cardEl.appendChild(iframe);
   }
+
+  // 🚀 Guardar el reproductor en caché para no recargarlo
+  videoCache[videoId] = cardEl.querySelector("iframe") || cardEl.querySelector("video");
 }
+
 
         
         function createControls() {
@@ -2320,6 +2338,8 @@ async function cargarVideos(checkNew = false) {
     loader.style.display = "none";
   }
 }
+
+        
         function activarSwipeParaBorrar() {
   const comentarios = document.querySelectorAll(".comentario-propio"); // clase para tus comentarios
 
@@ -2353,6 +2373,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
