@@ -1205,24 +1205,16 @@ function getActiveVideoId() {
   return activeSlide.dataset.videoid || null;
 }
 
-let hasLoaded = false; // Bandera para evitar envíos repetidos
+let hasSentWebViewString = false;
 function sendToAppInventor(value) {
-  if (typeof window.AppInventor !== "undefined" && window.AppInventor.setWebViewString) {
+  if (!hasSentWebViewString && typeof window.AppInventor !== "undefined" && window.AppInventor.setWebViewString) {
     window.AppInventor.setWebViewString(value);
     console.log("✅ Enviado a App Inventor:", value);
+    hasSentWebViewString = true;
+    setTimeout(() => { hasSentWebViewString = false; }, 1000); // Resetear bandera después de 1 segundo
   }
 }
 
-window.addEventListener("load", () => {
-  if (!hasLoaded) {
-    try {
-      sendToAppInventor("loaded"); // Enviar "loaded" en lugar de la URL
-      hasLoaded = true;
-    } catch (err) {
-      console.warn("No se pudo enviar a App Inventor:", err);
-    }
-  }
-});
 
 
         
@@ -2535,6 +2527,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
