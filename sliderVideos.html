@@ -1205,17 +1205,22 @@ function getActiveVideoId() {
   return activeSlide.dataset.videoid || null;
 }
 
-let hasLoaded = false;
-        
-// 🚀 Apenas carga la página, enviamos "success" a App Inventor
+let hasLoaded = false; // Bandera para evitar envíos repetidos
+function sendToAppInventor(value) {
+  if (typeof window.AppInventor !== "undefined" && window.AppInventor.setWebViewString) {
+    window.AppInventor.setWebViewString(value);
+    console.log("✅ Enviado a App Inventor:", value);
+  }
+}
+
 window.addEventListener("load", () => {
-  try {
-    if (typeof AppInventor !== "undefined" && AppInventor.setWebViewString) {
-      AppInventor.setWebViewString(window.location.href);
-      console.log("✅ Se envió la URL actual a App Inventor:", window.location.href);
+  if (!hasLoaded) {
+    try {
+      sendToAppInventor("loaded"); // Enviar "loaded" en lugar de la URL
+      hasLoaded = true;
+    } catch (err) {
+      console.warn("No se pudo enviar a App Inventor:", err);
     }
-  } catch (err) {
-    console.warn("No se pudo enviar la URL a App Inventor:", err);
   }
 });
 
@@ -1669,7 +1674,7 @@ function renderNotifications() {
 
   try {
     if (typeof AppInventor !== "undefined" && AppInventor.setWebViewString) {
-      AppInventor.setWebViewString(String(notifications.length));
+     sendToAppInventor(String(notifications.length));
     }
   } catch (e) {
     console.warn("No se pudo enviar a App Inventor:", e);
@@ -2530,6 +2535,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
