@@ -3655,14 +3655,14 @@ function cleanupIframesExceptActiveAndAdjacent() {
     if (!swiper) return;
 
     const activeIndex = swiper.activeIndex;
-    const prevIndex = swiper.previousIndex;
+    const prevIndex = (activeIndex - 1 + swiper.slides.length) % swiper.slides.length;
     const nextIndex = (activeIndex + 1) % swiper.slides.length;
 
     swiper.slides.forEach((slide, index) => {
         if (index !== activeIndex && index !== prevIndex && index !== nextIndex) {
             const card = slide.querySelector(".player-card");
             if (card) restorePoster(card);
-        } else if (index !== activeIndex) {
+        } else {
             // Para prev y next, pausar si está reproduciendo
             const card = slide.querySelector(".player-card");
             if (card) {
@@ -3874,82 +3874,83 @@ async function cargarVideos(checkNew = false) {
     lastVideos = newVideos;
 
     // ✅ Inicializamos Swiper
-    if (!checkNew) {
-      if (swiper) swiper.destroy(true, true);
-      swiper = new Swiper(".swiper", {
+  // Dentro de cargarVideos, reemplaza el bloque de inicialización de Swiper con este:
+if (!checkNew) {
+    if (swiper) swiper.destroy(true, true);
+    swiper = new Swiper(".swiper", {
         loop: true,
         direction: "vertical",
         slidesPerView: 1,
         spaceBetween: 10,
         pagination: false,
         on: {
-          init() {
-            updateFixedTitle(this);
-            activarSwipeParaBorrar();
-            const videoId = getActiveVideoId();
-            if (videoId) renderComentarios(videoId);
-            console.log("✅ Swiper inicializado");
-          },
-          slideChange() {
-            cleanupIframesExceptActiveAndAdjacent();
-            updateFixedTitle(this);
-            activarSwipeParaBorrar();
-            const videoId = getActiveVideoId();
-            if (videoId) {
-              if (!comentariosPorVideo[videoId]) {
-                cargarComentarios(videoId, true);
-              } else {
-                renderComentarios(videoId);
-              }
-            }
-          },
-          slideChangeTransitionEnd() {
-            updateFixedTitle(this);
-            const activeIndex = this.activeIndex;
-            const prevIndex = this.previousIndex;
-            const nextIndex = (activeIndex + 1) % this.slides.length;
-
-            // Manejar active
-            const activeCard = this.slides[activeIndex].querySelector('.player-card');
-            if (activeCard) {
-                if (!activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
-                    mountIframe(activeCard, true);
-                } else {
-                    const src = activeCard.dataset.embed;
-                    const player = players[src];
-                    if (player) {
-                        if (typeof player.playVideo === 'function') player.playVideo();
-                        else if (typeof player.play === 'function') player.play();
+            init() {
+                updateFixedTitle(this);
+                activarSwipeParaBorrar();
+                const videoId = getActiveVideoId();
+                if (videoId) renderComentarios(videoId);
+                console.log("✅ Swiper inicializado");
+            },
+            slideChange() {
+                cleanupIframesExceptActiveAndAdjacent();
+                updateFixedTitle(this);
+                activarSwipeParaBorrar();
+                const videoId = getActiveVideoId();
+                if (videoId) {
+                    if (!comentariosPorVideo[videoId]) {
+                        cargarComentarios(videoId, true);
+                    } else {
+                        renderComentarios(videoId);
                     }
                 }
-            }
+            },
+            slideChangeTransitionEnd() {
+                updateFixedTitle(this);
+                const activeIndex = this.activeIndex;
+                const prevIndex = (activeIndex - 1 + this.slides.length) % this.slides.length;
+                const nextIndex = (activeIndex + 1) % this.slides.length;
 
-            // Precargar prev
-            const prevCard = this.slides[prevIndex].querySelector('.player-card');
-            if (prevCard && !prevCard.querySelector("iframe") && !prevCard.querySelector("video")) {
-                mountIframe(prevCard, false);
-            }
+                // Manejar active
+                const activeCard = this.slides[activeIndex].querySelector('.player-card');
+                if (activeCard) {
+                    if (!activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
+                        mountIframe(activeCard, true);
+                    } else {
+                        const src = activeCard.dataset.embed;
+                        const player = players[src];
+                        if (player) {
+                            if (typeof player.playVideo === 'function') player.playVideo();
+                            else if (typeof player.play === 'function') player.play();
+                        }
+                    }
+                }
 
-            // Precargar next
-            const nextCard = this.slides[nextIndex].querySelector('.player-card');
-            if (nextCard && !nextCard.querySelector("iframe") && !nextCard.querySelector("video")) {
-                mountIframe(nextCard, false);
-            }
+                // Precargar prev
+                const prevCard = this.slides[prevIndex].querySelector('.player-card');
+                if (prevCard && !prevCard.querySelector("iframe") && !prevCard.querySelector("video")) {
+                    mountIframe(prevCard, false);
+                }
 
-            const videoId = getActiveVideoId();
-            if (videoId && comentariosPorVideo[videoId]) {
-              renderComentarios(videoId);
+                // Precargar next
+                const nextCard = this.slides[nextIndex].querySelector('.player-card');
+                if (nextCard && !nextCard.querySelector("iframe") && !nextCard.querySelector("video")) {
+                    mountIframe(nextCard, false);
+                }
+
+                const videoId = getActiveVideoId();
+                if (videoId && comentariosPorVideo[videoId]) {
+                    renderComentarios(videoId);
+                }
             }
-          }
         },
-      });
+    });
 
-      cleanupIframesExceptActiveAndAdjacent();
-      updateFixedTitle(swiper);
-      activarSwipeParaBorrar();
-      const videoId = getActiveVideoId();
-      if (videoId) renderComentarios(videoId);
-    }
+    cleanupIframesExceptActiveAndAdjacent();
+    updateFixedTitle(swiper);
+    activarSwipeParaBorrar();
+    const videoId = getActiveVideoId();
+    if (videoId) renderComentarios(videoId);
+}
   } catch (e) {
     console.error("❌ Error cargando videos:", e);
   } finally {
@@ -3989,4 +3990,5 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
