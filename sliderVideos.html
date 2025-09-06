@@ -1802,47 +1802,11 @@ deleteConfirm.onclick = async () => {
 
 
 
-// 🚀 Función para precargar el siguiente video
-function preloadNextVideo() {
-  if (!swiper) return;
-
-  const nextIndex = (swiper.activeIndex + 1) % swiper.slides.length;
-  const nextSlide = swiper.slides[nextIndex];
-  if (!nextSlide) return;
-
-  const cardEl = nextSlide.querySelector(".player-card");
-  if (!cardEl) return;
-
-  const videoId = nextSlide.dataset.videoid;
-  if (videoCache[videoId]) return; // ya precargado
-
-  const src = cardEl.dataset.embed;
-  const info = getEmbedInfo(src);
-
-  // ⚡ Solo precargamos MP4 (p.ej. archive.org directo)
-  if (info.type === "mp4") {
-    const video = document.createElement("video");
-    video.className = "preload-video";   // 👈 clave para reconocerlo luego
-    video.preload = "auto";
-    video.src = src;
-    video.muted = true;                   // evita bloqueos de autoplay
-    video.playsInline = true;
-    video.style.display = "none";         // invisible
-    cardEl.appendChild(video);
-
-    // Opcional: empujar a caché cuando el buffer arranca
-    video.addEventListener("loadeddata", () => {
-      videoCache[videoId] = video;
-      console.log("✅ Video precargado:", src);
-    });
-  }
-}
-
-
-// 🔥 Montar video o iframe en la tarjeta
-function mountIframe(cardEl, videoId) {
+   function mountIframe(cardEl, videoId) {
+  // 🔥 Antes de montar, desmonta todo lo demás
   cleanupIframesExceptActive();
 
+  // Si ya hay un reproductor montado, salimos
   if (cardEl.querySelector("iframe") || cardEl.querySelector("video")) return;
 
   const src = cardEl.dataset.embed;
@@ -1851,6 +1815,7 @@ function mountIframe(cardEl, videoId) {
   const poster = cardEl.querySelector(".poster");
   if (poster) poster.remove();
 
+  // Controles y botón central (sin cambios)
   const controls = createControls();
   cardEl.appendChild(controls);
 
@@ -1889,111 +1854,15 @@ function mountIframe(cardEl, videoId) {
         }
       }
     });
-    players[sfunction mountIframe(cardEl, videoId) {
-  // 🔥 Antes de montar, desmonta todo lo demás
-  cleanupIframesExceptActive();
-
-  const src = cardEl.dataset.embed;
-  const info = getEmbedInfo(src);
-
-  // 👉 Si hay un reproductor ya montado "real" (iframe o video con clase player-iframe), salimos
-  if (cardEl.querySelector("iframe") || cardEl.querySelector("video.player-iframe")) return;
-
-  // 🧠 ¿Hay un video precargado invisible?
-  const preloaded = cardEl.querySelector("video.preload-video");
-
-  // Quitamos el póster sí o sí (vamos a montar)
-  const poster = cardEl.querySelector(".poster");
-  if (poster) poster.remove();
-
-  // Controles y botón central (tus controles)
-  const controls = createControls();
-  cardEl.appendChild(controls);
-
-  const centerPlayPauseBtn = document.createElement("div");
-  centerPlayPauseBtn.className = "center-play-pause-btn";
-  centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-  cardEl.appendChild(centerPlayPauseBtn);
-
-  let player;
-
-  // ▶️ Si ya tenemos un MP4 precargado, lo promovemos a reproductor
-  if (preloaded && info.type === "mp4") {
-    // Convertir el preloaded en tu reproductor real
-    preloaded.classList.remove("preload-video");
-    preloaded.classList.add("player-iframe");
-    preloaded.style.display = "";             // visible
-    preloaded.removeAttribute("controls");    // sin controles nativos
-    preloaded.setAttribute("autoplay", "true");
-    preloaded.setAttribute("playsinline", "true");
-    preloaded.muted = false;                  // reproducir con audio
-
-    // Asegurar estilos
-    preloaded.style.width = "100%";
-    preloaded.style.height = "100%";
-    preloaded.style.background = "#000";
-
-    player = preloaded;
     players[src] = player;
 
-    // Listeners y tus controles
-    player.addEventListener('loadedmetadata', () => {
-      setupControls(player, 'mp4', controls, centerPlayPauseBtn, cardEl);
-    });
-    player.addEventListener('play', () => {
-      centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-      centerPlayPauseBtn.style.opacity = 0;
-    });
-    player.addEventListener('pause', () => {
-      centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-      centerPlayPauseBtn.style.opacity = 1;
-    });
-    player.addEventListener('ended', () => {
-      centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-      centerPlayPauseBtn.style.opacity = 1;
-    });
-
-    return; // ✅ Listo con preloaded
-  }
-
-  // ▶️ YouTube
-  if (info.type === "youtube") {
-    const container = document.createElement("div");
-    container.className = "player-iframe";
-    cardEl.appendChild(container);
-
-    player = new YT.Player(container, {
-      videoId: info.videoId,
-      playerVars: { autoplay: 1, rel: 0, playsinline: 1, controls: 0, modestbranding: 1 },
-      events: {
-        onReady: (event) => {
-          event.target.playVideo();
-          setupControls(event.target, 'youtube', controls, centerPlayPauseBtn, cardEl);
-        },
-        onStateChange: (event) => {
-          const state = event.data;
-          if (state === YT.PlayerState.PLAYING) {
-            centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-            centerPlayPauseBtn.style.opacity = 0;
-          } else if (state === YT.PlayerState.PAUSED) {
-            centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-            centerPlayPauseBtn.style.opacity = 1;
-          } else {
-            centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-          }
-        }
-      }
-    });
-    players[src] = player;
-
-  // ▶️ MP4 directo (sin preloaded)
+  // ▶️ MP4 directo
   } else if (info.type === "mp4") {
     const video = document.createElement("video");
     video.className = "player-iframe";
     video.setAttribute("autoplay", "true");
     video.setAttribute("playsinline", "true");
-    // ❌ NO usamos controles nativos
-    // video.setAttribute("controls","true");  // ← eliminado
+    video.setAttribute("controls", "true");
     video.preload = "auto"; // ⚡ Precarga rápida
     video.style.width = "100%";
     video.style.height = "100%";
@@ -2024,7 +1893,7 @@ function mountIframe(cardEl, videoId) {
       centerPlayPauseBtn.style.opacity = 1;
     });
 
-  // ▶️ Iframe (archive.org embebido u otros)
+  // ▶️ Iframe (Archive.org u otros)
   } else {
     const iframe = document.createElement("iframe");
     iframe.className = "player-iframe";
@@ -2040,7 +1909,36 @@ function mountIframe(cardEl, videoId) {
 }
 
 
+function preloadNextVideo() {
+  if (!swiper) return;
 
+  const nextIndex = (swiper.activeIndex + 1) % swiper.slides.length;
+  const nextSlide = swiper.slides[nextIndex];
+  if (!nextSlide) return;
+
+  const cardEl = nextSlide.querySelector(".player-card");
+  if (!cardEl) return;
+
+  // Si ya está en caché, no hacemos nada
+  const videoId = nextSlide.dataset.videoid;
+  if (videoCache[videoId]) return;
+
+  const src = cardEl.dataset.embed;
+  const info = getEmbedInfo(src);
+
+  // ⚡ Solo precargamos MP4 y archive.org
+  if (info.type === "mp4") {
+    const video = document.createElement("video");
+    video.preload = "auto";
+    video.src = src;
+    video.style.display = "none"; // Invisible, pero cargado
+    cardEl.appendChild(video);
+
+    video.addEventListener("loadeddata", () => {
+      console.log("✅ Video precargado:", src);
+    });
+  }
+}
 
 
 
@@ -2421,7 +2319,7 @@ async function cargarVideos(checkNew = false) {
 
     lastVideos = newVideos;
 
-    // ✅ Inicializamos Swiper con precarga inteligente
+    // ✅ Inicializamos Swiper
     if (!checkNew) {
       if (swiper) swiper.destroy(true, true);
       swiper = new Swiper(".swiper", {
@@ -2436,10 +2334,6 @@ async function cargarVideos(checkNew = false) {
             activarSwipeParaBorrar();
             const videoId = getActiveVideoId();
             if (videoId) renderComentarios(videoId);
-
-            // 🚀 Precargamos el primer siguiente video
-            preloadNextVideo();
-
             console.log("✅ Swiper inicializado");
           },
           slideChange() {
@@ -2455,8 +2349,17 @@ async function cargarVideos(checkNew = false) {
               }
             }
 
-            // 🚀 Precargamos el siguiente video automáticamente
-            preloadNextVideo();
+            // 🚀 **PRECARGAR el siguiente video automáticamente**
+            const nextIndex = this.activeIndex + 1;
+            const nextSlide = wrapper.children[nextIndex];
+            if (nextSlide) {
+              const nextCard = nextSlide.querySelector(".player-card");
+              const videoIdNext = nextSlide.dataset.videoid;
+              if (nextCard && videoIdNext && !videoCache[videoIdNext]) {
+                mountIframe(nextCard, videoIdNext);
+                console.log("⚡ Video siguiente precargado");
+              }
+            }
           },
           slideChangeTransitionEnd() {
             updateFixedTitle(this);
@@ -2516,28 +2419,5 @@ setInterval(() => {
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
