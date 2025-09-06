@@ -2,18 +2,9 @@
 <html lang="es">
 <head>
 
-    <div class="app-name">DECOM</div>
-  <nav class="nav-icons">
-    <button onclick="navigateTo('https://artisticaipucbochicasur-code.github.io/Subir-Videos/upload.html')" title="Publicar">
-      <i class="fas fa-plus-circle"></i>
-    </button>
-    <button onclick="navigateTo('https://artisticaipucbochicasur-code.github.io/pase-de-fotos-vertical/fotos.html')" title="Anuncios">
-      <i class="fas fa-bullhorn"></i>
-    </button>
-    <button onclick="navigateTo('https://artisticaipucbochicasur-code.github.io/slider-de-videos/sliderVideos.html')" title="Videos" class="active">
-      <i class="fas fa-video"></i>
-    </button>
-  </nav>
+
+
+    
     <meta charset="UTF-8" />
     <meta
         name="viewport"
@@ -26,52 +17,6 @@
     />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-
-        .social-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #222;
-  color: white;
-  padding: 10px 20px;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-}
-
-.app-name {
-  font-size: 24px;
-  font-weight: bold;
-}
-
-.nav-icons {
-  display: flex;
-  gap: 15px;
-}
-
-.nav-icons button {
-  background: none;
-  border: none;
-  color: white;
-  font-size: 20px;
-  cursor: pointer;
-  transition: color 0.3s;
-}
-
-.nav-icons button:hover {
-  color: #1e90ff;
-}
-
-.nav-icons button.active {
-  color: #1e90ff;
-}
-
-body {
-  padding-top: 60px; /* Espacio para el encabezado fijo */
-}
         :root {
             --bg1: #000;
             --bg2: #000;
@@ -82,7 +27,6 @@ body {
         html, body {
             height: 100%;
         }
-
 
         body {
             margin: 0;
@@ -781,12 +725,69 @@ body {
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.5);
 }
 
+.social-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #222;
+  color: white;
+  padding: 10px 20px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
 
+.app-name {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.nav-icons {
+  display: flex;
+  gap: 15px;
+}
+
+.nav-icons button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.nav-icons button:hover {
+  color: #1e90ff;
+}
+
+.nav-icons button.active {
+  color: #1e90ff;
+}
+
+body {
+  padding-top: 60px; /* Espacio para el encabezado fijo */
+}
         
     </style>
 </head>
 <body>
-
+<header class="social-header">
+  <div class="app-name">DECOM</div>
+  <nav class="nav-icons">
+    <button onclick="navigateTo('https://tu-usuario.github.io/tu-repositorio/publicar.html')" title="Publicar">
+      <i class="fas fa-plus-circle"></i>
+    </button>
+    <button onclick="navigateTo('https://tu-usuario.github.io/tu-repositorio/anuncios.html')" title="Anuncios">
+      <i class="fas fa-bullhorn"></i>
+    </button>
+    <button onclick="navigateTo('https://tu-usuario.github.io/tu-repositorio/videos.html')" title="Videos" class="active">
+      <i class="fas fa-video"></i>
+    </button>
+  </nav>
+</header>
 <!-- 🔍 Modal de búsqueda -->
 <div id="search-modal" class="hidden">
   <div class="modal-content">
@@ -881,13 +882,15 @@ body {
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script src="https://www.youtube.com/iframe_api"></script>
     <script>
-        function navigateTo(page) {
+function navigateTo(page) {
   if (typeof window.AppInventor !== "undefined" && window.AppInventor.setWebViewString) {
     window.AppInventor.setWebViewString(page);
+    console.log("✅ Navegando a:", page);
   } else {
     window.location.href = page;
+    console.log("✅ Navegación directa a:", page);
   }
-}
+        
         const SCRIPT_URL =
             "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
 
@@ -1190,15 +1193,15 @@ function getActiveVideoId() {
   return activeSlide.dataset.videoid || null;
 }
 
+// 🚀 Apenas carga la página, enviamos "success" a App Inventor
 window.addEventListener("load", () => {
   try {
     if (typeof AppInventor !== "undefined" && AppInventor.setWebViewString) {
-      // Enviar la URL actual de la página en lugar de "success"
-      AppInventor.setWebViewString(window.location.href);
-      console.log("✅ Se envió la URL actual a App Inventor:", window.location.href);
+      AppInventor.setWebViewString("success");
+      console.log("✅ Se envió 'success' a App Inventor");
     }
   } catch (err) {
-    console.warn("No se pudo enviar la URL a App Inventor:", err);
+    console.warn("No se pudo enviar 'success' a App Inventor:", err);
   }
 });
 
@@ -2782,7 +2785,17 @@ function getActiveVideoId() {
   return activeSlide.dataset.videoid || null;
 }
 
-
+// 🚀 Apenas carga la página, enviamos "success" a App Inventor
+window.addEventListener("load", () => {
+  try {
+    if (typeof AppInventor !== "undefined" && AppInventor.setWebViewString) {
+      AppInventor.setWebViewString(window.location.href);
+      console.log("✅ Se envió la URL actual a App Inventor:", window.location.href);
+    }
+  } catch (err) {
+    console.warn("No se pudo enviar la URL a App Inventor:", err);
+  }
+});
 
 
         
@@ -4095,12 +4108,6 @@ setInterval(() => {
     </script>
 </body>
 </html>
-
-
-
-
-
-
 
 
 
