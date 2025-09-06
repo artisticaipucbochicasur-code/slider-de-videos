@@ -1,6 +1,19 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+
+    <div class="app-name">DECOM</div>
+  <nav class="nav-icons">
+    <button onclick="navigateTo('https://artisticaipucbochicasur-code.github.io/Subir-Videos/upload.html')" title="Publicar">
+      <i class="fas fa-plus-circle"></i>
+    </button>
+    <button onclick="navigateTo('https://artisticaipucbochicasur-code.github.io/pase-de-fotos-vertical/fotos.html')" title="Anuncios">
+      <i class="fas fa-bullhorn"></i>
+    </button>
+    <button onclick="navigateTo('https://artisticaipucbochicasur-code.github.io/slider-de-videos/sliderVideos.html')" title="Videos" class="active">
+      <i class="fas fa-video"></i>
+    </button>
+  </nav>
     <meta charset="UTF-8" />
     <meta
         name="viewport"
@@ -13,33 +26,8 @@
     />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root {
-            --bg1: #000;
-            --bg2: #000;
-            --text: #fff;
-            --card-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
-        }
 
-        html, body {
-            height: 100%;
-        }
-<header class="social-header">
-  <div class="app-name">DECOM</div>
-  <nav class="nav-icons">
-    <button onclick="navigateTo('https://tu-usuario.github.io/tu-repositorio/publicar.html')" title="Publicar">
-      <i class="fas fa-plus-circle"></i>
-    </button>
-    <button onclick="navigateTo('https://tu-usuario.github.io/tu-repositorio/anuncios.html')" title="Anuncios">
-      <i class="fas fa-bullhorn"></i>
-    </button>
-    <button onclick="navigateTo('https://tu-usuario.github.io/tu-repositorio/videos.html')" title="Videos" class="active">
-      <i class="fas fa-video"></i>
-    </button>
-  </nav>
-</header>
-
-<style>
-.social-header {
+        .social-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -84,16 +72,17 @@
 body {
   padding-top: 60px; /* Espacio para el encabezado fijo */
 }
-</style>
+        :root {
+            --bg1: #000;
+            --bg2: #000;
+            --text: #fff;
+            --card-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+        }
 
-<script>
-function navigateTo(page) {
-  if (typeof window.AppInventor !== "undefined" && window.AppInventor.setWebViewString) {
-    window.AppInventor.setWebViewString(page);
-  } else {
-    window.location.href = page;
-  }
-}
+        html, body {
+            height: 100%;
+        }
+
 
         body {
             margin: 0;
@@ -892,6 +881,13 @@ function navigateTo(page) {
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script src="https://www.youtube.com/iframe_api"></script>
     <script>
+        function navigateTo(page) {
+  if (typeof window.AppInventor !== "undefined" && window.AppInventor.setWebViewString) {
+    window.AppInventor.setWebViewString(page);
+  } else {
+    window.location.href = page;
+  }
+}
         const SCRIPT_URL =
             "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
 
@@ -4109,6 +4105,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
