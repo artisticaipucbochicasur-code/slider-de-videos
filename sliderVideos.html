@@ -1889,16 +1889,112 @@ function mountIframe(cardEl, videoId) {
         }
       }
     });
+    players[sfunction mountIframe(cardEl, videoId) {
+  // 🔥 Antes de montar, desmonta todo lo demás
+  cleanupIframesExceptActive();
+
+  const src = cardEl.dataset.embed;
+  const info = getEmbedInfo(src);
+
+  // 👉 Si hay un reproductor ya montado "real" (iframe o video con clase player-iframe), salimos
+  if (cardEl.querySelector("iframe") || cardEl.querySelector("video.player-iframe")) return;
+
+  // 🧠 ¿Hay un video precargado invisible?
+  const preloaded = cardEl.querySelector("video.preload-video");
+
+  // Quitamos el póster sí o sí (vamos a montar)
+  const poster = cardEl.querySelector(".poster");
+  if (poster) poster.remove();
+
+  // Controles y botón central (tus controles)
+  const controls = createControls();
+  cardEl.appendChild(controls);
+
+  const centerPlayPauseBtn = document.createElement("div");
+  centerPlayPauseBtn.className = "center-play-pause-btn";
+  centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+  cardEl.appendChild(centerPlayPauseBtn);
+
+  let player;
+
+  // ▶️ Si ya tenemos un MP4 precargado, lo promovemos a reproductor
+  if (preloaded && info.type === "mp4") {
+    // Convertir el preloaded en tu reproductor real
+    preloaded.classList.remove("preload-video");
+    preloaded.classList.add("player-iframe");
+    preloaded.style.display = "";             // visible
+    preloaded.removeAttribute("controls");    // sin controles nativos
+    preloaded.setAttribute("autoplay", "true");
+    preloaded.setAttribute("playsinline", "true");
+    preloaded.muted = false;                  // reproducir con audio
+
+    // Asegurar estilos
+    preloaded.style.width = "100%";
+    preloaded.style.height = "100%";
+    preloaded.style.background = "#000";
+
+    player = preloaded;
     players[src] = player;
 
-  // ▶️ MP4 directo
+    // Listeners y tus controles
+    player.addEventListener('loadedmetadata', () => {
+      setupControls(player, 'mp4', controls, centerPlayPauseBtn, cardEl);
+    });
+    player.addEventListener('play', () => {
+      centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+      centerPlayPauseBtn.style.opacity = 0;
+    });
+    player.addEventListener('pause', () => {
+      centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+      centerPlayPauseBtn.style.opacity = 1;
+    });
+    player.addEventListener('ended', () => {
+      centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+      centerPlayPauseBtn.style.opacity = 1;
+    });
+
+    return; // ✅ Listo con preloaded
+  }
+
+  // ▶️ YouTube
+  if (info.type === "youtube") {
+    const container = document.createElement("div");
+    container.className = "player-iframe";
+    cardEl.appendChild(container);
+
+    player = new YT.Player(container, {
+      videoId: info.videoId,
+      playerVars: { autoplay: 1, rel: 0, playsinline: 1, controls: 0, modestbranding: 1 },
+      events: {
+        onReady: (event) => {
+          event.target.playVideo();
+          setupControls(event.target, 'youtube', controls, centerPlayPauseBtn, cardEl);
+        },
+        onStateChange: (event) => {
+          const state = event.data;
+          if (state === YT.PlayerState.PLAYING) {
+            centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+            centerPlayPauseBtn.style.opacity = 0;
+          } else if (state === YT.PlayerState.PAUSED) {
+            centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+            centerPlayPauseBtn.style.opacity = 1;
+          } else {
+            centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+          }
+        }
+      }
+    });
+    players[src] = player;
+
+  // ▶️ MP4 directo (sin preloaded)
   } else if (info.type === "mp4") {
     const video = document.createElement("video");
     video.className = "player-iframe";
     video.setAttribute("autoplay", "true");
     video.setAttribute("playsinline", "true");
-    video.setAttribute("controls", "true");
-    video.preload = "auto";
+    // ❌ NO usamos controles nativos
+    // video.setAttribute("controls","true");  // ← eliminado
+    video.preload = "auto"; // ⚡ Precarga rápida
     video.style.width = "100%";
     video.style.height = "100%";
     video.style.background = "#000";
@@ -1911,11 +2007,6 @@ function mountIframe(cardEl, videoId) {
 
     player = video;
     players[src] = player;
-
-    // ✅ Guardamos en caché cuando se carga
-    video.addEventListener("loadeddata", () => {
-      videoCache[videoId] = video;
-    });
 
     video.addEventListener('loadedmetadata', () => {
       setupControls(video, 'mp4', controls, centerPlayPauseBtn, cardEl);
@@ -1933,19 +2024,18 @@ function mountIframe(cardEl, videoId) {
       centerPlayPauseBtn.style.opacity = 1;
     });
 
-  // ▶️ Iframe (Archive.org u otros)
+  // ▶️ Iframe (archive.org embebido u otros)
   } else {
     const iframe = document.createElement("iframe");
     iframe.className = "player-iframe";
     iframe.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share");
     iframe.setAttribute("allowfullscreen", "true");
-    iframe.loading = "lazy";
+    iframe.loading = "lazy"; // ⚡ Carga diferida
     iframe.src = src + (src.includes("?") ? "&" : "?") + "autoplay=1";
     cardEl.appendChild(iframe);
-
-    videoCache[videoId] = iframe;
   }
 
+  // 🚀 Guardar el reproductor en caché para no recargarlo
   videoCache[videoId] = cardEl.querySelector("iframe") || cardEl.querySelector("video");
 }
 
@@ -2426,6 +2516,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
