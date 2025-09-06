@@ -1802,18 +1802,12 @@ deleteConfirm.onclick = async () => {
 
 
 
-      function mountIframe(cardEl, videoId) {
-  // 🔥 Antes de montar, desmonta todo lo demás excepto el activo
+   function mountIframe(cardEl, videoId) {
+  // 🔥 Antes de montar, desmonta todo lo demás
   cleanupIframesExceptActive();
 
-  // Si ya existe un reproductor cargado, no hacemos nada
+  // Si ya hay un reproductor montado, salimos
   if (cardEl.querySelector("iframe") || cardEl.querySelector("video")) return;
-
-  // 🚀 Si ya tenemos el reproductor en caché, reutilízalo
-  if (videoCache[videoId]) {
-    cardEl.appendChild(videoCache[videoId]);
-    return;
-  }
 
   const src = cardEl.dataset.embed;
   const info = getEmbedInfo(src);
@@ -1821,22 +1815,18 @@ deleteConfirm.onclick = async () => {
   const poster = cardEl.querySelector(".poster");
   if (poster) poster.remove();
 
-  // 🎛️ Controles personalizados
+  // Controles y botón central (sin cambios)
   const controls = createControls();
   cardEl.appendChild(controls);
 
-  // 🎯 Botón central Play/Pause → SOLO crear si no existe
-  let centerPlayPauseBtn = cardEl.querySelector(".center-play-pause-btn");
-  if (!centerPlayPauseBtn) {
-    centerPlayPauseBtn = document.createElement("div");
-    centerPlayPauseBtn.className = "center-play-pause-btn";
-    centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-    cardEl.appendChild(centerPlayPauseBtn);
-  }
+  const centerPlayPauseBtn = document.createElement("div");
+  centerPlayPauseBtn.className = "center-play-pause-btn";
+  centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+  cardEl.appendChild(centerPlayPauseBtn);
 
   let player;
 
-  // 🎥 Caso YouTube
+  // ▶️ YouTube
   if (info.type === "youtube") {
     const container = document.createElement("div");
     container.className = "player-iframe";
@@ -1866,7 +1856,7 @@ deleteConfirm.onclick = async () => {
     });
     players[src] = player;
 
-  // 🎥 Caso MP4 o archive.org
+  // ▶️ MP4 directo
   } else if (info.type === "mp4") {
     const video = document.createElement("video");
     video.className = "player-iframe";
@@ -1903,7 +1893,7 @@ deleteConfirm.onclick = async () => {
       centerPlayPauseBtn.style.opacity = 1;
     });
 
-  // 🎥 Caso iframe genérico
+  // ▶️ Iframe (Archive.org u otros)
   } else {
     const iframe = document.createElement("iframe");
     iframe.className = "player-iframe";
@@ -1914,9 +1904,10 @@ deleteConfirm.onclick = async () => {
     cardEl.appendChild(iframe);
   }
 
-  // 🚀 Guardamos el reproductor en caché
+  // 🚀 Guardar el reproductor en caché para no recargarlo
   videoCache[videoId] = cardEl.querySelector("iframe") || cardEl.querySelector("video");
 }
+
 
 function preloadNextVideo() {
   if (!swiper) return;
@@ -2258,7 +2249,7 @@ async function cargarVideos(checkNew = false) {
         const link = row[1];
         const descripcion = row[4] || "";
         const id = row[5];
-        if (titulo && link && id) { // 🔥 FIX8: Validar datos para evitar videos inválidos
+        if (titulo && link && id) {
           newVideos.push({ title: titulo, link, desc: descripcion, id });
         }
       });
@@ -2286,30 +2277,25 @@ async function cargarVideos(checkNew = false) {
       });
     }
 
-    // 🔥 FIX8: Eliminación silenciosa sin afectar slide activo
+    // 🔥 Eliminación silenciosa sin afectar slide activo
     if (checkNew) {
       const linksActivos = newVideos.map(v => v.link);
       const activeSlide = document.querySelector('.swiper-slide-active');
-      const activeLink = activeSlide ? activeSlide.querySelector('.player-card')?.dataset.embed : null;
-      
       Array.from(wrapper.children).forEach(slide => {
         const card = slide.querySelector(".player-card");
         if (card && !linksActivos.includes(card.dataset.embed)) {
           if (slide === activeSlide) {
-            // 🔥 FIX8: Si el slide eliminado es el activo, pasar al siguiente slide
             if (swiper) {
               swiper.removeSlide(swiper.activeIndex);
               console.log("✅ Slide activo eliminado, pasando al siguiente");
-              swiper.slideNext(0); // Transición inmediata al siguiente slide
+              swiper.slideNext(0);
             }
           } else {
-            // 🔥 FIX8: Eliminar solo slides no activos, sin actualizar Swiper inmediatamente
             wrapper.removeChild(slide);
             console.log("✅ Slide no activo eliminado silenciosamente");
           }
         }
       });
-      // 🔥 FIX8: Actualizar Swiper solo después de todas las eliminaciones
       if (swiper) {
         swiper.update();
         console.log("✅ Swiper actualizado tras eliminación");
@@ -2317,10 +2303,9 @@ async function cargarVideos(checkNew = false) {
     }
 
     // 🛎️ Notificaciones de nuevos videos
-    if (checkNew && lastVideos.length > 0) { 
+    if (checkNew && lastVideos.length > 0) {
       const nuevos = newVideos.filter(v => !lastVideos.find(old => old.link === v.link));
       if (nuevos.length > 0) {
-        // 🔥 FIX8: Filtrar notificaciones vacías/inválidas antes de añadir
         const validNuevos = nuevos.filter(v => v.title && v.link && v.id);
         if (validNuevos.length > 0) {
           notifications.unshift(...validNuevos);
@@ -2351,23 +2336,31 @@ async function cargarVideos(checkNew = false) {
             if (videoId) renderComentarios(videoId);
             console.log("✅ Swiper inicializado");
           },
-        slideChange() {
-  cleanupIframesExceptActive();
-  updateFixedTitle(this);
-  activarSwipeParaBorrar();
-  const videoId = getActiveVideoId();
-  if (videoId) {
-    if (!comentariosPorVideo[videoId]) {
-      cargarComentarios(videoId, true);
-    } else {
-      renderComentarios(videoId);
-    }
-  }
+          slideChange() {
+            cleanupIframesExceptActive();
+            updateFixedTitle(this);
+            activarSwipeParaBorrar();
+            const videoId = getActiveVideoId();
+            if (videoId) {
+              if (!comentariosPorVideo[videoId]) {
+                cargarComentarios(videoId, true);
+              } else {
+                renderComentarios(videoId);
+              }
+            }
 
-  // ⚡ Precargar el siguiente video automáticamente
-  preloadNextVideo();
-},
-
+            // 🚀 **PRECARGAR el siguiente video automáticamente**
+            const nextIndex = this.activeIndex + 1;
+            const nextSlide = wrapper.children[nextIndex];
+            if (nextSlide) {
+              const nextCard = nextSlide.querySelector(".player-card");
+              const videoIdNext = nextSlide.dataset.videoid;
+              if (nextCard && videoIdNext && !videoCache[videoIdNext]) {
+                mountIframe(nextCard, videoIdNext);
+                console.log("⚡ Video siguiente precargado");
+              }
+            }
+          },
           slideChangeTransitionEnd() {
             updateFixedTitle(this);
             const videoId = getActiveVideoId();
@@ -2390,6 +2383,7 @@ async function cargarVideos(checkNew = false) {
     loader.style.display = "none";
   }
 }
+
 
         
         function activarSwipeParaBorrar() {
@@ -2425,6 +2419,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
