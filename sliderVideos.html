@@ -23,7 +23,78 @@
         html, body {
             height: 100%;
         }
+<header class="social-header">
+  <div class="app-name">DECOM</div>
+  <nav class="nav-icons">
+    <button onclick="navigateTo('https://tu-usuario.github.io/tu-repositorio/publicar.html')" title="Publicar">
+      <i class="fas fa-plus-circle"></i>
+    </button>
+    <button onclick="navigateTo('https://tu-usuario.github.io/tu-repositorio/anuncios.html')" title="Anuncios">
+      <i class="fas fa-bullhorn"></i>
+    </button>
+    <button onclick="navigateTo('https://tu-usuario.github.io/tu-repositorio/videos.html')" title="Videos" class="active">
+      <i class="fas fa-video"></i>
+    </button>
+  </nav>
+</header>
 
+<style>
+.social-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #222;
+  color: white;
+  padding: 10px 20px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+.app-name {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.nav-icons {
+  display: flex;
+  gap: 15px;
+}
+
+.nav-icons button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.nav-icons button:hover {
+  color: #1e90ff;
+}
+
+.nav-icons button.active {
+  color: #1e90ff;
+}
+
+body {
+  padding-top: 60px; /* Espacio para el encabezado fijo */
+}
+</style>
+
+<script>
+function navigateTo(page) {
+  if (typeof window.AppInventor !== "undefined" && window.AppInventor.setWebViewString) {
+    window.AppInventor.setWebViewString(page);
+  } else {
+    window.location.href = page;
+  }
+}
+</script>
         body {
             margin: 0;
             padding: 0;
@@ -4038,6 +4109,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
