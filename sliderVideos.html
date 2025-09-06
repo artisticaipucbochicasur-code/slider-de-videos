@@ -3875,6 +3875,7 @@ async function cargarVideos(checkNew = false) {
 
     // ✅ Inicializamos Swiper
   // Dentro de cargarVideos, reemplaza el bloque de inicialización de Swiper con este:
+// Reemplaza solo el bloque de inicialización de Swiper dentro de cargarVideos
 if (!checkNew) {
     if (swiper) swiper.destroy(true, true);
     swiper = new Swiper(".swiper", {
@@ -3990,5 +3991,6 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
