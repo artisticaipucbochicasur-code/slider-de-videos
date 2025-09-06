@@ -1205,6 +1205,8 @@ function getActiveVideoId() {
   return activeSlide.dataset.videoid || null;
 }
 
+let hasLoaded = false;
+        
 // 🚀 Apenas carga la página, enviamos "success" a App Inventor
 window.addEventListener("load", () => {
   try {
@@ -2528,6 +2530,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
