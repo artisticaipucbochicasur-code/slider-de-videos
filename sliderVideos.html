@@ -1802,11 +1802,44 @@ deleteConfirm.onclick = async () => {
 
 
 
-   function mountIframe(cardEl, videoId) {
-  // 🔥 Antes de montar, desmonta todo lo demás
+// 🚀 Función para precargar el siguiente video
+function preloadNextVideo() {
+  if (!swiper) return;
+
+  const nextIndex = (swiper.activeIndex + 1) % swiper.slides.length;
+  const nextSlide = swiper.slides[nextIndex];
+  if (!nextSlide) return;
+
+  const cardEl = nextSlide.querySelector(".player-card");
+  if (!cardEl) return;
+
+  const videoId = nextSlide.dataset.videoid;
+
+  // ⚡ Si ya está en caché, no recargamos
+  if (videoCache[videoId]) return;
+
+  const src = cardEl.dataset.embed;
+  const info = getEmbedInfo(src);
+
+  // ⚡ Solo precargamos MP4 y archive.org
+  if (info.type === "mp4") {
+    const video = document.createElement("video");
+    video.preload = "auto";
+    video.src = src;
+    video.style.display = "none";
+    cardEl.appendChild(video);
+
+    video.addEventListener("loadeddata", () => {
+      videoCache[videoId] = video; // ✅ Guardamos en caché
+      console.log("✅ Video precargado:", src);
+    });
+  }
+}
+
+// 🔥 Montar video o iframe en la tarjeta
+function mountIframe(cardEl, videoId) {
   cleanupIframesExceptActive();
 
-  // Si ya hay un reproductor montado, salimos
   if (cardEl.querySelector("iframe") || cardEl.querySelector("video")) return;
 
   const src = cardEl.dataset.embed;
@@ -1815,7 +1848,6 @@ deleteConfirm.onclick = async () => {
   const poster = cardEl.querySelector(".poster");
   if (poster) poster.remove();
 
-  // Controles y botón central (sin cambios)
   const controls = createControls();
   cardEl.appendChild(controls);
 
@@ -1863,7 +1895,7 @@ deleteConfirm.onclick = async () => {
     video.setAttribute("autoplay", "true");
     video.setAttribute("playsinline", "true");
     video.setAttribute("controls", "true");
-    video.preload = "auto"; // ⚡ Precarga rápida
+    video.preload = "auto";
     video.style.width = "100%";
     video.style.height = "100%";
     video.style.background = "#000";
@@ -1876,6 +1908,11 @@ deleteConfirm.onclick = async () => {
 
     player = video;
     players[src] = player;
+
+    // ✅ Guardamos en caché cuando se carga
+    video.addEventListener("loadeddata", () => {
+      videoCache[videoId] = video;
+    });
 
     video.addEventListener('loadedmetadata', () => {
       setupControls(video, 'mp4', controls, centerPlayPauseBtn, cardEl);
@@ -1899,46 +1936,18 @@ deleteConfirm.onclick = async () => {
     iframe.className = "player-iframe";
     iframe.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share");
     iframe.setAttribute("allowfullscreen", "true");
-    iframe.loading = "lazy"; // ⚡ Carga diferida
+    iframe.loading = "lazy";
     iframe.src = src + (src.includes("?") ? "&" : "?") + "autoplay=1";
     cardEl.appendChild(iframe);
+
+    videoCache[videoId] = iframe;
   }
 
-  // 🚀 Guardar el reproductor en caché para no recargarlo
   videoCache[videoId] = cardEl.querySelector("iframe") || cardEl.querySelector("video");
 }
 
 
-function preloadNextVideo() {
-  if (!swiper) return;
 
-  const nextIndex = (swiper.activeIndex + 1) % swiper.slides.length;
-  const nextSlide = swiper.slides[nextIndex];
-  if (!nextSlide) return;
-
-  const cardEl = nextSlide.querySelector(".player-card");
-  if (!cardEl) return;
-
-  // Si ya está en caché, no hacemos nada
-  const videoId = nextSlide.dataset.videoid;
-  if (videoCache[videoId]) return;
-
-  const src = cardEl.dataset.embed;
-  const info = getEmbedInfo(src);
-
-  // ⚡ Solo precargamos MP4 y archive.org
-  if (info.type === "mp4") {
-    const video = document.createElement("video");
-    video.preload = "auto";
-    video.src = src;
-    video.style.display = "none"; // Invisible, pero cargado
-    cardEl.appendChild(video);
-
-    video.addEventListener("loadeddata", () => {
-      console.log("✅ Video precargado:", src);
-    });
-  }
-}
 
 
 
@@ -2319,7 +2328,7 @@ async function cargarVideos(checkNew = false) {
 
     lastVideos = newVideos;
 
-    // ✅ Inicializamos Swiper
+    // ✅ Inicializamos Swiper con precarga inteligente
     if (!checkNew) {
       if (swiper) swiper.destroy(true, true);
       swiper = new Swiper(".swiper", {
@@ -2334,6 +2343,10 @@ async function cargarVideos(checkNew = false) {
             activarSwipeParaBorrar();
             const videoId = getActiveVideoId();
             if (videoId) renderComentarios(videoId);
+
+            // 🚀 Precargamos el primer siguiente video
+            preloadNextVideo();
+
             console.log("✅ Swiper inicializado");
           },
           slideChange() {
@@ -2349,17 +2362,8 @@ async function cargarVideos(checkNew = false) {
               }
             }
 
-            // 🚀 **PRECARGAR el siguiente video automáticamente**
-            const nextIndex = this.activeIndex + 1;
-            const nextSlide = wrapper.children[nextIndex];
-            if (nextSlide) {
-              const nextCard = nextSlide.querySelector(".player-card");
-              const videoIdNext = nextSlide.dataset.videoid;
-              if (nextCard && videoIdNext && !videoCache[videoIdNext]) {
-                mountIframe(nextCard, videoIdNext);
-                console.log("⚡ Video siguiente precargado");
-              }
-            }
+            // 🚀 Precargamos el siguiente video automáticamente
+            preloadNextVideo();
           },
           slideChangeTransitionEnd() {
             updateFixedTitle(this);
@@ -2419,6 +2423,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
