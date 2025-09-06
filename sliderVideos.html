@@ -1802,21 +1802,26 @@ deleteConfirm.onclick = async () => {
 
 
 
- function mountIframe(cardEl, videoId) {
-  // 🔥 Antes de montar, desmonta todo lo demás
-  cleanupIframesExceptActive();
 
-  // Si ya existe el reproductor, usamos el cache
-  if (videoCache[videoId]) return;
+
+function mountIframe(cardEl, videoId) {
+  // 🔥 Antes de montar, desmonta todo lo demás EXCEPTO controles personalizados
+  cleanupIframesExceptActive();
 
   const src = cardEl.dataset.embed;
   const info = getEmbedInfo(src);
+
+  // Si el video ya está en caché, solo aseguramos que los controles sigan
+  if (videoCache[videoId]) {
+    ensureCustomControls(cardEl, videoCache[videoId]);
+    return;
+  }
 
   // Quitamos el póster si existe
   const poster = cardEl.querySelector(".poster");
   if (poster) poster.remove();
 
-  // Controles personalizados
+  // Creamos controles personalizados siempre
   const controls = createControls();
   cardEl.appendChild(controls);
 
@@ -1863,7 +1868,7 @@ deleteConfirm.onclick = async () => {
     video.className = "player-iframe";
     video.setAttribute("autoplay", "true");
     video.setAttribute("playsinline", "true");
-    video.setAttribute("controls", "true");
+    video.setAttribute("controls", "false"); // ❌ Quitamos controles nativos
     video.preload = "auto";
     video.style.width = "100%";
     video.style.height = "100%";
@@ -1894,21 +1899,46 @@ deleteConfirm.onclick = async () => {
       centerPlayPauseBtn.style.opacity = 1;
     });
 
-  // ▶️ Otros iframes
+  // ▶️ Archive.org u otros iframes
   } else {
     const iframe = document.createElement("iframe");
     iframe.className = "player-iframe";
     iframe.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share");
     iframe.setAttribute("allowfullscreen", "true");
     iframe.loading = "lazy";
-    iframe.src = src + (src.includes("?") ? "&" : "?") + "autoplay=1";
+
+    // ❌ Quitamos controles nativos de archive.org
+    iframe.src = src + (src.includes("?") ? "&" : "?") + "autoplay=1&controls=0";
     cardEl.appendChild(iframe);
     player = iframe;
+
+    // Montamos controles personalizados encima
+    setupControls(iframe, "iframe", controls, centerPlayPauseBtn, cardEl);
   }
 
   // 🚀 Guardamos el reproductor en caché
   videoCache[videoId] = player;
 }
+
+// 🛠️ Garantiza que los controles siempre estén activos aunque el video esté en caché
+function ensureCustomControls(cardEl, player) {
+  // Si ya existen, no hacemos nada
+  if (cardEl.querySelector(".custom-controls")) return;
+
+  const controls = createControls();
+  cardEl.appendChild(controls);
+
+  const centerPlayPauseBtn = document.createElement("div");
+  centerPlayPauseBtn.className = "center-play-pause-btn";
+  centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+  cardEl.appendChild(centerPlayPauseBtn);
+
+  // Reconectamos eventos
+  const src = cardEl.dataset.embed;
+  const info = getEmbedInfo(src);
+  setupControls(player, info.type, controls, centerPlayPauseBtn, cardEl);
+}
+
 
 // ⚡ Precargar videos anterior y siguiente
 function preloadAdjacentVideos(swiper, wrapper) {
@@ -2408,6 +2438,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
