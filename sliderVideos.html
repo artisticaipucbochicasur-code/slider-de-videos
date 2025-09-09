@@ -1067,24 +1067,24 @@ function renderSavedVideos(filter = "") {
     if (filtered.length === 0) {
         savedList.innerHTML = "<li style='color: #777; padding: 10px;'>No hay videos guardados</li>";
         savedModalInner.style.transform = "translateY(-60px)";
-        return;
     } else {
         savedModalInner.style.transform = "translateY(0)";
     }
 
-    // 🔹 Contenedor de botones (Guardar actual + Eliminar todo)
-    const buttonsContainer = document.createElement("div");
-    buttonsContainer.style.display = "flex";
-    buttonsContainer.style.justifyContent = "flex-end";
-    buttonsContainer.style.gap = "10px";
-    buttonsContainer.style.margin = "8px 0 10px";
+    // 📌 Contenedor para acciones (Guardar actual + Eliminar todo)
+    const actionsContainer = document.createElement("div");
+    actionsContainer.style.display = "flex";
+    actionsContainer.style.justifyContent = "space-between";
+    actionsContainer.style.gap = "10px";
+    actionsContainer.style.margin = "10px 0";
 
-    // Botón Guardar actual
+    // 🆕 Botón Guardar actual
     const saveCurrentBtn = document.createElement("button");
     saveCurrentBtn.textContent = "Guardar actual";
-    saveCurrentBtn.style.background = "#2c2c2c";
-    saveCurrentBtn.style.color = "#ccc";
-    saveCurrentBtn.style.border = "1px solid #444";
+    saveCurrentBtn.style.flex = "1";
+    saveCurrentBtn.style.background = "#007bff";
+    saveCurrentBtn.style.color = "#fff";
+    saveCurrentBtn.style.border = "none";
     saveCurrentBtn.style.borderRadius = "6px";
     saveCurrentBtn.style.padding = "6px 12px";
     saveCurrentBtn.style.cursor = "pointer";
@@ -1092,22 +1092,25 @@ function renderSavedVideos(filter = "") {
     saveCurrentBtn.style.transition = "background 0.2s ease";
 
     saveCurrentBtn.addEventListener("mouseenter", () => {
-        saveCurrentBtn.style.background = "#3a3a3a";
+        saveCurrentBtn.style.background = "#3399ff";
     });
+
     saveCurrentBtn.addEventListener("mouseleave", () => {
-        saveCurrentBtn.style.background = "#2c2c2c";
+        saveCurrentBtn.style.background = "#007bff";
     });
+
     saveCurrentBtn.addEventListener("click", () => {
         saveCurrentVideo();
-        renderSavedVideos(filter); // refresca la lista
+        renderSavedVideos(filter);
     });
 
-    buttonsContainer.appendChild(saveCurrentBtn);
+    actionsContainer.appendChild(saveCurrentBtn);
 
-    // Botón Eliminar todo (solo si hay más de uno)
+    // 🗑️ Botón Eliminar todo (solo si hay más de 1 guardado)
     if (filtered.length > 1) {
         const clearAllBtn = document.createElement("button");
         clearAllBtn.textContent = "Eliminar todo";
+        clearAllBtn.style.flex = "1";
         clearAllBtn.style.background = "#2c2c2c";
         clearAllBtn.style.color = "#ccc";
         clearAllBtn.style.border = "1px solid #444";
@@ -1120,21 +1123,24 @@ function renderSavedVideos(filter = "") {
         clearAllBtn.addEventListener("mouseenter", () => {
             clearAllBtn.style.background = "#3a3a3a";
         });
+
         clearAllBtn.addEventListener("mouseleave", () => {
             clearAllBtn.style.background = "#2c2c2c";
         });
+
         clearAllBtn.addEventListener("click", () => {
             setSavedVideos([]);
             renderSavedVideos();
             showToast("✅ Todos los videos fueron eliminados");
         });
 
-        buttonsContainer.appendChild(clearAllBtn);
+        actionsContainer.appendChild(clearAllBtn);
     }
 
-    savedList.appendChild(buttonsContainer);
+    // Insertamos los botones en la lista
+    savedList.appendChild(actionsContainer);
 
-    // 🔹 Renderizar cada item guardado
+    // Renderizamos los guardados
     filtered.forEach(item => {
         const li = document.createElement("li");
         li.style.display = "flex";
@@ -1159,16 +1165,10 @@ function renderSavedVideos(filter = "") {
                 savedModal.style.display = "none";
 
                 setTimeout(() => {
-                    // 🔹 Seleccionamos SOLO el título del bloque actual
                     const tituloActual = document.querySelector("#video-title-fixed .video-title");
                     if (tituloActual) {
                         tituloActual.classList.add("highlight-title-zoom");
-
-                        // 🔹 Nos aseguramos que quede visible en pantalla
-                        tituloActual.scrollIntoView({
-                            behavior: "smooth",
-                            block: "center"
-                        });
+                        tituloActual.scrollIntoView({ behavior: "smooth", block: "center" });
 
                         setTimeout(() => {
                             tituloActual.classList.remove("highlight-title-zoom");
@@ -1194,6 +1194,7 @@ function renderSavedVideos(filter = "") {
         deleteBtn.addEventListener("mouseenter", () => {
             deleteBtn.style.color = "#fff";
         });
+
         deleteBtn.addEventListener("mouseleave", () => {
             deleteBtn.style.color = "#aaa";
         });
@@ -1216,6 +1217,7 @@ function renderSavedVideos(filter = "") {
         savedList.appendChild(li);
     });
 }
+
 
 
 
@@ -2906,6 +2908,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
