@@ -1073,7 +1073,7 @@ function renderSavedVideos(filter = "") {
 
     // Botón Guardar actual (siempre visible)
     const saveCurrentBtn = document.createElement("button");
-    saveCurrentBtn.textContent = "Guardar actual";
+    saveCurrentBtn.textContent = "💾 Guardar actual";
     saveCurrentBtn.style.flex = "1";
     saveCurrentBtn.style.background = "#007bff";
     saveCurrentBtn.style.color = "#fff";
@@ -1129,9 +1129,9 @@ function renderSavedVideos(filter = "") {
     savedList.appendChild(buttonsContainer);
 
     if (filtered.length === 0) {
+        // ⬇️ Mostrar mensaje, pero sin cortar la ejecución (sin return)
         savedList.innerHTML += "<li style='color: #777; padding: 10px;'>No hay videos guardados</li>";
         savedModalInner.style.transform = "translateY(-60px)";
-        return;
     } else {
         savedModalInner.style.transform = "translateY(0)";
     }
@@ -1218,6 +1218,7 @@ function renderSavedVideos(filter = "") {
         savedList.appendChild(li);
     });
 }
+
 
 
 
@@ -2910,6 +2911,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
