@@ -892,12 +892,7 @@ function navigateTo(page) {
 
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("publicar-btn").addEventListener("click", () => {
-    // Send "publicar" command to App Inventor
-    window.AppInventor = window.AppInventor || {};
-    window.AppInventor.postMessage = window.AppInventor.postMessage || function(message) {
-      window.parent.postMessage(message, "*");
-    };
-    window.AppInventor.postMessage("publicar");
+    window.parent.postMessage("publicar", "*");
   });
   document.getElementById("anuncios-btn").addEventListener("click", () => {
     navigateTo("https://artisticaipucbochicasur-code.github.io/pase-de-fotos-vertical/fotos.html");
@@ -2531,6 +2526,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
