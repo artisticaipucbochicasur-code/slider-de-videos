@@ -796,7 +796,7 @@
     cursor: pointer;
     z-index: 2000;
 ">
-    <i class="far fa-bookmark" style="font-size: 24px;"></i>
+    <i class="fa-solid fa-bookmark" style="font-size: 24px;"></i>
 </button>
 
 
@@ -931,7 +931,7 @@
 <!-- Notificaciones -->
 <div id="notification-wrapper">
   <button id="notification-btn">
-    <i class="far fa-bell"></i>
+    <i class="fas fa-bell"></i>
     <span id="notification-count"></span>
   </button>
   <div id="notification-list" class="hidden"></div>
@@ -1907,8 +1907,7 @@ function normalizeText(text) {
 let notifications = [];
 let lastVideos = [];
 
-
- function renderNotifications() {
+function renderNotifications() {
   const list = document.getElementById("notification-list");
   const count = document.getElementById("notification-count");
 
@@ -2055,29 +2054,6 @@ let lastVideos = [];
   } catch (e) {
     console.warn("No se pudo enviar a App Inventor:", e);
   }
-}
-
-
-        
-// --- BOTÓN NOTIFICACIONES UNIVERSAL ---
-const notifBtn = document.getElementById("notification-btn");
-const notifList = document.getElementById("notification-list");
-
-// Mostrar/ocultar la lista al tocar el botón (desktop y móvil)
-notifBtn.addEventListener("click", (e) => {
-  e.stopPropagation();
-  notifList.classList.toggle("hidden");
-});
-
-        
-// Ocultar la lista al hacer clic fuera
-document.addEventListener("click", (e) => {
-  if (!notifList.classList.contains("hidden")) {
-    if (!notifList.contains(e.target) && e.target !== notifBtn) {
-      notifList.classList.add("hidden");
-    }
-  }
-});
 }
 // --- BOTÓN NOTIFICACIONES UNIVERSAL ---
 const notifBtn = document.getElementById("notification-btn");
@@ -2934,26 +2910,5 @@ setInterval(() => {
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
