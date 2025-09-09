@@ -751,31 +751,135 @@
     </style>
 </head>
 <body>
-<!-- 📌 Botón abrir guardados -->
-<div style="position: fixed; bottom: 80px; right: 20px; z-index: 1000;">
-  <button onclick="openSaved()" style="background: #007bff; color: white; padding: 10px 14px; border: none; border-radius: 50%; box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: pointer;">
-    ⭐
-  </button>
-</div>
+<!-- BOTÓN GUARDAR -->
+<button id="saveBtn" onclick="guardarVideoActual()" style="
+    position: fixed;
+    bottom: 300px;
+    right: 18px;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    z-index: 2000;
+">
+    <i class="fa-solid fa-bookmark" style="font-size: 24px;"></i>
+</button>
 
-<!-- 📌 Botón guardar video actual -->
-<div style="position: fixed; bottom: 140px; right: 20px; z-index: 1000;">
-  <button onclick="guardarVideoActual()" style="background: #28a745; color: white; padding: 10px 14px; border: none; border-radius: 50%; box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: pointer;">
-    💾
-  </button>
-</div>
+<!-- BOTÓN VER GUARDADOS -->
+<button id="viewSavedBtn" onclick="openSaved()" style="
+    position: fixed;
+    bottom: 350px;
+    right: 18px;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    z-index: 9999;
+">
+    <i class="fa-solid fa-list" style="font-size: 24px;"></i>
+</button>
+
 <!-- 📌 Modal Guardados -->
-<div id="savedModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-    background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(4px); z-index: 1000; overflow-y: auto;">
-  <div style="background: #fff; width: 90%; max-width: 400px; margin: 50px auto; padding: 20px; border-radius: 12px; position: relative;">
-    <h2 style="margin-bottom: 10px; font-size: 20px; font-weight: bold;">⭐ Videos guardados</h2>
-    <ul id="savedList" style="list-style: none; padding: 0; margin: 0; max-height: 400px; overflow-y: auto;"></ul>
-    <div style="margin-top: 15px; text-align: right;">
-      <button id="clearSaved" style="background: red; color: white; padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer;">Eliminar todos</button>
-      <button onclick="document.getElementById('savedModal').style.display='none'" 
-              style="background: gray; color: white; padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer;">Cerrar</button>
+<div id="savedModal" style="
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(4px);
+    z-index: 10000;
+    align-items: center;
+    justify-content: flex-start;
+    flex-direction: column;
+    padding: 15px;
+">
+    <div id="savedModalInner" style="
+        background-color: #1c1c1c;
+        color: white;
+        width: 90%;
+        max-width: 420px;
+        max-height: 80%;
+        border-radius: 12px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        overflow: hidden;
+        margin-top: 16vh;
+        transition: margin-top 0.25s ease;
+    ">
+        <!-- Encabezado -->
+        <div style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background-color: #1c1c1c;
+            z-index: 20;
+            padding-bottom: 8px;
+        ">
+            <h2 style="margin: 0; font-size: 18px; color: white;">🔖 Guardados</h2>
+            <button id="closeSavedBtn" style="
+                background: none;
+                border: none;
+                color: white;
+                font-size: 24px;
+                cursor: pointer;
+                line-height: 1;
+            ">&times;</button>
+        </div>
+
+        <!-- Input de búsqueda -->
+        <input
+            id="savedSearchInput"
+            type="text"
+            placeholder="Buscar guardados..."
+            style="
+                position: sticky;
+                top: 40px;
+                z-index: 15;
+                margin-top: 12px;
+                padding: 10px;
+                border: none;
+                border-radius: 6px;
+                background-color: #2c2c2c;
+                color: white;
+                font-size: 15px;
+            "
+        />
+
+        <!-- Lista de guardados -->
+        <ul id="savedList" style="
+            list-style: none;
+            padding: 0;
+            margin: 15px 0 0;
+            max-height: 250px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #555 #1c1c1c;
+        "></ul>
     </div>
-  </div>
 </div>
 
 
@@ -926,7 +1030,7 @@ function renderSavedVideos() {
   saved.forEach(v => {
     const li = document.createElement("li");
     li.style.padding = "6px";
-    li.style.borderBottom = "1px solid #ddd";
+    li.style.borderBottom = "1px solid #333";
     li.style.display = "flex";
     li.style.justifyContent = "space-between";
     li.style.alignItems = "center";
@@ -941,6 +1045,7 @@ function renderSavedVideos() {
     delBtn.style.background = "none";
     delBtn.style.border = "none";
     delBtn.style.cursor = "pointer";
+    delBtn.style.color = "#ff4444";
     delBtn.onclick = () => eliminarGuardado(v.id);
 
     li.appendChild(span);
@@ -972,18 +1077,51 @@ function eliminarGuardado(id) {
   showToast("🗑️ Eliminado");
 }
 
-function eliminarTodosGuardados() {
-  setSavedVideos([]);
-  renderSavedVideos();
-  showToast("🗑️ Todos eliminados");
-}
-
 function openSaved() {
   renderSavedVideos();
-  document.getElementById("savedModal").style.display = "block";
+  document.getElementById("savedModal").style.display = "flex";
 }
 
-// Toast de confirmación (reutiliza tu sistema existente si ya tienes)
+// Cerrar modal
+document.getElementById("closeSavedBtn").addEventListener("click", () => {
+  document.getElementById("savedModal").style.display = "none";
+});
+
+// Buscar en lista
+document.getElementById("savedSearchInput").addEventListener("input", (e) => {
+  const term = e.target.value.toLowerCase();
+  const saved = getSavedVideos();
+  const filtered = saved.filter(v => v.title.toLowerCase().includes(term));
+  const list = document.getElementById("savedList");
+  list.innerHTML = "";
+  filtered.forEach(v => {
+    const li = document.createElement("li");
+    li.style.padding = "6px";
+    li.style.borderBottom = "1px solid #333";
+    li.style.display = "flex";
+    li.style.justifyContent = "space-between";
+    li.style.alignItems = "center";
+
+    const span = document.createElement("span");
+    span.textContent = v.title;
+    span.style.cursor = "pointer";
+    span.onclick = () => irAGuardado(v.id);
+
+    const delBtn = document.createElement("button");
+    delBtn.textContent = "❌";
+    delBtn.style.background = "none";
+    delBtn.style.border = "none";
+    delBtn.style.cursor = "pointer";
+    delBtn.style.color = "#ff4444";
+    delBtn.onclick = () => eliminarGuardado(v.id);
+
+    li.appendChild(span);
+    li.appendChild(delBtn);
+    list.appendChild(li);
+  });
+});
+
+// Toast rápido
 function showToast(msg) {
   const toast = document.createElement("div");
   toast.textContent = msg;
@@ -999,6 +1137,7 @@ function showToast(msg) {
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 2000);
 }
+
 
 
 
@@ -2628,6 +2767,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
