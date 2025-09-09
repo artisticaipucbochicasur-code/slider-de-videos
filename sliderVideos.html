@@ -776,8 +776,8 @@
     </style>
 </head>
 <body>
-<!-- BOTÓN GUARDAR -->
-<button id="saveBtn" onclick="guardarVideoActual()" style="
+<!-- BOTÓN GUARDAR/VER -->
+<button id="saveBtn" style="
     position: fixed;
     bottom: 300px;
     right: 18px;
@@ -799,28 +799,6 @@
     <i class="fa-solid fa-bookmark" style="font-size: 24px;"></i>
 </button>
 
-<!-- BOTÓN VER GUARDADOS -->
-<button id="viewSavedBtn" onclick="openSaved()" style="
-    position: fixed;
-    bottom: 350px;
-    right: 18px;
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    cursor: pointer;
-    z-index: 9999;
-">
-    <i class="fa-solid fa-list" style="font-size: 24px;"></i>
-</button>
 
 <!-- 📌 Modal Guardados -->
 <div id="savedModal" style="
@@ -1094,6 +1072,39 @@ function renderSavedVideos(filter = "") {
         savedModalInner.style.transform = "translateY(0)";
     }
 
+    // 🔹 Contenedor de botones (Guardar actual + Eliminar todo)
+    const buttonsContainer = document.createElement("div");
+    buttonsContainer.style.display = "flex";
+    buttonsContainer.style.justifyContent = "flex-end";
+    buttonsContainer.style.gap = "10px";
+    buttonsContainer.style.margin = "8px 0 10px";
+
+    // Botón Guardar actual
+    const saveCurrentBtn = document.createElement("button");
+    saveCurrentBtn.textContent = "Guardar actual";
+    saveCurrentBtn.style.background = "#2c2c2c";
+    saveCurrentBtn.style.color = "#ccc";
+    saveCurrentBtn.style.border = "1px solid #444";
+    saveCurrentBtn.style.borderRadius = "6px";
+    saveCurrentBtn.style.padding = "6px 12px";
+    saveCurrentBtn.style.cursor = "pointer";
+    saveCurrentBtn.style.fontSize = "13px";
+    saveCurrentBtn.style.transition = "background 0.2s ease";
+
+    saveCurrentBtn.addEventListener("mouseenter", () => {
+        saveCurrentBtn.style.background = "#3a3a3a";
+    });
+    saveCurrentBtn.addEventListener("mouseleave", () => {
+        saveCurrentBtn.style.background = "#2c2c2c";
+    });
+    saveCurrentBtn.addEventListener("click", () => {
+        saveCurrentVideo();
+        renderSavedVideos(filter); // refresca la lista
+    });
+
+    buttonsContainer.appendChild(saveCurrentBtn);
+
+    // Botón Eliminar todo (solo si hay más de uno)
     if (filtered.length > 1) {
         const clearAllBtn = document.createElement("button");
         clearAllBtn.textContent = "Eliminar todo";
@@ -1102,29 +1113,28 @@ function renderSavedVideos(filter = "") {
         clearAllBtn.style.border = "1px solid #444";
         clearAllBtn.style.borderRadius = "6px";
         clearAllBtn.style.padding = "6px 12px";
-        clearAllBtn.style.margin = "8px 0 10px";
         clearAllBtn.style.cursor = "pointer";
-        clearAllBtn.style.alignSelf = "flex-end";
         clearAllBtn.style.fontSize = "13px";
         clearAllBtn.style.transition = "background 0.2s ease";
 
         clearAllBtn.addEventListener("mouseenter", () => {
             clearAllBtn.style.background = "#3a3a3a";
         });
-
         clearAllBtn.addEventListener("mouseleave", () => {
             clearAllBtn.style.background = "#2c2c2c";
         });
-
         clearAllBtn.addEventListener("click", () => {
             setSavedVideos([]);
             renderSavedVideos();
             showToast("✅ Todos los videos fueron eliminados");
         });
 
-        savedList.appendChild(clearAllBtn);
+        buttonsContainer.appendChild(clearAllBtn);
     }
 
+    savedList.appendChild(buttonsContainer);
+
+    // 🔹 Renderizar cada item guardado
     filtered.forEach(item => {
         const li = document.createElement("li");
         li.style.display = "flex";
@@ -1184,7 +1194,6 @@ function renderSavedVideos(filter = "") {
         deleteBtn.addEventListener("mouseenter", () => {
             deleteBtn.style.color = "#fff";
         });
-
         deleteBtn.addEventListener("mouseleave", () => {
             deleteBtn.style.color = "#aaa";
         });
@@ -1209,12 +1218,11 @@ function renderSavedVideos(filter = "") {
 }
 
 
+
 // ==========================
 // 📌 EVENTOS DE LOS BOTONES
 // ==========================
-saveBtn.addEventListener("click", saveCurrentVideo);
-
-viewSavedBtn.addEventListener("click", () => {
+saveBtn.addEventListener("click", () => {
     savedSearchInput.value = "";
     renderSavedVideos();
     setTimeout(() => {
@@ -2898,6 +2906,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
