@@ -931,7 +931,7 @@
 <!-- Notificaciones -->
 <div id="notification-wrapper">
   <button id="notification-btn">
-    <i class="fas fa-bell"></i>
+    <i class="far fa-bell"></i>
     <span id="notification-count"></span>
   </button>
   <div id="notification-list" class="hidden"></div>
@@ -2054,6 +2054,173 @@ function renderNotifications() {
   } catch (e) {
     console.warn("No se pudo enviar a App Inventor:", e);
   }
+    function renderNotifications() {
+  const list = document.getElementById("notification-list");
+  const count = document.getElementById("notification-count");
+
+  if (!list || !count) {
+    console.error("❌ Error: Elementos de notificaciones no encontrados en el DOM");
+    return;
+  }
+
+  list.innerHTML = "";
+
+  if (notifications.length === 0) {
+    list.innerHTML = "<div>Sin notificaciones</div>";
+    count.textContent = "";
+    count.style.display = "none";
+
+    try {
+      if (typeof AppInventor !== "undefined" && AppInventor.setWebViewString) {
+        AppInventor.setWebViewString("0");
+      }
+    } catch (e) {
+      console.warn("No se pudo enviar a App Inventor:", e);
+    }
+    return;
+  }
+
+  count.textContent = notifications.length;
+  count.style.display = "block";
+
+  notifications.forEach((notif, i) => {
+    if (!notif || !notif.link || !notif.title || !notif.id) {
+      console.warn("⚠️ Notificación inválida detectada:", notif);
+      return; // 🔥 FIX7: Evitar procesar notificaciones vacías/inválidas
+    }
+
+    const item = document.createElement("div");
+    item.textContent = notif.title;
+    item.style.cursor = "pointer";
+
+    item.onclick = () => {
+      const wrapper = document.getElementById("slides");
+      if (!wrapper) {
+        console.error("❌ Error: Contenedor de slides no encontrado");
+        return;
+      }
+
+      // 🔥 FIX7: Guardar y precargar comentarios del video actual solo si no están en caché
+      const currentVideoId = getActiveVideoId();
+      if (currentVideoId && !comentariosPorVideo[currentVideoId]) {
+        cargarComentarios(currentVideoId, false, { force: true });
+        console.log(`✅ Precargando comentarios para video actual ${currentVideoId}`);
+      }
+
+      // Buscar si ya existe el slide del anuncio
+      let slide = Array.from(wrapper.children).find(s => {
+        const card = s.querySelector('.player-card');
+        return card && card.dataset.embed === notif.link;
+      });
+
+      let isNewSlide = false;
+      // Si no existe, crearlo y agregarlo
+      if (!slide) {
+        isNewSlide = true;
+        const nuevoSlide = createSlide(notif.title, notif.link, notif.desc, notif.id);
+        if (swiper) {
+          swiper.appendSlide(nuevoSlide);
+          console.log("✅ Nuevo slide añadido al final con appendSlide");
+        } else {
+          wrapper.appendChild(nuevoSlide);
+        }
+        lastVideos.push({ title: notif.title, link: notif.link, desc: notif.desc, id: notif.id });
+        // 🔥 FIX7: Precargar comentarios del nuevo video para evitar alternancia
+        cargarComentarios(notif.id, false, { force: true });
+      }
+
+      // 🔥 FIX7: Delay para sincronización del DOM/Swiper
+      setTimeout(() => {
+        // Buscar índice real del slide en Swiper
+        let realIndex = -1;
+        if (swiper) {
+          swiper.slides.forEach((s, idx) => {
+            const card = s.querySelector('.player-card');
+            if (card && card.dataset.embed === notif.link) {
+              realIndex = idx;
+            }
+          });
+          if (isNewSlide && realIndex === -1) {
+            realIndex = swiper.slides.length - 1;
+            console.log(`✅ Nuevo video posicionado en índice final: ${realIndex}`);
+          }
+        }
+
+        if (swiper && realIndex !== -1) {
+          cleanupIframesExceptActive();
+          swiper.slideTo(realIndex, 0);
+          updateFixedTitle(swiper);
+
+          const videoId = getActiveVideoId();
+          if (videoId) {
+            if (!comentariosPorVideo[videoId] || comentariosPorVideo[videoId].length === 0) {
+              cargarComentarios(videoId, true, { force: true });
+            } else {
+              renderComentarios(videoId);
+            }
+          }
+
+          swiper.once('slideChangeTransitionEnd', () => {
+            cleanupIframesExceptActive();
+            const activeCard = document.querySelector('.swiper-slide-active .player-card');
+            if (activeCard && !activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
+              mountIframe(activeCard);
+            }
+            const videoIdFinal = getActiveVideoId();
+            if (videoIdFinal) {
+              if (!comentariosPorVideo[videoIdFinal] || comentariosPorVideo[videoIdFinal].length === 0) {
+                cargarComentarios(videoIdFinal, true, { force: true });
+              } else {
+                renderComentarios(videoIdFinal);
+              }
+            }
+            // 🔥 FIX7: Restaurar comentarios del video original si están en caché
+            if (currentVideoId && comentariosPorVideo[currentVideoId]) {
+              console.log(`✅ Restaurando comentarios para video original ${currentVideoId}`);
+              renderComentarios(currentVideoId);
+            }
+          });
+        } else {
+          console.error("❌ Error: Swiper o índice no válido al intentar navegar al nuevo video");
+        }
+      }, 100);
+
+      // Marcar como leída y cerrar panel
+      notifications.splice(i, 1);
+      renderNotifications();
+      document.getElementById("notification-list").classList.add("hidden");
+    };
+
+    list.appendChild(item);
+  });
+
+  try {
+    if (typeof AppInventor !== "undefined" && AppInventor.setWebViewString) {
+      AppInventor.setWebViewString(String(notifications.length));
+    }
+  } catch (e) {
+    console.warn("No se pudo enviar a App Inventor:", e);
+  }
+}
+// --- BOTÓN NOTIFICACIONES UNIVERSAL ---
+const notifBtn = document.getElementById("notification-btn");
+const notifList = document.getElementById("notification-list");
+
+// Mostrar/ocultar la lista al tocar el botón (desktop y móvil)
+notifBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  notifList.classList.toggle("hidden");
+});
+
+        
+// Ocultar la lista al hacer clic fuera
+document.addEventListener("click", (e) => {
+  if (!notifList.classList.contains("hidden")) {
+    if (!notifList.contains(e.target) && e.target !== notifBtn) {
+      notifList.classList.add("hidden");
+    }
+  }
+});
 }
 // --- BOTÓN NOTIFICACIONES UNIVERSAL ---
 const notifBtn = document.getElementById("notification-btn");
@@ -2910,6 +3077,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
