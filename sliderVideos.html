@@ -746,11 +746,70 @@
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.5);
 }
 
+/* ✨ Resaltado temporal + zoom del título */
+.highlight-title-zoom {
+    background-color: rgba(0, 150, 255, 0.3);
+    padding: 3px 6px;
+    border-radius: 5px;
+    animation: highlightZoom 0.4s ease-in-out;
+    transition: background-color 1s ease;
+}
+
+/* 🎥 Animación de zoom */
+@keyframes highlightZoom {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+#savedList {
+    scroll-behavior: smooth;
+}
 
         
     </style>
 </head>
 <body>
+<!-- BOTÓN GUARDAR -->
+<button id="saveBtn" class="fab" style="bottom: 300px;">
+  <i class="fa-solid fa-bookmark"></i>
+</button>
+
+<!-- BOTÓN VER GUARDADOS -->
+<button id="viewSavedBtn" class="fab" style="bottom: 350px;">
+  <i class="fa-solid fa-list"></i>
+</button>
+
+<!-- 📌 Modal Guardados -->
+<div id="savedModal">
+  <div id="savedModalInner">
+    <!-- Encabezado -->
+    <div style="
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      background-color: #1c1c1c;
+      z-index: 20;
+      padding-bottom: 8px;">
+      <h2 style="margin: 0; font-size: 18px; color: white;">🔖 Guardados</h2>
+      <button id="closeSavedBtn" style="background: none; border: none; color: white; font-size: 24px; cursor: pointer; line-height: 1;">&times;</button>
+    </div>
+
+    <!-- Input de búsqueda -->
+    <input id="savedSearchInput" type="text" placeholder="Buscar guardados..." style="
+      position: sticky; top: 40px; z-index: 15; margin-top: 12px;
+      padding: 10px; border: none; border-radius: 6px;
+      background-color: #2c2c2c; color: white; font-size: 15px;" />
+
+    <!-- Lista de guardados -->
+    <ul id="savedList" style="
+      list-style: none; padding: 0; margin: 15px 0 0;
+      max-height: 250px; overflow-y: auto;
+      scrollbar-width: thin; scrollbar-color: #555 #1c1c1c;"></ul>
+  </div>
+</div>
 
 
 
@@ -856,6 +915,167 @@
     <script>
         const SCRIPT_URL =
             "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
+
+
+// ==========================
+// 🔖 GUARDAR Y VER TITULOS
+// ==========================
+const saveBtn = document.getElementById("saveBtn");
+const viewSavedBtn = document.getElementById("viewSavedBtn");
+const savedModal = document.getElementById("savedModal");
+const savedList = document.getElementById("savedList");
+const savedSearchInput = document.getElementById("savedSearchInput");
+const closeSavedBtn = document.getElementById("closeSavedBtn");
+const savedModalInner = document.getElementById("savedModalInner");
+
+// ==========================
+// ✅ FUNCIONES DE COOKIES (Compatibilidad WebViewer)
+// ==========================
+function setSavedTitles(data) {
+  document.cookie = "savedTitles=" + encodeURIComponent(JSON.stringify(data)) + "; path=/; max-age=31536000";
+}
+function getSavedTitles() {
+  const match = document.cookie.match(/(^| )savedTitles=([^;]+)/);
+  return match ? JSON.parse(decodeURIComponent(match[2])) : [];
+}
+
+// ==========================
+// 💾 GUARDAR ANUNCIO ACTUAL
+// ==========================
+function saveCurrentTitle() {
+  if (!swiperInstance || anunciosData.length === 0) {
+    showToast("⚠️ No hay anuncios para guardar");
+    return;
+  }
+  const currentIndex = swiperInstance.realIndex;
+  const currentAnuncio = anunciosData[currentIndex];
+  let saved = getSavedTitles();
+
+  if (!saved.find(item => item.id === currentAnuncio.id)) {
+    saved.push({ id: currentAnuncio.id, titulo: currentAnuncio.titulo });
+    setSavedTitles(saved);
+    showToast("✅ Anuncio guardado");
+  } else {
+    showToast("ℹ️ Este anuncio ya está guardado");
+  }
+}
+
+// 🔧 Normaliza texto
+function normalizeText(text) {
+  return text.toLowerCase().normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// ==========================
+// 📜 RENDERIZAR TITULOS GUARDADOS
+// ==========================
+function renderSavedTitles(filter = "") {
+  const saved = getSavedTitles();
+  savedList.innerHTML = "";
+
+  const filtered = saved.filter(item =>
+    normalizeText(item.titulo).includes(normalizeText(filter))
+  );
+
+  if (filtered.length === 0) {
+    savedList.innerHTML = "<li style='color: #777; padding: 10px;'>No hay títulos guardados</li>";
+    savedModalInner.style.transform = "translateY(-60px)";
+    return;
+  } else {
+    savedModalInner.style.transform = "translateY(0)";
+  }
+
+  if (filtered.length > 1) {
+    const clearAllBtn = document.createElement("button");
+    clearAllBtn.textContent = "Eliminar todo";
+    clearAllBtn.style.cssText = "background:#2c2c2c;color:#ccc;border:1px solid #444;border-radius:6px;padding:6px 12px;margin:8px 0 10px;cursor:pointer;align-self:flex-end;font-size:13px;transition:background 0.2s ease;";
+    clearAllBtn.addEventListener("click", () => {
+      setSavedTitles([]);
+      renderSavedTitles();
+      showToast("✅ Todos los guardados fueron eliminados");
+    });
+    savedList.appendChild(clearAllBtn);
+  }
+
+  filtered.forEach(item => {
+    const li = document.createElement("li");
+    li.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #333;color:#fff;transition:opacity 0.3s ease, transform 0.3s ease;";
+
+    const titleSpan = document.createElement("span");
+    titleSpan.textContent = item.titulo;
+    titleSpan.style.cssText = "cursor:pointer;flex:1";
+    titleSpan.addEventListener("click", () => {
+      const anuncioIndex = anunciosData.findIndex(a => a.id === item.id);
+      if (anuncioIndex !== -1) {
+        swiperInstance.slideToLoop(anuncioIndex, 0, false);
+        savedModal.style.display = "none";
+        setTimeout(() => {
+          const tituloActual = document.querySelector(".content-overlay h3");
+          if (tituloActual) {
+            tituloActual.classList.add("highlight-title-zoom");
+            setTimeout(() => tituloActual.classList.remove("highlight-title-zoom"), 2000);
+          }
+        }, 400);
+      } else {
+        showToast("⚠️ Este anuncio ya no está disponible");
+      }
+    });
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.textContent = "✕";
+    deleteBtn.style.cssText = "background:transparent;border:none;color:#aaa;font-size:14px;cursor:pointer;margin-left:10px;transition:color 0.2s ease;";
+    deleteBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      li.style.opacity = "0";
+      li.style.transform = "translateX(30px)";
+      setTimeout(() => {
+        const updated = saved.filter(s => s.id !== item.id);
+        setSavedTitles(updated);
+        renderSavedTitles(filter);
+        showToast("🗑️ Eliminado de guardados");
+      }, 300);
+    });
+
+    li.appendChild(titleSpan);
+    li.appendChild(deleteBtn);
+    savedList.appendChild(li);
+  });
+}
+
+// ==========================
+// 📌 EVENTOS
+// ==========================
+saveBtn.addEventListener("click", saveCurrentTitle);
+viewSavedBtn.addEventListener("click", () => {
+  savedSearchInput.value = "";
+  renderSavedTitles();
+  setTimeout(() => {
+    savedModal.style.display = "flex";
+    savedList.scrollTop = 0;
+  }, 50);
+});
+savedSearchInput.addEventListener("input", (e) => renderSavedTitles(e.target.value));
+closeSavedBtn.addEventListener("click", () => savedModal.style.display = "none");
+savedModal.addEventListener("click", (e) => { if (e.target === savedModal) savedModal.style.display = "none"; });
+
+// ==========================
+// 🍞 TOASTS
+// ==========================
+function showToast(msg) {
+  const toast = document.createElement("div");
+  toast.textContent = msg;
+  toast.style.cssText = "position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:white;padding:10px 16px;border-radius:6px;font-size:14px;z-index:100000;";
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2500);
+}
+
+
+
+
+
+        
 
 // === Comentarios móviles ===
 const commentsOverlay = document.getElementById('commentsOverlay');
@@ -2479,4 +2699,5 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
