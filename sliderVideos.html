@@ -988,156 +988,238 @@
             "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
 
 
-// === GUARDADOS ===
+// ==========================
+// 🔖 GUARDAR Y VER VIDEOS
+// ==========================
+const saveBtn = document.getElementById("saveBtn");
+const viewSavedBtn = document.getElementById("viewSavedBtn");
+const savedModal = document.getElementById("savedModal");
+const savedList = document.getElementById("savedList");
+const savedSearchInput = document.getElementById("savedSearchInput");
+const closeSavedBtn = document.getElementById("closeSavedBtn");
+const savedModalInner = document.getElementById("savedModalInner");
+
+// ==========================
+// ✅ FUNCIONES DE COOKIES (Compatibilidad WebViewer)
+// ==========================
+function setSavedVideos(data) {
+    document.cookie = "savedVideos=" + encodeURIComponent(JSON.stringify(data)) + "; path=/; max-age=31536000";
+}
+
 function getSavedVideos() {
-  return JSON.parse(localStorage.getItem("savedVideos") || "[]");
+    const match = document.cookie.match(/(^| )savedVideos=([^;]+)/);
+    return match ? JSON.parse(decodeURIComponent(match[2])) : [];
 }
 
-function setSavedVideos(arr) {
-  localStorage.setItem("savedVideos", JSON.stringify(arr));
+// 🔧 Normaliza texto: minúsculas, sin tildes, sin espacios extras
+function normalizeText(text) {
+    return text
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
 }
 
-function guardarVideoActual() {
-  const activeCard = document.querySelector(".swiper-slide-active .player-card");
-  if (!activeCard) return showToast("❌ No se encontró el video activo");
+// ==========================
+// 💾 GUARDAR VIDEO ACTUAL
+// ==========================
+function saveCurrentVideo() {
+    if (!swiper || lastVideos.length === 0) {
+        showToast("⚠️ No hay videos para guardar");
+        return;
+    }
 
-  const id = activeCard.dataset.id;
-  const title = activeCard.dataset.title;
-  const link = activeCard.dataset.embed;
-  const desc = activeCard.dataset.desc;
+    const currentIndex = swiper.realIndex;
+    const currentVideo = lastVideos[currentIndex];
 
-  let saved = getSavedVideos();
-  if (saved.some(v => v.id === id)) {
-    showToast("⚠️ Ya está guardado");
-    return;
-  }
+    let saved = getSavedVideos();
 
-  saved.push({ id, title, link, desc });
-  setSavedVideos(saved);
-  renderSavedVideos();
-  showToast("✅ Guardado en favoritos");
+    if (!saved.find(item => item.id === currentVideo.id)) {
+        saved.push({
+            id: currentVideo.id,
+            titulo: currentVideo.titulo,
+            desc: currentVideo.desc || ""
+        });
+        setSavedVideos(saved);
+        showToast("✅ Video guardado");
+    } else {
+        showToast("ℹ️ Este video ya está guardado");
+    }
 }
 
-function renderSavedVideos() {
-  const saved = getSavedVideos();
-  const list = document.getElementById("savedList");
-  if (!list) return;
+// ==========================
+// 📜 RENDERIZAR VIDEOS GUARDADOS
+// ==========================
+function renderSavedVideos(filter = "") {
+    const saved = getSavedVideos();
+    savedList.innerHTML = "";
 
-  list.innerHTML = saved.length === 0 
-    ? "<li style='padding: 8px;'>No hay videos guardados</li>" 
-    : "";
+    const filtered = saved.filter(item =>
+        normalizeText(item.titulo).includes(normalizeText(filter))
+    );
 
-  saved.forEach(v => {
-    const li = document.createElement("li");
-    li.style.padding = "6px";
-    li.style.borderBottom = "1px solid #333";
-    li.style.display = "flex";
-    li.style.justifyContent = "space-between";
-    li.style.alignItems = "center";
+    if (filtered.length === 0) {
+        savedList.innerHTML = "<li style='color: #777; padding: 10px;'>No hay videos guardados</li>";
+        savedModalInner.style.transform = "translateY(-60px)";
+        return;
+    } else {
+        savedModalInner.style.transform = "translateY(0)";
+    }
 
-    const span = document.createElement("span");
-    span.textContent = v.title;
-    span.style.cursor = "pointer";
-    span.onclick = () => irAGuardado(v.id);
+    if (filtered.length > 1) {
+        const clearAllBtn = document.createElement("button");
+        clearAllBtn.textContent = "Eliminar todo";
+        clearAllBtn.style.background = "#2c2c2c";
+        clearAllBtn.style.color = "#ccc";
+        clearAllBtn.style.border = "1px solid #444";
+        clearAllBtn.style.borderRadius = "6px";
+        clearAllBtn.style.padding = "6px 12px";
+        clearAllBtn.style.margin = "8px 0 10px";
+        clearAllBtn.style.cursor = "pointer";
+        clearAllBtn.style.alignSelf = "flex-end";
+        clearAllBtn.style.fontSize = "13px";
+        clearAllBtn.style.transition = "background 0.2s ease";
 
-    const delBtn = document.createElement("button");
-    delBtn.textContent = "❌";
-    delBtn.style.background = "none";
-    delBtn.style.border = "none";
-    delBtn.style.cursor = "pointer";
-    delBtn.style.color = "#ff4444";
-    delBtn.onclick = () => eliminarGuardado(v.id);
+        clearAllBtn.addEventListener("mouseenter", () => {
+            clearAllBtn.style.background = "#3a3a3a";
+        });
 
-    li.appendChild(span);
-    li.appendChild(delBtn);
-    list.appendChild(li);
-  });
+        clearAllBtn.addEventListener("mouseleave", () => {
+            clearAllBtn.style.background = "#2c2c2c";
+        });
+
+        clearAllBtn.addEventListener("click", () => {
+            setSavedVideos([]);
+            renderSavedVideos();
+            showToast("✅ Todos los videos fueron eliminados");
+        });
+
+        savedList.appendChild(clearAllBtn);
+    }
+
+    filtered.forEach(item => {
+        const li = document.createElement("li");
+        li.style.display = "flex";
+        li.style.justifyContent = "space-between";
+        li.style.alignItems = "center";
+        li.style.padding = "10px";
+        li.style.borderBottom = "1px solid #333";
+        li.style.color = "#fff";
+        li.style.transition = "opacity 0.3s ease, transform 0.3s ease";
+
+        const titleSpan = document.createElement("span");
+        titleSpan.textContent = item.titulo;
+        titleSpan.style.cursor = "pointer";
+        titleSpan.style.flex = "1";
+
+        // Click → ir al video
+        titleSpan.addEventListener("click", () => {
+            const videoIndex = lastVideos.findIndex(v => v.id === item.id);
+
+            if (videoIndex !== -1) {
+                swiper.slideToLoop(videoIndex, 0, false);
+                savedModal.style.display = "none";
+
+                setTimeout(() => {
+                    const tituloActual = document.getElementById("video-title-fixed");
+                    if (tituloActual) {
+                        tituloActual.classList.add("highlight-title-zoom");
+                        setTimeout(() => {
+                            tituloActual.classList.remove("highlight-title-zoom");
+                        }, 2000);
+                    }
+                }, 400);
+            } else {
+                showToast("⚠️ Este video ya no está disponible");
+            }
+        });
+
+        // Botón eliminar ❌
+        const deleteBtn = document.createElement("button");
+        deleteBtn.textContent = "✕";
+        deleteBtn.style.background = "transparent";
+        deleteBtn.style.border = "none";
+        deleteBtn.style.color = "#aaa";
+        deleteBtn.style.fontSize = "14px";
+        deleteBtn.style.cursor = "pointer";
+        deleteBtn.style.marginLeft = "10px";
+        deleteBtn.style.transition = "color 0.2s ease";
+
+        deleteBtn.addEventListener("mouseenter", () => {
+            deleteBtn.style.color = "#fff";
+        });
+
+        deleteBtn.addEventListener("mouseleave", () => {
+            deleteBtn.style.color = "#aaa";
+        });
+
+        deleteBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            li.style.opacity = "0";
+            li.style.transform = "translateX(30px)";
+
+            setTimeout(() => {
+                const updated = saved.filter(s => s.id !== item.id);
+                setSavedVideos(updated);
+                renderSavedVideos(filter);
+                showToast("🗑️ Eliminado de guardados");
+            }, 300);
+        });
+
+        li.appendChild(titleSpan);
+        li.appendChild(deleteBtn);
+        savedList.appendChild(li);
+    });
 }
 
-function irAGuardado(id) {
-  const index = lastVideos.findIndex(v => v.id === id);
-  if (index === -1) return showToast("❌ No encontrado en el carrusel");
+// ==========================
+// 📌 EVENTOS DE LOS BOTONES
+// ==========================
+saveBtn.addEventListener("click", saveCurrentVideo);
 
-  swiper.slideTo(index, 0);
-  document.getElementById("savedModal").style.display = "none";
-
-  // ✨ Resaltado temporal + zoom del título
-  const titleFixed = document.getElementById("video-title-fixed");
-  if (titleFixed) {
-    titleFixed.classList.add("highlight-title-zoom");
-    setTimeout(() => titleFixed.classList.remove("highlight-title-zoom"), 600);
-  }
-}
-
-function eliminarGuardado(id) {
-  let saved = getSavedVideos();
-  saved = saved.filter(v => v.id !== id);
-  setSavedVideos(saved);
-  renderSavedVideos();
-  showToast("🗑️ Eliminado");
-}
-
-function openSaved() {
-  renderSavedVideos();
-  document.getElementById("savedModal").style.display = "flex";
-}
-
-// Cerrar modal
-document.getElementById("closeSavedBtn").addEventListener("click", () => {
-  document.getElementById("savedModal").style.display = "none";
+viewSavedBtn.addEventListener("click", () => {
+    savedSearchInput.value = "";
+    renderSavedVideos();
+    setTimeout(() => {
+        savedModal.style.display = "flex";
+        savedList.scrollTop = 0;
+    }, 50);
 });
 
-// Buscar en lista
-document.getElementById("savedSearchInput").addEventListener("input", (e) => {
-  const term = e.target.value.toLowerCase();
-  const saved = getSavedVideos();
-  const filtered = saved.filter(v => v.title.toLowerCase().includes(term));
-  const list = document.getElementById("savedList");
-  list.innerHTML = "";
-  filtered.forEach(v => {
-    const li = document.createElement("li");
-    li.style.padding = "6px";
-    li.style.borderBottom = "1px solid #333";
-    li.style.display = "flex";
-    li.style.justifyContent = "space-between";
-    li.style.alignItems = "center";
-
-    const span = document.createElement("span");
-    span.textContent = v.title;
-    span.style.cursor = "pointer";
-    span.onclick = () => irAGuardado(v.id);
-
-    const delBtn = document.createElement("button");
-    delBtn.textContent = "❌";
-    delBtn.style.background = "none";
-    delBtn.style.border = "none";
-    delBtn.style.cursor = "pointer";
-    delBtn.style.color = "#ff4444";
-    delBtn.onclick = () => eliminarGuardado(v.id);
-
-    li.appendChild(span);
-    li.appendChild(delBtn);
-    list.appendChild(li);
-  });
+savedSearchInput.addEventListener("input", (e) => {
+    renderSavedVideos(e.target.value);
 });
 
-// Toast rápido
+closeSavedBtn.addEventListener("click", () => {
+    savedModal.style.display = "none";
+});
+
+savedModal.addEventListener("click", (e) => {
+    if (e.target === savedModal) {
+        savedModal.style.display = "none";
+    }
+});
+
+// ==========================
+// 🍞 TOASTS PERSONALIZADOS
+// ==========================
 function showToast(msg) {
-  const toast = document.createElement("div");
-  toast.textContent = msg;
-  toast.style.position = "fixed";
-  toast.style.bottom = "20px";
-  toast.style.left = "50%";
-  toast.style.transform = "translateX(-50%)";
-  toast.style.background = "#333";
-  toast.style.color = "#fff";
-  toast.style.padding = "8px 12px";
-  toast.style.borderRadius = "6px";
-  toast.style.zIndex = "2000";
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 2000);
+    const toast = document.createElement("div");
+    toast.textContent = msg;
+    toast.style.position = "fixed";
+    toast.style.bottom = "80px";
+    toast.style.left = "50%";
+    toast.style.transform = "translateX(-50%)";
+    toast.style.background = "rgba(0,0,0,0.85)";
+    toast.style.color = "white";
+    toast.style.padding = "10px 16px";
+    toast.style.borderRadius = "6px";
+    toast.style.fontSize = "14px";
+    toast.style.zIndex = "100000";
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2500);
 }
-
 
 
 
@@ -2767,6 +2849,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
