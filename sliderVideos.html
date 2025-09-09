@@ -746,165 +746,36 @@
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.5);
 }
 
-/* ✨ Resaltado temporal + zoom del título */
-.highlight-title-zoom {
-    background-color: rgba(0, 150, 255, 0.3);
-    padding: 3px 6px;
-    border-radius: 5px;
-    animation: highlightZoom 0.4s ease-in-out;
-    transition: background-color 1s ease;
-}
-
-/* 🎥 Animación de zoom */
-@keyframes highlightZoom {
-    0% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.2);
-    }
-    100% {
-        transform: scale(1);
-    }
-}
-
-    #savedList {
-    scroll-behavior: smooth;
-}
 
         
     </style>
 </head>
 <body>
-<!-- BOTÓN GUARDAR -->
-<button id="saveBtn" style="
-    position: fixed;
-    bottom: 300px;
-    right: 18px;
-    width: 40px;
-    height: 40px;
-   background: rgba(255, 255, 255, 0.1); /* Fondo ligeramente blanco */
-    backdrop-filter: blur(10px); /* Efecto de desenfoque */
-    -webkit-backdrop-filter: blur(10px); /* Compatibilidad con navegadores WebKit */
-    color: white;
-    border: none;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    cursor: pointer;
-    z-index: 2000;
-">
-    <i class="fa-solid fa-bookmark" style="font-size: 24px;"></i>
-</button>
+<!-- 📌 Botón abrir guardados -->
+<div style="position: fixed; bottom: 80px; right: 20px; z-index: 1000;">
+  <button onclick="openSaved()" style="background: #007bff; color: white; padding: 10px 14px; border: none; border-radius: 50%; box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: pointer;">
+    ⭐
+  </button>
+</div>
 
-<!-- BOTÓN VER GUARDADOS -->
-<button id="viewSavedBtn" style="
-    position: fixed;
-    bottom: 350px;
-    right: 18px;
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.1); /* Fondo ligeramente blanco */
-    backdrop-filter: blur(10px); /* Efecto de desenfoque */
-    -webkit-backdrop-filter: blur(10px); /* Compatibilidad con navegadores WebKit */
-    color: white;
-    border: none;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    cursor: pointer;
-    z-index: 9999;
-">
-    <i class="fa-solid fa-list" style="font-size: 24px;"></i>
-</button>
-
+<!-- 📌 Botón guardar video actual -->
+<div style="position: fixed; bottom: 140px; right: 20px; z-index: 1000;">
+  <button onclick="guardarVideoActual()" style="background: #28a745; color: white; padding: 10px 14px; border: none; border-radius: 50%; box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: pointer;">
+    💾
+  </button>
+</div>
 <!-- 📌 Modal Guardados -->
-<div id="savedModal" style="
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(4px);
-    z-index: 10000;
-    align-items: center;
-    justify-content: flex-start; /* 🔹 Arranca desde arriba */
-    flex-direction: column;
-    padding: 15px;
-">
-    <div id="savedModalInner" style="
-        background-color: #1c1c1c;
-        color: white;
-        width: 90%;
-        max-width: 420px;
-        max-height: 80%;
-        border-radius: 12px;
-        padding: 16px;
-        display: flex;
-        flex-direction: column;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-        overflow: hidden; /* 🔹 Aislamos scroll interno */
-        margin-top: 16vh; /* 🔹 Siempre más arriba */
-        transition: margin-top 0.25s ease;
-    ">
-        <!-- Encabezado -->
-        <div style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            background-color: #1c1c1c;
-            z-index: 20;
-            padding-bottom: 8px;
-        ">
-            <h2 style="margin: 0; font-size: 18px; color: white;">🔖 Guardados</h2>
-            <button id="closeSavedBtn" style="
-                background: none;
-                border: none;
-                color: white;
-                font-size: 24px;
-                cursor: pointer;
-                line-height: 1;
-            ">&times;</button>
-        </div>
-
-        <!-- Input de búsqueda -->
-        <input
-            id="savedSearchInput"
-            type="text"
-            placeholder="Buscar guardados..."
-            style="
-                position: sticky;
-                top: 40px; /* 🔹 Debajo del encabezado */
-                z-index: 15;
-                margin-top: 12px;
-                padding: 10px;
-                border: none;
-                border-radius: 6px;
-                background-color: #2c2c2c;
-                color: white;
-                font-size: 15px;
-            "
-        />
-
-        <!-- Lista de guardados -->
-        <ul id="savedList" style="
-            list-style: none;
-            padding: 0;
-            margin: 15px 0 0;
-            max-height: 250px;
-            overflow-y: auto;
-            scrollbar-width: thin;
-            scrollbar-color: #555 #1c1c1c;
-        "></ul>
+<div id="savedModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+    background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(4px); z-index: 1000; overflow-y: auto;">
+  <div style="background: #fff; width: 90%; max-width: 400px; margin: 50px auto; padding: 20px; border-radius: 12px; position: relative;">
+    <h2 style="margin-bottom: 10px; font-size: 20px; font-weight: bold;">⭐ Videos guardados</h2>
+    <ul id="savedList" style="list-style: none; padding: 0; margin: 0; max-height: 400px; overflow-y: auto;"></ul>
+    <div style="margin-top: 15px; text-align: right;">
+      <button id="clearSaved" style="background: red; color: white; padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer;">Eliminar todos</button>
+      <button onclick="document.getElementById('savedModal').style.display='none'" 
+              style="background: gray; color: white; padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer;">Cerrar</button>
     </div>
+  </div>
 </div>
 
 
@@ -1013,282 +884,121 @@
             "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
 
 
-// ==========================
-// 🔖 GUARDAR Y VER TITULOS
-// ==========================
-const saveBtn = document.getElementById("saveBtn");
-const viewSavedBtn = document.getElementById("viewSavedBtn");
-const savedModal = document.getElementById("savedModal");
-const savedList = document.getElementById("savedList");
-const savedSearchInput = document.getElementById("savedSearchInput");
-const closeSavedBtn = document.getElementById("closeSavedBtn");
-
-// ==========================
-// ✅ FUNCIONES DE COOKIES (Compatibilidad WebViewer)
-// ==========================
-function setSavedTitles(data) {
-    document.cookie = "savedTitles=" + encodeURIComponent(JSON.stringify(data)) + "; path=/; max-age=31536000";
+// === GUARDADOS ===
+function getSavedVideos() {
+  return JSON.parse(localStorage.getItem("savedVideos") || "[]");
 }
 
-function getSavedTitles() {
-    const match = document.cookie.match(/(^| )savedTitles=([^;]+)/);
-    return match ? JSON.parse(decodeURIComponent(match[2])) : [];
+function setSavedVideos(arr) {
+  localStorage.setItem("savedVideos", JSON.stringify(arr));
 }
 
-// ==========================
-// 💾 GUARDAR ANUNCIO ACTUAL
-// ==========================
-function saveCurrentTitle() {
-    if (!swiperInstance || anunciosData.length === 0) {
-        showToast("⚠️ No hay anuncios para guardar");
-        return;
-    }
+function guardarVideoActual() {
+  const activeCard = document.querySelector(".swiper-slide-active .player-card");
+  if (!activeCard) return showToast("❌ No se encontró el video activo");
 
-    const currentIndex = swiperInstance.realIndex;
-    const currentAnuncio = anunciosData[currentIndex];
+  const id = activeCard.dataset.id;
+  const title = activeCard.dataset.title;
+  const link = activeCard.dataset.embed;
+  const desc = activeCard.dataset.desc;
 
-    let saved = getSavedTitles();
+  let saved = getSavedVideos();
+  if (saved.some(v => v.id === id)) {
+    showToast("⚠️ Ya está guardado");
+    return;
+  }
 
-    // Evitamos duplicados por ID
-    if (!saved.find(item => item.id === currentAnuncio.id)) {
-        saved.push({ id: currentAnuncio.id, titulo: currentAnuncio.titulo });
-        setSavedTitles(saved);
-        showToast("✅ Anuncio guardado");
-    } else {
-        showToast("ℹ️ Este anuncio ya está guardado");
-    }
+  saved.push({ id, title, link, desc });
+  setSavedVideos(saved);
+  renderSavedVideos();
+  showToast("✅ Guardado en favoritos");
 }
 
-    // 🔧 Normaliza texto: minúsculas, sin tildes, sin espacios extras
-function normalizeText(text) {
-    return text
-        .toLowerCase()
-        .normalize("NFD")                  // separa acentos
-        .replace(/[\u0300-\u036f]/g, "")  // elimina tildes
-        .replace(/\s+/g, " ")              // colapsa espacios múltiples
-        .trim();                           // quita espacios al inicio/fin
+function renderSavedVideos() {
+  const saved = getSavedVideos();
+  const list = document.getElementById("savedList");
+  if (!list) return;
+
+  list.innerHTML = saved.length === 0 
+    ? "<li style='padding: 8px;'>No hay videos guardados</li>" 
+    : "";
+
+  saved.forEach(v => {
+    const li = document.createElement("li");
+    li.style.padding = "6px";
+    li.style.borderBottom = "1px solid #ddd";
+    li.style.display = "flex";
+    li.style.justifyContent = "space-between";
+    li.style.alignItems = "center";
+
+    const span = document.createElement("span");
+    span.textContent = v.title;
+    span.style.cursor = "pointer";
+    span.onclick = () => irAGuardado(v.id);
+
+    const delBtn = document.createElement("button");
+    delBtn.textContent = "❌";
+    delBtn.style.background = "none";
+    delBtn.style.border = "none";
+    delBtn.style.cursor = "pointer";
+    delBtn.onclick = () => eliminarGuardado(v.id);
+
+    li.appendChild(span);
+    li.appendChild(delBtn);
+    list.appendChild(li);
+  });
 }
 
-// ==========================
-// 📜 RENDERIZAR TITULOS GUARDADOS
-// ✅ Renderizar lista de guardados con eliminar individual, "Eliminar todo" y animación
-function renderSavedTitles(filter = "") {
-    const saved = getSavedTitles();
-    savedList.innerHTML = "";
+function irAGuardado(id) {
+  const index = lastVideos.findIndex(v => v.id === id);
+  if (index === -1) return showToast("❌ No encontrado en el carrusel");
 
-   const filtered = saved.filter(item =>
-    normalizeText(item.titulo).includes(normalizeText(filter))
-);
+  swiper.slideTo(index, 0);
+  document.getElementById("savedModal").style.display = "none";
 
-
-    if (filtered.length === 0) {
-        savedList.innerHTML = "<li style='color: #777; padding: 10px;'>No hay títulos guardados</li>";
-
-        // 🔹 Subir la ventana cuando no hay resultados
-        savedModalInner.style.transform = "translateY(-60px)";
-
-        return;
-    } else {
-        // 🔹 Volver al centro si sí hay resultados
-        savedModalInner.style.transform = "translateY(0)";
-    }
-
-    // 🔹 Agregar botón "Eliminar todo" solo si hay MÁS DE 1 guardado
-    if (filtered.length > 1) {
-        const clearAllBtn = document.createElement("button");
-        clearAllBtn.textContent = "Eliminar todo";
-        clearAllBtn.style.background = "#2c2c2c";          // Gris oscuro
-        clearAllBtn.style.color = "#ccc";                  // Gris claro
-        clearAllBtn.style.border = "1px solid #444";       // Borde sutil
-        clearAllBtn.style.borderRadius = "6px";
-        clearAllBtn.style.padding = "6px 12px";
-        clearAllBtn.style.margin = "8px 0 10px";
-        clearAllBtn.style.cursor = "pointer";
-        clearAllBtn.style.alignSelf = "flex-end";
-        clearAllBtn.style.fontSize = "13px";
-        clearAllBtn.style.transition = "background 0.2s ease";
-
-        clearAllBtn.addEventListener("mouseenter", () => {
-            clearAllBtn.style.background = "#3a3a3a"; // Hover gris más claro
-        });
-
-        clearAllBtn.addEventListener("mouseleave", () => {
-            clearAllBtn.style.background = "#2c2c2c"; // Regresa al gris oscuro
-        });
-
-        clearAllBtn.addEventListener("click", () => {
-            setSavedTitles([]); // Vaciar cookie
-            renderSavedTitles();
-            showToast("✅ Todos los guardados fueron eliminados");
-        });
-
-        savedList.appendChild(clearAllBtn);
-    }
-
-    // 🔹 Renderizamos títulos uno por uno
-    filtered.forEach(item => {
-        const li = document.createElement("li");
-        li.style.display = "flex";
-        li.style.justifyContent = "space-between";
-        li.style.alignItems = "center";
-        li.style.padding = "10px";
-        li.style.borderBottom = "1px solid #333";
-        li.style.color = "#fff";
-        li.style.transition = "opacity 0.3s ease, transform 0.3s ease"; // Animación de salida
-
-        // Texto del título
-        const titleSpan = document.createElement("span");
-        titleSpan.textContent = item.titulo;
-        titleSpan.style.cursor = "pointer";
-        titleSpan.style.flex = "1";
-
-        // Click en título → navegar al anuncio
-        titleSpan.addEventListener("click", () => {
-            const anuncioIndex = anunciosData.findIndex(a => a.id === item.id);
-
-            if (anuncioIndex !== -1) {
-                swiperInstance.slideToLoop(anuncioIndex, 0, false);
-                savedModal.style.display = "none";
-
-                // Resaltado azul del título
-                setTimeout(() => {
-                    const tituloActual = document.querySelector(".content-overlay h3");
-                    if (tituloActual) {
-                        tituloActual.classList.add("highlight-title-zoom");
-                        setTimeout(() => {
-                            tituloActual.classList.remove("highlight-title-zoom");
-                        }, 2000);
-                    }
-                }, 400);
-            } else {
-                showToast("⚠️ Este anuncio ya no está disponible");
-            }
-        });
-
-        // Botón eliminar individual ❌ (discreto)
-        const deleteBtn = document.createElement("button");
-        deleteBtn.textContent = "✕";
-        deleteBtn.style.background = "transparent";
-        deleteBtn.style.border = "none";
-        deleteBtn.style.color = "#aaa";              // Gris suave
-        deleteBtn.style.fontSize = "14px";
-        deleteBtn.style.cursor = "pointer";
-        deleteBtn.style.marginLeft = "10px";
-        deleteBtn.style.transition = "color 0.2s ease";
-
-        deleteBtn.addEventListener("mouseenter", () => {
-            deleteBtn.style.color = "#fff"; // Hover más visible
-        });
-
-        deleteBtn.addEventListener("mouseleave", () => {
-            deleteBtn.style.color = "#aaa"; // Regresa al gris discreto
-        });
-
-        deleteBtn.addEventListener("click", (e) => {
-            e.stopPropagation(); // Evita abrir el anuncio al borrar
-
-            // Animación de desvanecimiento y desplazamiento
-            li.style.opacity = "0";
-            li.style.transform = "translateX(30px)";
-
-            setTimeout(() => {
-                const updated = saved.filter(s => s.id !== item.id);
-                setSavedTitles(updated);
-                renderSavedTitles(filter);
-                showToast("🗑️ Eliminado de guardados");
-            }, 300); // Esperamos a que termine la animación
-        });
-
-        li.appendChild(titleSpan);
-        li.appendChild(deleteBtn);
-        savedList.appendChild(li);
-    });
+  // ✨ Resaltado temporal + zoom del título
+  const titleFixed = document.getElementById("video-title-fixed");
+  if (titleFixed) {
+    titleFixed.classList.add("highlight-title-zoom");
+    setTimeout(() => titleFixed.classList.remove("highlight-title-zoom"), 600);
+  }
 }
 
+function eliminarGuardado(id) {
+  let saved = getSavedVideos();
+  saved = saved.filter(v => v.id !== id);
+  setSavedVideos(saved);
+  renderSavedVideos();
+  showToast("🗑️ Eliminado");
+}
 
-// ==========================
-// 📌 EVENTOS DE LOS BOTONES
-// ==========================
-saveBtn.addEventListener("click", saveCurrentTitle);
+function eliminarTodosGuardados() {
+  setSavedVideos([]);
+  renderSavedVideos();
+  showToast("🗑️ Todos eliminados");
+}
 
-viewSavedBtn.addEventListener("click", () => {
-    savedSearchInput.value = "";
+function openSaved() {
+  renderSavedVideos();
+  document.getElementById("savedModal").style.display = "block";
+}
 
-    // Renderizamos primero los títulos
-    renderSavedTitles();
-
-    // Mostramos modal y reseteamos scroll
-    setTimeout(() => {
-        savedModal.style.display = "flex";
-        savedList.scrollTop = 0;
-    }, 50);
-});
-
-
-
-
-savedSearchInput.addEventListener("input", (e) => {
-    renderSavedTitles(e.target.value);
-});
-
-closeSavedBtn.addEventListener("click", () => {
-    savedModal.style.display = "none";
-});
-
-savedModal.addEventListener("click", (e) => {
-    if (e.target === savedModal) {
-        savedModal.style.display = "none";
-    }
-});
-
-// ==========================
-// 🍞 TOASTS PERSONALIZADOS
-// ==========================
+// Toast de confirmación (reutiliza tu sistema existente si ya tienes)
 function showToast(msg) {
-    const toast = document.createElement("div");
-    toast.textContent = msg;
-    toast.style.position = "fixed";
-    toast.style.bottom = "80px";
-    toast.style.left = "50%";
-    toast.style.transform = "translateX(-50%)";
-    toast.style.background = "rgba(0,0,0,0.85)";
-    toast.style.color = "white";
-    toast.style.padding = "10px 16px";
-    toast.style.borderRadius = "6px";
-    toast.style.fontSize = "14px";
-    toast.style.zIndex = "100000";
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 2500);
+  const toast = document.createElement("div");
+  toast.textContent = msg;
+  toast.style.position = "fixed";
+  toast.style.bottom = "20px";
+  toast.style.left = "50%";
+  toast.style.transform = "translateX(-50%)";
+  toast.style.background = "#333";
+  toast.style.color = "#fff";
+  toast.style.padding = "8px 12px";
+  toast.style.borderRadius = "6px";
+  toast.style.zIndex = "2000";
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2000);
 }
-
-
-
-
-const savedSearchInputEl = document.getElementById("savedSearchInput");
-const savedModalInner = document.getElementById("savedModalInner");
-
-// ✅ Mantener posición fija siempre
-savedSearchInputEl.addEventListener("focus", () => {
-    if (window.innerWidth <= 768) {
-        // Cuando se toca, NO movemos nada
-        savedModalInner.style.transform = "translateY(0)";
-    }
-});
-
-savedSearchInputEl.addEventListener("input", () => {
-    if (window.innerWidth <= 768) {
-        // Cuando escribes, tampoco movemos nada
-        savedModalInner.style.transform = "translateY(0)";
-    }
-});
-
-savedSearchInputEl.addEventListener("blur", () => {
-    if (window.innerWidth <= 768) {
-        // Cuando cierras teclado, vuelve igual
-        savedModalInner.style.transform = "translateY(0)";
-    }
-});
-
 
 
 
@@ -2918,6 +2628,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
