@@ -1945,11 +1945,11 @@ function renderNotifications() {
     const item = document.createElement("div");
     item.textContent = notif.title;
     item.style.cursor = "pointer";
-    item.style.padding = "10px"; // Asegurar visibilidad en WebView
-    item.style.userSelect = "none"; // Evitar selección de texto accidental
+    item.style.padding = "10px";
+    item.style.userSelect = "none";
 
     item.onclick = () => {
-      console.log("🔹 Click en notificación detectado:", notif.title, "ID:", notif.id); // Log para depuración
+      console.log("🔹 Click en notificación detectado:", notif.title, "ID:", notif.id);
 
       // Marcar como leída y cerrar panel INMEDIATAMENTE
       notifications.splice(i, 1);
@@ -1970,72 +1970,94 @@ function renderNotifications() {
         console.log(`✅ Precargando comentarios para video actual ${currentVideoId}`);
       }
 
-      // Buscar si ya existe el slide del anuncio usando videoId
+      // Buscar si ya existe el slide usando videoId
       let slide = Array.from(wrapper.children).find(s => s.dataset.videoid === notif.id);
-
-      let isNewSlide = false;
+      let isNewSlide = !slide;
       let targetIndex = -1;
 
-      // Si no existe, crearlo y agregarlo
-      if (!slide) {
-        isNewSlide = true;
+      if (isNewSlide) {
+        // Desactivar loop temporalmente si hay pocos slides para evitar bugs
+        const originalLoop = swiper.params.loop;
+        if (swiper.slides.length < 3) {
+          swiper.params.loop = false;
+          swiper.update();
+          console.log("🔹 Loop desactivado temporalmente (pocos slides)");
+        }
+
         const nuevoSlide = createSlide(notif.title, notif.link, notif.desc, notif.id);
         swiper.appendSlide(nuevoSlide);
-        swiper.update(); // Forzar actualización del Swiper
-        console.log("✅ Nuevo slide añadido al final con appendSlide, ID:", notif.id);
-        targetIndex = swiper.slides.length - 1; // El nuevo slide estará al final
+        swiper.update(); // Actualizar estructura
+        swiper.loopFix(); // Reparar clones y loop mode
+        console.log("✅ Nuevo slide añadido, loopFix aplicado, ID:", notif.id);
+
+        // Reactivar loop si se desactivó
+        if (swiper.slides.length < 3 && originalLoop) {
+          swiper.params.loop = true;
+          swiper.update();
+          swiper.loopFix();
+          console.log("🔹 Loop reactivado");
+        }
+
+        targetIndex = swiper.slides.length - 1;
         lastVideos.push({ title: notif.title, link: notif.link, desc: notif.desc, id: notif.id });
         cargarComentarios(notif.id, false, { force: true }).catch(e => console.warn("Error precargando comentarios del nuevo video:", e));
       } else {
-        // Si el slide existe, encontrar su índice usando videoId
-        swiper.slides.forEach((s, idx) => {
-          if (s.dataset.videoid === notif.id) {
-            targetIndex = idx;
-          }
-        });
+        // Para slide existente, usar método de Swiper para índice real en loop
+        targetIndex = swiper.getSlideIndexByData('videoid', notif.id);
+        if (targetIndex === undefined) {
+          // Fallback manual
+          swiper.slides.forEach((s, idx) => {
+            if (s.dataset.videoid === notif.id) targetIndex = idx;
+          });
+        }
         console.log(`✅ Slide existente encontrado en índice: ${targetIndex}, ID: ${notif.id}`);
       }
 
-      // Navegar al slide correspondiente con retraso para WebView
       if (targetIndex !== -1) {
         console.log(`🔹 Iniciando navegación a índice ${targetIndex} con slideToLoop`);
         setTimeout(() => {
-          cleanupIframesExceptActive();
-          swiper.slideToLoop(targetIndex, 300); // Transición suave
+          cleanupIframesExceptActiveAndAdjacent(); // Limpiar después de adición
+          swiper.slideToLoop(targetIndex, 500); // Transición más lenta para WebView
           updateFixedTitle(swiper);
 
-          const activeCard = swiper.slides[swiper.activeIndex]?.querySelector('.player-card');
-          if (activeCard && !activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
-            mountIframe(activeCard, true); // Reproducir automáticamente
-            console.log("✅ Video montado y reproducido");
-          } else {
-            console.log("🔹 Video ya montado, asegurando reproducción");
-            const src = activeCard?.dataset.embed;
-            const player = src && players[src];
-            if (player) {
-              if (typeof player.playVideo === 'function') {
-                player.playVideo();
-              } else if (typeof player.play === 'function') {
-                player.play().catch(e => console.warn("Error al reproducir:", e));
+          // Montaje del video con delay adicional
+          setTimeout(() => {
+            const activeCard = swiper.slides[swiper.activeIndex]?.querySelector('.player-card');
+            if (activeCard) {
+              const src = activeCard.dataset.embed;
+              if (!activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
+                mountIframe(activeCard, true);
+                console.log("✅ Video montado y reproducido");
+              } else {
+                const player = players[src];
+                if (player) {
+                  if (typeof player.playVideo === 'function') {
+                    player.playVideo();
+                  } else if (typeof player.play === 'function') {
+                    player.play().catch(e => console.warn("Error al reproducir:", e));
+                  }
+                  console.log("🔹 Video existente reproducido");
+                }
               }
             }
-          }
 
-          const videoId = getActiveVideoId();
-          if (videoId) {
-            if (!comentariosPorVideo[videoId] || comentariosPorVideo[videoId].length === 0) {
-              cargarComentarios(videoId, true, { force: true }).catch(e => console.warn("Error cargando comentarios:", e));
-            } else {
-              renderComentarios(videoId);
+            const videoId = getActiveVideoId();
+            if (videoId) {
+              if (!comentariosPorVideo[videoId] || comentariosPorVideo[videoId].length === 0) {
+                cargarComentarios(videoId, true, { force: true }).catch(e => console.warn("Error cargando comentarios:", e));
+              } else {
+                renderComentarios(videoId);
+              }
+              console.log(`✅ Comentarios manejados para video ${videoId}`);
             }
-            console.log(`✅ Comentarios manejados para video ${videoId}`);
-          }
-        }, 300); // Retraso para WebView
+          }, 300);
+        }, 500); // Retraso inicial mayor para WebView
 
-        // Listener para el fin de la transición
+        // Listener para fin de transición
         swiper.once('slideChangeTransitionEnd', () => {
-          console.log("✅ Transición de slide completada, índice activo:", swiper.activeIndex);
-          cleanupIframesExceptActive();
+          console.log("✅ Transición completada, índice activo:", swiper.activeIndex);
+          swiper.loopFix(); // Reparar loop nuevamente si es necesario
+          cleanupIframesExceptActiveAndAdjacent();
           const activeCard = document.querySelector('.swiper-slide-active .player-card');
           if (activeCard && !activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
             mountIframe(activeCard, true);
@@ -2055,7 +2077,7 @@ function renderNotifications() {
           }
         });
       } else {
-        console.error("❌ Error: Índice no válido al intentar navegar al video, ID:", notif.id);
+        console.error("❌ Error: Índice no válido para video, ID:", notif.id);
       }
     };
 
@@ -2070,7 +2092,6 @@ function renderNotifications() {
     console.warn("No se pudo enviar a App Inventor:", e);
   }
 }
-
 // --- BOTÓN NOTIFICACIONES UNIVERSAL ---
 const notifBtn = document.getElementById("notification-btn");
 const notifList = document.getElementById("notification-list");
@@ -2926,6 +2947,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
