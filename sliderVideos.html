@@ -1129,8 +1129,13 @@ function renderSavedVideos(filter = "") {
     savedList.appendChild(buttonsContainer);
 
     if (filtered.length === 0) {
-        // ⬇️ Mostrar mensaje, pero sin cortar la ejecución (sin return)
-        savedList.innerHTML += "<li style='color: #777; padding: 10px;'>No hay videos guardados</li>";
+        // ⬇️ Crear mensaje vacío sin borrar el botón
+        const emptyMsg = document.createElement("li");
+        emptyMsg.textContent = "No hay videos guardados";
+        emptyMsg.style.color = "#777";
+        emptyMsg.style.padding = "10px";
+        savedList.appendChild(emptyMsg);
+
         savedModalInner.style.transform = "translateY(-60px)";
     } else {
         savedModalInner.style.transform = "translateY(0)";
@@ -1161,17 +1166,10 @@ function renderSavedVideos(filter = "") {
                 savedModal.style.display = "none";
 
                 setTimeout(() => {
-                    // 🔹 Seleccionamos SOLO el título del bloque actual
                     const tituloActual = document.querySelector("#video-title-fixed .video-title");
                     if (tituloActual) {
                         tituloActual.classList.add("highlight-title-zoom");
-
-                        // 🔹 Nos aseguramos que quede visible en pantalla
-                        tituloActual.scrollIntoView({
-                            behavior: "smooth",
-                            block: "center"
-                        });
-
+                        tituloActual.scrollIntoView({ behavior: "smooth", block: "center" });
                         setTimeout(() => {
                             tituloActual.classList.remove("highlight-title-zoom");
                         }, 2000);
@@ -1218,6 +1216,7 @@ function renderSavedVideos(filter = "") {
         savedList.appendChild(li);
     });
 }
+
 
 
 
@@ -2911,6 +2910,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
