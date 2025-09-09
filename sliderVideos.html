@@ -1473,9 +1473,16 @@ document.querySelector('.swiper').addEventListener('click', (e) => {
     const viewSavedBtn = document.getElementById("viewSavedBtn");
     if (saveBtn) saveBtn.classList.toggle("hidden-overlay");
     if (viewSavedBtn) viewSavedBtn.classList.toggle("hidden-overlay");
+
+    // 🆕 Ocultar/mostrar contenedor de botones flotantes
+    const floatingButtons = document.querySelector(".floating-buttons");
+    if (floatingButtons) {
+      floatingButtons.classList.toggle("hidden-overlay");
+    }
   }
   lastTapTime = currentTime;
 });
+
 
 
 
@@ -2891,6 +2898,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
