@@ -256,7 +256,9 @@
 
 #notification-btn {
     position: relative;
-    background: transparent;
+    background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
     border: none;
     border-radius: 50%;
     width: 40px;
@@ -2053,6 +2055,7 @@ function renderNotifications() {
     console.warn("No se pudo enviar a App Inventor:", e);
   }
 }
+
 // --- BOTÓN NOTIFICACIONES UNIVERSAL ---
 const notifBtn = document.getElementById("notification-btn");
 const notifList = document.getElementById("notification-list");
@@ -2908,6 +2911,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
