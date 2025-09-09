@@ -796,7 +796,7 @@
     cursor: pointer;
     z-index: 2000;
 ">
-    <i class="fa-solid fa-bookmark" style="font-size: 24px;"></i>
+    <i class="far fa-bookmark" style="font-size: 24px;"></i>
 </button>
 
 
@@ -1945,18 +1945,28 @@ function renderNotifications() {
     const item = document.createElement("div");
     item.textContent = notif.title;
     item.style.cursor = "pointer";
+    item.style.padding = "10px"; // Asegurar visibilidad en WebView
+    item.style.userSelect = "none"; // Evitar selección de texto accidental
 
-    item.onclick = async () => {
+    item.onclick = () => {
+      console.log("🔹 Click en notificación detectado:", notif.title); // Log para depuración
+
+      // Marcar como leída y cerrar panel INMEDIATAMENTE (para que desaparezca al tocar)
+      notifications.splice(i, 1);
+      renderNotifications();
+      document.getElementById("notification-list").classList.add("hidden");
+      console.log("✅ Notificación marcada como leída y panel cerrado");
+
       const wrapper = document.getElementById("slides");
-      if (!wrapper) {
-        console.error("❌ Error: Contenedor de slides no encontrado");
+      if (!wrapper || !swiper) {
+        console.error("❌ Error: Contenedor de slides o Swiper no encontrado");
         return;
       }
 
       // Guardar y precargar comentarios del video actual solo si no están en caché
       const currentVideoId = getActiveVideoId();
       if (currentVideoId && !comentariosPorVideo[currentVideoId]) {
-        cargarComentarios(currentVideoId, false, { force: true });
+        cargarComentarios(currentVideoId, false, { force: true }).catch(e => console.warn("Error precargando comentarios actuales:", e));
         console.log(`✅ Precargando comentarios para video actual ${currentVideoId}`);
       }
 
@@ -1973,16 +1983,12 @@ function renderNotifications() {
       if (!slide) {
         isNewSlide = true;
         const nuevoSlide = createSlide(notif.title, notif.link, notif.desc, notif.id);
-        if (swiper) {
-          swiper.appendSlide(nuevoSlide);
-          swiper.update(); // Forzar actualización del Swiper para integrar el nuevo slide
-          console.log("✅ Nuevo slide añadido al final con appendSlide");
-          targetIndex = swiper.slides.length - 1; // El nuevo slide estará al final
-        } else {
-          wrapper.appendChild(nuevoSlide);
-        }
+        swiper.appendSlide(nuevoSlide);
+        swiper.update(); // Forzar actualización del Swiper para integrar el nuevo slide
+        console.log("✅ Nuevo slide añadido al final con appendSlide");
+        targetIndex = swiper.slides.length - 1; // El nuevo slide estará al final
         lastVideos.push({ title: notif.title, link: notif.link, desc: notif.desc, id: notif.id });
-        await cargarComentarios(notif.id, false, { force: true }); // Precargar comentarios del nuevo video
+        cargarComentarios(notif.id, false, { force: true }).catch(e => console.warn("Error precargando comentarios del nuevo video:", e)); // Precargar sin bloquear
       } else {
         // Si el slide ya existe, encontrar su índice
         swiper.slides.forEach((s, idx) => {
@@ -1991,29 +1997,38 @@ function renderNotifications() {
             targetIndex = idx;
           }
         });
+        console.log(`✅ Slide existente encontrado en índice: ${targetIndex}`);
       }
 
       // Navegar al slide correspondiente
-      if (swiper && targetIndex !== -1) {
+      if (targetIndex !== -1) {
+        console.log(`🔹 Navegando a índice ${targetIndex} con slideToLoop`);
         cleanupIframesExceptActive();
         swiper.slideToLoop(targetIndex, 300); // Usar slideToLoop con transición suave
         updateFixedTitle(swiper);
 
-        const activeCard = swiper.slides[swiper.activeIndex].querySelector('.player-card');
-        if (activeCard && !activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
-          mountIframe(activeCard, true); // Reproducir automáticamente el nuevo video
-        }
+        // Montar y reproducir el video activo después de un pequeño delay para WebView
+        setTimeout(() => {
+          const activeCard = swiper.slides[swiper.activeIndex].querySelector('.player-card');
+          if (activeCard && !activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
+            mountIframe(activeCard, true); // Reproducir automáticamente
+            console.log("✅ Video montado y reproducido");
+          }
+        }, 200); // Delay adicional para sincronizar en WebView
 
         const videoId = getActiveVideoId();
         if (videoId) {
           if (!comentariosPorVideo[videoId] || comentariosPorVideo[videoId].length === 0) {
-            await cargarComentarios(videoId, true, { force: true });
+            cargarComentarios(videoId, true, { force: true }).catch(e => console.warn("Error cargando comentarios:", e));
           } else {
             renderComentarios(videoId);
           }
+          console.log(`✅ Comentarios manejados para video ${videoId}`);
         }
 
+        // Listener para el fin de la transición (usar once para un solo disparo)
         swiper.once('slideChangeTransitionEnd', () => {
+          console.log("✅ Transición de slide completada");
           cleanupIframesExceptActive();
           const activeCard = document.querySelector('.swiper-slide-active .player-card');
           if (activeCard && !activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
@@ -2022,7 +2037,7 @@ function renderNotifications() {
           const videoIdFinal = getActiveVideoId();
           if (videoIdFinal) {
             if (!comentariosPorVideo[videoIdFinal] || comentariosPorVideo[videoIdFinal].length === 0) {
-              cargarComentarios(videoIdFinal, true, { force: true });
+              cargarComentarios(videoIdFinal, true, { force: true }).catch(e => console.warn("Error en comentarios finales:", e));
             } else {
               renderComentarios(videoIdFinal);
             }
@@ -2034,13 +2049,8 @@ function renderNotifications() {
           }
         });
       } else {
-        console.error("❌ Error: Swiper o índice no válido al intentar navegar al nuevo video");
+        console.error("❌ Error: Índice no válido al intentar navegar al nuevo video");
       }
-
-      // Marcar como leída y cerrar panel
-      notifications.splice(i, 1);
-      renderNotifications();
-      document.getElementById("notification-list").classList.add("hidden");
     };
 
     list.appendChild(item);
@@ -2910,6 +2920,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
