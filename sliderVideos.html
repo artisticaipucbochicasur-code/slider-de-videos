@@ -1064,21 +1064,14 @@ function renderSavedVideos(filter = "") {
         normalizeText(item.titulo).includes(normalizeText(filter))
     );
 
-    if (filtered.length === 0) {
-        savedList.innerHTML = "<li style='color: #777; padding: 10px;'>No hay videos guardados</li>";
-        savedModalInner.style.transform = "translateY(-60px)";
-    } else {
-        savedModalInner.style.transform = "translateY(0)";
-    }
+    // 🔹 Contenedor de botones (Guardar actual + Eliminar todo)
+    const buttonsContainer = document.createElement("div");
+    buttonsContainer.style.display = "flex";
+    buttonsContainer.style.justifyContent = "space-between";
+    buttonsContainer.style.gap = "10px";
+    buttonsContainer.style.margin = "8px 0 10px";
 
-    // 📌 Contenedor para acciones (Guardar actual + Eliminar todo)
-    const actionsContainer = document.createElement("div");
-    actionsContainer.style.display = "flex";
-    actionsContainer.style.justifyContent = "space-between";
-    actionsContainer.style.gap = "10px";
-    actionsContainer.style.margin = "10px 0";
-
-    // 🆕 Botón Guardar actual
+    // Botón Guardar actual (siempre visible)
     const saveCurrentBtn = document.createElement("button");
     saveCurrentBtn.textContent = "Guardar actual";
     saveCurrentBtn.style.flex = "1";
@@ -1094,19 +1087,17 @@ function renderSavedVideos(filter = "") {
     saveCurrentBtn.addEventListener("mouseenter", () => {
         saveCurrentBtn.style.background = "#3399ff";
     });
-
     saveCurrentBtn.addEventListener("mouseleave", () => {
         saveCurrentBtn.style.background = "#007bff";
     });
-
     saveCurrentBtn.addEventListener("click", () => {
         saveCurrentVideo();
-        renderSavedVideos(filter);
+        renderSavedVideos(filter); // refresca la lista
     });
 
-    actionsContainer.appendChild(saveCurrentBtn);
+    buttonsContainer.appendChild(saveCurrentBtn);
 
-    // 🗑️ Botón Eliminar todo (solo si hay más de 1 guardado)
+    // Botón Eliminar todo (solo si hay más de uno)
     if (filtered.length > 1) {
         const clearAllBtn = document.createElement("button");
         clearAllBtn.textContent = "Eliminar todo";
@@ -1123,24 +1114,29 @@ function renderSavedVideos(filter = "") {
         clearAllBtn.addEventListener("mouseenter", () => {
             clearAllBtn.style.background = "#3a3a3a";
         });
-
         clearAllBtn.addEventListener("mouseleave", () => {
             clearAllBtn.style.background = "#2c2c2c";
         });
-
         clearAllBtn.addEventListener("click", () => {
             setSavedVideos([]);
             renderSavedVideos();
             showToast("✅ Todos los videos fueron eliminados");
         });
 
-        actionsContainer.appendChild(clearAllBtn);
+        buttonsContainer.appendChild(clearAllBtn);
     }
 
-    // Insertamos los botones en la lista
-    savedList.appendChild(actionsContainer);
+    savedList.appendChild(buttonsContainer);
 
-    // Renderizamos los guardados
+    if (filtered.length === 0) {
+        savedList.innerHTML += "<li style='color: #777; padding: 10px;'>No hay videos guardados</li>";
+        savedModalInner.style.transform = "translateY(-60px)";
+        return;
+    } else {
+        savedModalInner.style.transform = "translateY(0)";
+    }
+
+    // 🔹 Renderizar cada item guardado
     filtered.forEach(item => {
         const li = document.createElement("li");
         li.style.display = "flex";
@@ -1165,10 +1161,16 @@ function renderSavedVideos(filter = "") {
                 savedModal.style.display = "none";
 
                 setTimeout(() => {
+                    // 🔹 Seleccionamos SOLO el título del bloque actual
                     const tituloActual = document.querySelector("#video-title-fixed .video-title");
                     if (tituloActual) {
                         tituloActual.classList.add("highlight-title-zoom");
-                        tituloActual.scrollIntoView({ behavior: "smooth", block: "center" });
+
+                        // 🔹 Nos aseguramos que quede visible en pantalla
+                        tituloActual.scrollIntoView({
+                            behavior: "smooth",
+                            block: "center"
+                        });
 
                         setTimeout(() => {
                             tituloActual.classList.remove("highlight-title-zoom");
@@ -1194,7 +1196,6 @@ function renderSavedVideos(filter = "") {
         deleteBtn.addEventListener("mouseenter", () => {
             deleteBtn.style.color = "#fff";
         });
-
         deleteBtn.addEventListener("mouseleave", () => {
             deleteBtn.style.color = "#aaa";
         });
@@ -1217,6 +1218,7 @@ function renderSavedVideos(filter = "") {
         savedList.appendChild(li);
     });
 }
+
 
 
 
@@ -2908,6 +2910,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
