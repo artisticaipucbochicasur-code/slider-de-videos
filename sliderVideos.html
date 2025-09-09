@@ -896,44 +896,102 @@
             "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
 
 
-// === VARIABLES PARA GUARDAR VIDEOS ===
-const saveVideoBtn = document.getElementById("save-video-btn");
-const saveVideoIcon = document.getElementById("save-video-icon");
-const savedVideosBtn = document.getElementById("saved-videos-btn");
-const savedVideosModal = document.getElementById("saved-videos-modal");
-const savedVideosList = document.getElementById("saved-videos-list");
-const savedVideosSearch = document.getElementById("saved-videos-search");
-const savedVideosClose = document.getElementById("saved-videos-close");
+// ===============================
+// 📌 SISTEMA DE VIDEOS GUARDADOS
+// ===============================
 
-// === FUNCIONES DE LOCALSTORAGE ===
+// --- ELEMENTOS DEL DOM ---
+const saveBtn = document.getElementById("saveBtn");
+const viewSavedBtn = document.getElementById("viewSavedBtn");
+const savedModal = document.getElementById("savedModal");
+const closeSavedBtn = document.getElementById("closeSavedBtn");
+const savedSearchInput = document.getElementById("savedSearchInput");
+const savedList = document.getElementById("savedList");
+
+// --- OBTENER VIDEOS GUARDADOS ---
 function getSavedVideos() {
-    return JSON.parse(localStorage.getItem("savedVideos")) || [];
+    try {
+        return JSON.parse(localStorage.getItem("savedVideos")) || [];
+    } catch {
+        return [];
+    }
 }
 
+// --- GUARDAR VIDEO ---
 function saveVideo(video) {
     const saved = getSavedVideos();
     if (!saved.find(v => v.id === video.id)) {
         saved.push(video);
         localStorage.setItem("savedVideos", JSON.stringify(saved));
-        updateSaveIcon(video.id);
     }
+    updateSaveBtn(video.id);
 }
 
+// --- ELIMINAR VIDEO ---
 function removeVideo(videoId) {
     const saved = getSavedVideos().filter(v => v.id !== videoId);
     localStorage.setItem("savedVideos", JSON.stringify(saved));
-    updateSaveIcon(videoId);
+    updateSaveBtn(videoId);
 }
 
-// === ACTUALIZAR ÍCONO DE GUARDADO ===
-function updateSaveIcon(videoId) {
+// --- ACTUALIZAR ICONO GUARDAR ---
+function updateSaveBtn(videoId) {
     const saved = getSavedVideos();
     const isSaved = saved.some(v => v.id === videoId);
-    saveVideoIcon.setAttribute("stroke", isSaved ? "#00ff88" : "white");
+    const icon = saveBtn.querySelector("i");
+    if (icon) {
+        icon.style.color = isSaved ? "#00ff88" : "white";
+    }
 }
 
-// === GUARDAR O ELIMINAR VIDEO ACTUAL ===
-saveVideoBtn.addEventListener("click", () => {
+// --- RENDERIZAR LISTA DE GUARDADOS ---
+function renderSavedVideos(filter = "") {
+    const saved = getSavedVideos();
+    savedList.innerHTML = "";
+
+    const filtered = saved.filter(item =>
+        item.titulo.toLowerCase().includes(filter.toLowerCase())
+    );
+
+    if (filtered.length === 0) {
+        savedList.innerHTML = `
+            <li style="padding:10px; color:#777; text-align:center;">
+                No hay videos guardados
+            </li>`;
+        return;
+    }
+
+    filtered.forEach(item => {
+        const li = document.createElement("li");
+        li.textContent = item.titulo;
+        li.style.padding = "10px";
+        li.style.cursor = "pointer";
+        li.style.borderBottom = "1px solid #333";
+        li.style.color = "#fff";
+
+        // 🔹 Resaltar el video activo
+        const activeSlide = document.querySelector(".swiper-slide-active");
+        if (activeSlide && activeSlide.dataset.videoid === item.id) {
+            li.style.background = "#333";
+        }
+
+        li.addEventListener("click", () => {
+            const index = lastVideos.findIndex(v => v.id === item.id);
+            if (index !== -1 && swiper) {
+                swiper.slideToLoop(index, 0, false);
+                savedModal.style.display = "none";
+                showToast("🎬 Reproduciendo video guardado");
+            } else {
+                showToast("⚠️ Este video ya no está disponible");
+            }
+        });
+
+        savedList.appendChild(li);
+    });
+}
+
+// --- CLICK BOTÓN GUARDAR ---
+saveBtn.addEventListener("click", () => {
     const activeSlide = document.querySelector(".swiper-slide-active");
     if (!activeSlide) return;
 
@@ -955,63 +1013,64 @@ saveVideoBtn.addEventListener("click", () => {
     }
 });
 
-// === MOSTRAR MODAL CON VIDEOS GUARDADOS ===
-savedVideosBtn.addEventListener("click", () => {
+// --- CLICK BOTÓN VER GUARDADOS ---
+viewSavedBtn.addEventListener("click", () => {
     renderSavedVideos();
-    savedVideosModal.style.display = "flex";
+    savedModal.style.display = "flex";
 });
 
-// === CERRAR MODAL ===
-savedVideosClose.addEventListener("click", () => {
-    savedVideosModal.style.display = "none";
+// --- CERRAR MODAL ---
+closeSavedBtn.addEventListener("click", () => {
+    savedModal.style.display = "none";
 });
 
-// === BUSCAR VIDEOS GUARDADOS ===
-savedVideosSearch.addEventListener("input", () => {
-    renderSavedVideos(savedVideosSearch.value);
+// --- BUSCAR GUARDADOS ---
+savedSearchInput.addEventListener("input", () => {
+    renderSavedVideos(savedSearchInput.value);
 });
 
-// === RENDERIZAR VIDEOS GUARDADOS ===
-function renderSavedVideos(filter = "") {
-    const saved = getSavedVideos();
-    savedVideosList.innerHTML = "";
+// --- TOAST / NOTIFICACIÓN ---
+function showToast(msg) {
+    const toast = document.createElement("div");
+    toast.textContent = msg;
+    toast.style.position = "fixed";
+    toast.style.bottom = "120px";
+    toast.style.right = "20px";
+    toast.style.background = "rgba(0,0,0,0.8)";
+    toast.style.color = "#fff";
+    toast.style.padding = "10px 15px";
+    toast.style.borderRadius = "8px";
+    toast.style.fontSize = "14px";
+    toast.style.zIndex = "9999";
+    toast.style.transition = "opacity 0.3s ease";
+    document.body.appendChild(toast);
 
-    const filtered = saved.filter(item =>
-        item.titulo.toLowerCase().includes(filter.toLowerCase())
-    );
-
-    if (filtered.length === 0) {
-        savedVideosList.innerHTML = "<li style='color: #777; padding: 10px;'>No hay videos guardados</li>";
-        return;
-    }
-
-    filtered.forEach(item => {
-        const li = document.createElement("li");
-        li.textContent = item.titulo;
-        li.style.color = "#fff";
-
-        li.addEventListener("click", () => {
-            const index = lastVideos.findIndex(v => v.id === item.id);
-            if (index !== -1 && swiper) {
-                swiper.slideToLoop(index, 0, false);
-                savedVideosModal.style.display = "none";
-                showToast("🎬 Reproduciendo video guardado");
-            } else {
-                showToast("⚠️ Este video ya no está disponible");
-            }
-        });
-
-        savedVideosList.appendChild(li);
-    });
+    setTimeout(() => {
+        toast.style.opacity = "0";
+        setTimeout(() => toast.remove(), 300);
+    }, 1500);
 }
 
-// === INICIALIZAR ÍCONO AL CARGAR ===
+// --- ACTUALIZAR ICONO AL CARGAR ---
 document.addEventListener("DOMContentLoaded", () => {
     const activeSlide = document.querySelector(".swiper-slide-active");
     if (activeSlide) {
-        updateSaveIcon(activeSlide.dataset.videoid);
+        updateSaveBtn(activeSlide.dataset.videoid);
     }
 });
+
+// --- ACTUALIZAR ICONO AL CAMBIAR DE VIDEO ---
+if (typeof swiper !== "undefined") {
+    swiper.on("slideChange", () => {
+        const activeSlide = document.querySelector(".swiper-slide-active");
+        if (activeSlide) {
+            updateSaveBtn(activeSlide.dataset.videoid);
+        }
+    });
+}
+
+
+        
 
 
 
@@ -2639,6 +2698,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
