@@ -1910,8 +1910,10 @@ let lastVideos = [];
 function renderNotifications() {
   const list = document.getElementById("notification-list");
   const count = document.getElementById("notification-count");
+  const notificationBtn = document.getElementById("notification-btn");
+  const bellIcon = notificationBtn.querySelector("i"); // Seleccionar el elemento <i> de la campana
 
-  if (!list || !count) {
+  if (!list || !count || !notificationBtn || !bellIcon) {
     console.error("❌ Error: Elementos de notificaciones no encontrados en el DOM");
     return;
   }
@@ -1922,6 +1924,7 @@ function renderNotifications() {
     list.innerHTML = "<div>Sin notificaciones</div>";
     count.textContent = "";
     count.style.display = "none";
+    bellIcon.className = "far fa-bell"; // Campana vacía cuando no hay notificaciones
 
     try {
       if (typeof AppInventor !== "undefined" && AppInventor.setWebViewString) {
@@ -1935,6 +1938,7 @@ function renderNotifications() {
 
   count.textContent = notifications.length;
   count.style.display = "block";
+  bellIcon.className = "fas fa-bell"; // Campana rellena cuando hay notificaciones
 
   notifications.forEach((notif, i) => {
     if (!notif || !notif.link || !notif.title || !notif.id) {
@@ -2947,6 +2951,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
