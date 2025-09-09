@@ -757,12 +757,18 @@
 
 /* 🎥 Animación de zoom */
 @keyframes highlightZoom {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.2); }
-    100% { transform: scale(1); }
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
 }
 
-#savedList {
+    #savedList {
     scroll-behavior: smooth;
 }
 
@@ -771,44 +777,134 @@
 </head>
 <body>
 <!-- BOTÓN GUARDAR -->
-<button id="saveBtn" class="fab" style="bottom: 300px;">
-  <i class="fa-solid fa-bookmark"></i>
+<button id="saveBtn" style="
+    position: fixed;
+    bottom: 300px;
+    right: 18px;
+    width: 40px;
+    height: 40px;
+   background: rgba(255, 255, 255, 0.1); /* Fondo ligeramente blanco */
+    backdrop-filter: blur(10px); /* Efecto de desenfoque */
+    -webkit-backdrop-filter: blur(10px); /* Compatibilidad con navegadores WebKit */
+    color: white;
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    z-index: 2000;
+">
+    <i class="fa-solid fa-bookmark" style="font-size: 24px;"></i>
 </button>
 
 <!-- BOTÓN VER GUARDADOS -->
-<button id="viewSavedBtn" class="fab" style="bottom: 350px;">
-  <i class="fa-solid fa-list"></i>
+<button id="viewSavedBtn" style="
+    position: fixed;
+    bottom: 350px;
+    right: 18px;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.1); /* Fondo ligeramente blanco */
+    backdrop-filter: blur(10px); /* Efecto de desenfoque */
+    -webkit-backdrop-filter: blur(10px); /* Compatibilidad con navegadores WebKit */
+    color: white;
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    z-index: 9999;
+">
+    <i class="fa-solid fa-list" style="font-size: 24px;"></i>
 </button>
 
 <!-- 📌 Modal Guardados -->
-<div id="savedModal">
-  <div id="savedModalInner">
-    <!-- Encabezado -->
-    <div style="
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      position: sticky;
-      top: 0;
-      background-color: #1c1c1c;
-      z-index: 20;
-      padding-bottom: 8px;">
-      <h2 style="margin: 0; font-size: 18px; color: white;">🔖 Guardados</h2>
-      <button id="closeSavedBtn" style="background: none; border: none; color: white; font-size: 24px; cursor: pointer; line-height: 1;">&times;</button>
+<div id="savedModal" style="
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(4px);
+    z-index: 10000;
+    align-items: center;
+    justify-content: flex-start; /* 🔹 Arranca desde arriba */
+    flex-direction: column;
+    padding: 15px;
+">
+    <div id="savedModalInner" style="
+        background-color: #1c1c1c;
+        color: white;
+        width: 90%;
+        max-width: 420px;
+        max-height: 80%;
+        border-radius: 12px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        overflow: hidden; /* 🔹 Aislamos scroll interno */
+        margin-top: 16vh; /* 🔹 Siempre más arriba */
+        transition: margin-top 0.25s ease;
+    ">
+        <!-- Encabezado -->
+        <div style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background-color: #1c1c1c;
+            z-index: 20;
+            padding-bottom: 8px;
+        ">
+            <h2 style="margin: 0; font-size: 18px; color: white;">🔖 Guardados</h2>
+            <button id="closeSavedBtn" style="
+                background: none;
+                border: none;
+                color: white;
+                font-size: 24px;
+                cursor: pointer;
+                line-height: 1;
+            ">&times;</button>
+        </div>
+
+        <!-- Input de búsqueda -->
+        <input
+            id="savedSearchInput"
+            type="text"
+            placeholder="Buscar guardados..."
+            style="
+                position: sticky;
+                top: 40px; /* 🔹 Debajo del encabezado */
+                z-index: 15;
+                margin-top: 12px;
+                padding: 10px;
+                border: none;
+                border-radius: 6px;
+                background-color: #2c2c2c;
+                color: white;
+                font-size: 15px;
+            "
+        />
+
+        <!-- Lista de guardados -->
+        <ul id="savedList" style="
+            list-style: none;
+            padding: 0;
+            margin: 15px 0 0;
+            max-height: 250px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #555 #1c1c1c;
+        "></ul>
     </div>
-
-    <!-- Input de búsqueda -->
-    <input id="savedSearchInput" type="text" placeholder="Buscar guardados..." style="
-      position: sticky; top: 40px; z-index: 15; margin-top: 12px;
-      padding: 10px; border: none; border-radius: 6px;
-      background-color: #2c2c2c; color: white; font-size: 15px;" />
-
-    <!-- Lista de guardados -->
-    <ul id="savedList" style="
-      list-style: none; padding: 0; margin: 15px 0 0;
-      max-height: 250px; overflow-y: auto;
-      scrollbar-width: thin; scrollbar-color: #555 #1c1c1c;"></ul>
-  </div>
 </div>
 
 
@@ -926,150 +1022,273 @@ const savedModal = document.getElementById("savedModal");
 const savedList = document.getElementById("savedList");
 const savedSearchInput = document.getElementById("savedSearchInput");
 const closeSavedBtn = document.getElementById("closeSavedBtn");
-const savedModalInner = document.getElementById("savedModalInner");
 
 // ==========================
 // ✅ FUNCIONES DE COOKIES (Compatibilidad WebViewer)
 // ==========================
 function setSavedTitles(data) {
-  document.cookie = "savedTitles=" + encodeURIComponent(JSON.stringify(data)) + "; path=/; max-age=31536000";
+    document.cookie = "savedTitles=" + encodeURIComponent(JSON.stringify(data)) + "; path=/; max-age=31536000";
 }
+
 function getSavedTitles() {
-  const match = document.cookie.match(/(^| )savedTitles=([^;]+)/);
-  return match ? JSON.parse(decodeURIComponent(match[2])) : [];
+    const match = document.cookie.match(/(^| )savedTitles=([^;]+)/);
+    return match ? JSON.parse(decodeURIComponent(match[2])) : [];
 }
 
 // ==========================
 // 💾 GUARDAR ANUNCIO ACTUAL
 // ==========================
 function saveCurrentTitle() {
-  if (!swiperInstance || anunciosData.length === 0) {
-    showToast("⚠️ No hay anuncios para guardar");
-    return;
-  }
-  const currentIndex = swiperInstance.realIndex;
-  const currentAnuncio = anunciosData[currentIndex];
-  let saved = getSavedTitles();
+    if (!swiperInstance || anunciosData.length === 0) {
+        showToast("⚠️ No hay anuncios para guardar");
+        return;
+    }
 
-  if (!saved.find(item => item.id === currentAnuncio.id)) {
-    saved.push({ id: currentAnuncio.id, titulo: currentAnuncio.titulo });
-    setSavedTitles(saved);
-    showToast("✅ Anuncio guardado");
-  } else {
-    showToast("ℹ️ Este anuncio ya está guardado");
-  }
+    const currentIndex = swiperInstance.realIndex;
+    const currentAnuncio = anunciosData[currentIndex];
+
+    let saved = getSavedTitles();
+
+    // Evitamos duplicados por ID
+    if (!saved.find(item => item.id === currentAnuncio.id)) {
+        saved.push({ id: currentAnuncio.id, titulo: currentAnuncio.titulo });
+        setSavedTitles(saved);
+        showToast("✅ Anuncio guardado");
+    } else {
+        showToast("ℹ️ Este anuncio ya está guardado");
+    }
 }
 
-// 🔧 Normaliza texto
+    // 🔧 Normaliza texto: minúsculas, sin tildes, sin espacios extras
 function normalizeText(text) {
-  return text.toLowerCase().normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+    return text
+        .toLowerCase()
+        .normalize("NFD")                  // separa acentos
+        .replace(/[\u0300-\u036f]/g, "")  // elimina tildes
+        .replace(/\s+/g, " ")              // colapsa espacios múltiples
+        .trim();                           // quita espacios al inicio/fin
 }
 
 // ==========================
 // 📜 RENDERIZAR TITULOS GUARDADOS
-// ==========================
+// ✅ Renderizar lista de guardados con eliminar individual, "Eliminar todo" y animación
 function renderSavedTitles(filter = "") {
-  const saved = getSavedTitles();
-  savedList.innerHTML = "";
+    const saved = getSavedTitles();
+    savedList.innerHTML = "";
 
-  const filtered = saved.filter(item =>
+   const filtered = saved.filter(item =>
     normalizeText(item.titulo).includes(normalizeText(filter))
-  );
+);
 
-  if (filtered.length === 0) {
-    savedList.innerHTML = "<li style='color: #777; padding: 10px;'>No hay títulos guardados</li>";
-    savedModalInner.style.transform = "translateY(-60px)";
-    return;
-  } else {
-    savedModalInner.style.transform = "translateY(0)";
-  }
 
-  if (filtered.length > 1) {
-    const clearAllBtn = document.createElement("button");
-    clearAllBtn.textContent = "Eliminar todo";
-    clearAllBtn.style.cssText = "background:#2c2c2c;color:#ccc;border:1px solid #444;border-radius:6px;padding:6px 12px;margin:8px 0 10px;cursor:pointer;align-self:flex-end;font-size:13px;transition:background 0.2s ease;";
-    clearAllBtn.addEventListener("click", () => {
-      setSavedTitles([]);
-      renderSavedTitles();
-      showToast("✅ Todos los guardados fueron eliminados");
+    if (filtered.length === 0) {
+        savedList.innerHTML = "<li style='color: #777; padding: 10px;'>No hay títulos guardados</li>";
+
+        // 🔹 Subir la ventana cuando no hay resultados
+        savedModalInner.style.transform = "translateY(-60px)";
+
+        return;
+    } else {
+        // 🔹 Volver al centro si sí hay resultados
+        savedModalInner.style.transform = "translateY(0)";
+    }
+
+    // 🔹 Agregar botón "Eliminar todo" solo si hay MÁS DE 1 guardado
+    if (filtered.length > 1) {
+        const clearAllBtn = document.createElement("button");
+        clearAllBtn.textContent = "Eliminar todo";
+        clearAllBtn.style.background = "#2c2c2c";          // Gris oscuro
+        clearAllBtn.style.color = "#ccc";                  // Gris claro
+        clearAllBtn.style.border = "1px solid #444";       // Borde sutil
+        clearAllBtn.style.borderRadius = "6px";
+        clearAllBtn.style.padding = "6px 12px";
+        clearAllBtn.style.margin = "8px 0 10px";
+        clearAllBtn.style.cursor = "pointer";
+        clearAllBtn.style.alignSelf = "flex-end";
+        clearAllBtn.style.fontSize = "13px";
+        clearAllBtn.style.transition = "background 0.2s ease";
+
+        clearAllBtn.addEventListener("mouseenter", () => {
+            clearAllBtn.style.background = "#3a3a3a"; // Hover gris más claro
+        });
+
+        clearAllBtn.addEventListener("mouseleave", () => {
+            clearAllBtn.style.background = "#2c2c2c"; // Regresa al gris oscuro
+        });
+
+        clearAllBtn.addEventListener("click", () => {
+            setSavedTitles([]); // Vaciar cookie
+            renderSavedTitles();
+            showToast("✅ Todos los guardados fueron eliminados");
+        });
+
+        savedList.appendChild(clearAllBtn);
+    }
+
+    // 🔹 Renderizamos títulos uno por uno
+    filtered.forEach(item => {
+        const li = document.createElement("li");
+        li.style.display = "flex";
+        li.style.justifyContent = "space-between";
+        li.style.alignItems = "center";
+        li.style.padding = "10px";
+        li.style.borderBottom = "1px solid #333";
+        li.style.color = "#fff";
+        li.style.transition = "opacity 0.3s ease, transform 0.3s ease"; // Animación de salida
+
+        // Texto del título
+        const titleSpan = document.createElement("span");
+        titleSpan.textContent = item.titulo;
+        titleSpan.style.cursor = "pointer";
+        titleSpan.style.flex = "1";
+
+        // Click en título → navegar al anuncio
+        titleSpan.addEventListener("click", () => {
+            const anuncioIndex = anunciosData.findIndex(a => a.id === item.id);
+
+            if (anuncioIndex !== -1) {
+                swiperInstance.slideToLoop(anuncioIndex, 0, false);
+                savedModal.style.display = "none";
+
+                // Resaltado azul del título
+                setTimeout(() => {
+                    const tituloActual = document.querySelector(".content-overlay h3");
+                    if (tituloActual) {
+                        tituloActual.classList.add("highlight-title-zoom");
+                        setTimeout(() => {
+                            tituloActual.classList.remove("highlight-title-zoom");
+                        }, 2000);
+                    }
+                }, 400);
+            } else {
+                showToast("⚠️ Este anuncio ya no está disponible");
+            }
+        });
+
+        // Botón eliminar individual ❌ (discreto)
+        const deleteBtn = document.createElement("button");
+        deleteBtn.textContent = "✕";
+        deleteBtn.style.background = "transparent";
+        deleteBtn.style.border = "none";
+        deleteBtn.style.color = "#aaa";              // Gris suave
+        deleteBtn.style.fontSize = "14px";
+        deleteBtn.style.cursor = "pointer";
+        deleteBtn.style.marginLeft = "10px";
+        deleteBtn.style.transition = "color 0.2s ease";
+
+        deleteBtn.addEventListener("mouseenter", () => {
+            deleteBtn.style.color = "#fff"; // Hover más visible
+        });
+
+        deleteBtn.addEventListener("mouseleave", () => {
+            deleteBtn.style.color = "#aaa"; // Regresa al gris discreto
+        });
+
+        deleteBtn.addEventListener("click", (e) => {
+            e.stopPropagation(); // Evita abrir el anuncio al borrar
+
+            // Animación de desvanecimiento y desplazamiento
+            li.style.opacity = "0";
+            li.style.transform = "translateX(30px)";
+
+            setTimeout(() => {
+                const updated = saved.filter(s => s.id !== item.id);
+                setSavedTitles(updated);
+                renderSavedTitles(filter);
+                showToast("🗑️ Eliminado de guardados");
+            }, 300); // Esperamos a que termine la animación
+        });
+
+        li.appendChild(titleSpan);
+        li.appendChild(deleteBtn);
+        savedList.appendChild(li);
     });
-    savedList.appendChild(clearAllBtn);
-  }
-
-  filtered.forEach(item => {
-    const li = document.createElement("li");
-    li.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #333;color:#fff;transition:opacity 0.3s ease, transform 0.3s ease;";
-
-    const titleSpan = document.createElement("span");
-    titleSpan.textContent = item.titulo;
-    titleSpan.style.cssText = "cursor:pointer;flex:1";
-    titleSpan.addEventListener("click", () => {
-      const anuncioIndex = anunciosData.findIndex(a => a.id === item.id);
-      if (anuncioIndex !== -1) {
-        swiperInstance.slideToLoop(anuncioIndex, 0, false);
-        savedModal.style.display = "none";
-        setTimeout(() => {
-          const tituloActual = document.querySelector(".content-overlay h3");
-          if (tituloActual) {
-            tituloActual.classList.add("highlight-title-zoom");
-            setTimeout(() => tituloActual.classList.remove("highlight-title-zoom"), 2000);
-          }
-        }, 400);
-      } else {
-        showToast("⚠️ Este anuncio ya no está disponible");
-      }
-    });
-
-    const deleteBtn = document.createElement("button");
-    deleteBtn.textContent = "✕";
-    deleteBtn.style.cssText = "background:transparent;border:none;color:#aaa;font-size:14px;cursor:pointer;margin-left:10px;transition:color 0.2s ease;";
-    deleteBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      li.style.opacity = "0";
-      li.style.transform = "translateX(30px)";
-      setTimeout(() => {
-        const updated = saved.filter(s => s.id !== item.id);
-        setSavedTitles(updated);
-        renderSavedTitles(filter);
-        showToast("🗑️ Eliminado de guardados");
-      }, 300);
-    });
-
-    li.appendChild(titleSpan);
-    li.appendChild(deleteBtn);
-    savedList.appendChild(li);
-  });
 }
 
+
 // ==========================
-// 📌 EVENTOS
+// 📌 EVENTOS DE LOS BOTONES
 // ==========================
 saveBtn.addEventListener("click", saveCurrentTitle);
+
 viewSavedBtn.addEventListener("click", () => {
-  savedSearchInput.value = "";
-  renderSavedTitles();
-  setTimeout(() => {
-    savedModal.style.display = "flex";
-    savedList.scrollTop = 0;
-  }, 50);
+    savedSearchInput.value = "";
+
+    // Renderizamos primero los títulos
+    renderSavedTitles();
+
+    // Mostramos modal y reseteamos scroll
+    setTimeout(() => {
+        savedModal.style.display = "flex";
+        savedList.scrollTop = 0;
+    }, 50);
 });
-savedSearchInput.addEventListener("input", (e) => renderSavedTitles(e.target.value));
-closeSavedBtn.addEventListener("click", () => savedModal.style.display = "none");
-savedModal.addEventListener("click", (e) => { if (e.target === savedModal) savedModal.style.display = "none"; });
+
+
+
+
+savedSearchInput.addEventListener("input", (e) => {
+    renderSavedTitles(e.target.value);
+});
+
+closeSavedBtn.addEventListener("click", () => {
+    savedModal.style.display = "none";
+});
+
+savedModal.addEventListener("click", (e) => {
+    if (e.target === savedModal) {
+        savedModal.style.display = "none";
+    }
+});
 
 // ==========================
-// 🍞 TOASTS
+// 🍞 TOASTS PERSONALIZADOS
 // ==========================
 function showToast(msg) {
-  const toast = document.createElement("div");
-  toast.textContent = msg;
-  toast.style.cssText = "position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:white;padding:10px 16px;border-radius:6px;font-size:14px;z-index:100000;";
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 2500);
+    const toast = document.createElement("div");
+    toast.textContent = msg;
+    toast.style.position = "fixed";
+    toast.style.bottom = "80px";
+    toast.style.left = "50%";
+    toast.style.transform = "translateX(-50%)";
+    toast.style.background = "rgba(0,0,0,0.85)";
+    toast.style.color = "white";
+    toast.style.padding = "10px 16px";
+    toast.style.borderRadius = "6px";
+    toast.style.fontSize = "14px";
+    toast.style.zIndex = "100000";
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2500);
 }
+
+
+
+
+const savedSearchInputEl = document.getElementById("savedSearchInput");
+const savedModalInner = document.getElementById("savedModalInner");
+
+// ✅ Mantener posición fija siempre
+savedSearchInputEl.addEventListener("focus", () => {
+    if (window.innerWidth <= 768) {
+        // Cuando se toca, NO movemos nada
+        savedModalInner.style.transform = "translateY(0)";
+    }
+});
+
+savedSearchInputEl.addEventListener("input", () => {
+    if (window.innerWidth <= 768) {
+        // Cuando escribes, tampoco movemos nada
+        savedModalInner.style.transform = "translateY(0)";
+    }
+});
+
+savedSearchInputEl.addEventListener("blur", () => {
+    if (window.innerWidth <= 768) {
+        // Cuando cierras teclado, vuelve igual
+        savedModalInner.style.transform = "translateY(0)";
+    }
+});
+
 
 
 
@@ -2699,5 +2918,6 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
