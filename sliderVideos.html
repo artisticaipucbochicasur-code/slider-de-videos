@@ -1953,56 +1953,91 @@ function renderNotifications() {
         return;
       }
 
+      // Guardar y precargar comentarios del video actual solo si no están en caché
+      const currentVideoId = getActiveVideoId();
+      if (currentVideoId && !comentariosPorVideo[currentVideoId]) {
+        cargarComentarios(currentVideoId, false, { force: true });
+        console.log(`✅ Precargando comentarios para video actual ${currentVideoId}`);
+      }
+
+      // Buscar si ya existe el slide del anuncio
       let slide = Array.from(wrapper.children).find(s => {
         const card = s.querySelector('.player-card');
         return card && card.dataset.embed === notif.link;
       });
 
       let isNewSlide = false;
+      let targetIndex = -1;
+
+      // Si no existe, crearlo y agregarlo
       if (!slide) {
         isNewSlide = true;
         const nuevoSlide = createSlide(notif.title, notif.link, notif.desc, notif.id);
-        if (swiper) swiper.appendSlide(nuevoSlide);
-        else wrapper.appendChild(nuevoSlide);
+        if (swiper) {
+          swiper.appendSlide(nuevoSlide);
+          swiper.update(); // Forzar actualización del Swiper para integrar el nuevo slide
+          console.log("✅ Nuevo slide añadido al final con appendSlide");
+          targetIndex = swiper.slides.length - 1; // El nuevo slide estará al final
+        } else {
+          wrapper.appendChild(nuevoSlide);
+        }
         lastVideos.push({ title: notif.title, link: notif.link, desc: notif.desc, id: notif.id });
-        slide = nuevoSlide;
+        await cargarComentarios(notif.id, false, { force: true }); // Precargar comentarios del nuevo video
+      } else {
+        // Si el slide ya existe, encontrar su índice
+        swiper.slides.forEach((s, idx) => {
+          const card = s.querySelector('.player-card');
+          if (card && card.dataset.embed === notif.link) {
+            targetIndex = idx;
+          }
+        });
       }
 
-      setTimeout(() => {
-        let realIndex = -1;
-        if (swiper) {
-          swiper.slides.forEach((s, idx) => {
-            const card = s.querySelector('.player-card');
-            if (card && card.dataset.embed === notif.link) realIndex = idx;
-          });
-          if (isNewSlide && realIndex === -1) realIndex = swiper.slides.length - 1;
+      // Navegar al slide correspondiente
+      if (swiper && targetIndex !== -1) {
+        cleanupIframesExceptActive();
+        swiper.slideToLoop(targetIndex, 300); // Usar slideToLoop con transición suave
+        updateFixedTitle(swiper);
+
+        const activeCard = swiper.slides[swiper.activeIndex].querySelector('.player-card');
+        if (activeCard && !activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
+          mountIframe(activeCard, true); // Reproducir automáticamente el nuevo video
         }
 
-     if (swiper && realIndex !== -1) {
-  cleanupIframesExceptActive();
+        const videoId = getActiveVideoId();
+        if (videoId) {
+          if (!comentariosPorVideo[videoId] || comentariosPorVideo[videoId].length === 0) {
+            await cargarComentarios(videoId, true, { force: true });
+          } else {
+            renderComentarios(videoId);
+          }
+        }
 
-  // 🔹 Usar slideToLoop en lugar de slideTo para respetar loop
-  swiper.slideToLoop(realIndex, 300); // scroll suave hacia el nuevo video
+        swiper.once('slideChangeTransitionEnd', () => {
+          cleanupIframesExceptActive();
+          const activeCard = document.querySelector('.swiper-slide-active .player-card');
+          if (activeCard && !activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
+            mountIframe(activeCard, true);
+          }
+          const videoIdFinal = getActiveVideoId();
+          if (videoIdFinal) {
+            if (!comentariosPorVideo[videoIdFinal] || comentariosPorVideo[videoIdFinal].length === 0) {
+              cargarComentarios(videoIdFinal, true, { force: true });
+            } else {
+              renderComentarios(videoIdFinal);
+            }
+          }
+          // Restaurar comentarios del video original si están en caché
+          if (currentVideoId && comentariosPorVideo[currentVideoId]) {
+            console.log(`✅ Restaurando comentarios para video original ${currentVideoId}`);
+            renderComentarios(currentVideoId);
+          }
+        });
+      } else {
+        console.error("❌ Error: Swiper o índice no válido al intentar navegar al nuevo video");
+      }
 
-  updateFixedTitle(swiper);
-
-  const activeCard = swiper.slides[swiper.activeIndex].querySelector('.player-card');
-  if (activeCard && !activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
-    mountIframe(activeCard, true); // reproducir automáticamente el nuevo video
-  }
-
-  const videoId = getActiveVideoId();
-  if (videoId) {
-    if (!comentariosPorVideo[videoId] || comentariosPorVideo[videoId].length === 0) {
-      cargarComentarios(videoId, true, { force: true });
-    } else {
-      renderComentarios(videoId);
-    }
-  }
-}
-
-      }, 100);
-
+      // Marcar como leída y cerrar panel
       notifications.splice(i, 1);
       renderNotifications();
       document.getElementById("notification-list").classList.add("hidden");
@@ -2875,5 +2910,6 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
