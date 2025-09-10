@@ -2855,9 +2855,13 @@ if (!checkNew) {
 // === Swipe-to-delete en móviles ===
 
 
+// === Swipe-to-delete en móviles ===
+let startX = 0;
+let activeComment = null;
+let isSwiping = false;
+
 function activarSwipeParaBorrar() {
   const commentsList = document.querySelector('#comments-list'); // Asegúrate de que este selector coincida con tu lista de comentarios
-  const comentarios = document.querySelectorAll('.comentario-propio'); // Clase para comentarios del usuario
 
   // Evento touchstart
   commentsList.addEventListener('touchstart', (e) => {
@@ -2869,7 +2873,8 @@ function activarSwipeParaBorrar() {
     if (normalizeText(commentData.correo) === normalizeText(usuarioCorreo)) {
       startX = e.touches[0].clientX;
       activeComment = commentElement;
-      activeComment.querySelector('.comment-content').style.transition = 'none';
+      const commentContent = activeComment.querySelector('.comment-content');
+      if (commentContent) commentContent.style.transition = 'none';
       isSwiping = false;
     }
   });
@@ -2885,12 +2890,12 @@ function activarSwipeParaBorrar() {
     const commentContent = activeComment.querySelector('.comment-content');
     const deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
 
-    // Deslizar hacia la derecha para mostrar el botón de borrar
-    if (diffX > 0) {
+    // Deslizar hacia la derecha (mostrar botón) o izquierda (preparar para borrar)
+    if (diffX >= 0) {
       commentContent.style.transform = `translateX(${diffX}px)`;
       if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(0)`;
     } else {
-      commentContent.style.transform = `translateX(0)`;
+      commentContent.style.transform = `translateX(${diffX}px)`; // Permitir deslizamiento a la izquierda
       if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
     }
   });
@@ -2903,10 +2908,10 @@ function activarSwipeParaBorrar() {
 
     const commentContent = activeComment.querySelector('.comment-content');
     let deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
-    commentContent.style.transition = 'transform 0.3s ease';
+    if (commentContent) commentContent.style.transition = 'transform 0.3s ease';
 
+    // Deslizar a la derecha: mostrar botón de borrar
     if (diffX > swipeThreshold) {
-      // Deslizar a la derecha: mostrar botón de borrar
       commentContent.style.transform = `translateX(100px)`;
       if (!deleteBtnContainer) {
         deleteBtnContainer = document.createElement('div');
@@ -2926,12 +2931,16 @@ function activarSwipeParaBorrar() {
       } else {
         deleteBtnContainer.style.transform = `translateX(0)`;
       }
-    } else if (startX - e.changedTouches[0].clientX > swipeThreshold) {
-      // Deslizar a la izquierda: eliminar directamente
+    }
+    // Deslizar a la izquierda: eliminar directamente
+    else if (diffX < -swipeThreshold) {
       const commentData = activeComment.dataset;
       eliminarComentario(getActiveVideoId(), commentData.texto, commentData.correo);
-    } else {
-      // Restaurar posición
+      // Opcional: Restaurar posición antes de eliminar para animación suave
+      commentContent.style.transform = `translateX(0)`;
+    }
+    // Restaurar posición si no se alcanza el umbral
+    else {
       commentContent.style.transform = `translateX(0)`;
       if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
     }
@@ -2951,6 +2960,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
