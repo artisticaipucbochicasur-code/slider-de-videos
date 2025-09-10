@@ -33,7 +33,7 @@
             overflow: hidden;
         }
 
-    /* Botones flotantes */
+   /* Botones flotantes */
 .floating-buttons {
     position: fixed;
     bottom: 90px;
@@ -509,7 +509,7 @@
         user-select: none;
     }
     
- /* El comentario se desliza */
+    /* El comentario se desliza */
     .comment-content {
       width: 100%;
       padding-left: 10px;
@@ -523,7 +523,6 @@
     .comment-content.swiped {
       transform: translateX(100px);
     }
-
     
     .delete-btn-container.visible {
         transform: translateX(0);
@@ -907,8 +906,6 @@
   <i class="fas fa-sync-alt"></i>
 </button>
 
-
-
     
 <div class="comments-overlay-container hidden-overlay" id="commentsOverlay">
   <ul id="commentsList"></ul>
@@ -1291,7 +1288,9 @@ const notificationList = document.getElementById('notification-list');
 
 let comentariosPorVideo = {}; // videoId: [ {autor, correo, fecha, comentario} ]
 let lastTapTime = 0;
-
+let activeComment = null;
+let startX = 0;
+let isSwiping = false;
 
 const refreshBtn = document.getElementById("refreshBtn");
 
@@ -1509,96 +1508,6 @@ commentsOverlay.addEventListener('click', (e) => {
   }
   isSwiping = false;
 });
-
-// === Swipe-to-delete en móviles ===
-
-
-function initSwipeComentarios() {
-  const commentsList = document.getElementById("comments-list");
-  if (!commentsList) return;
-
-  let activeComment = null;
-  let startX = 0;
-
-  commentsList.addEventListener('touchstart', e => {
-    const commentElement = e.target.closest('.comentario-propio'); // más flexible
-    if (!commentElement) return;
-
-    activeComment = commentElement;
-    startX = e.touches[0].clientX;
-
-    const commentContent = activeComment.querySelector('.comment-content');
-    if (commentContent) {
-      commentContent.style.transition = 'none';
-    }
-  });
-
-  commentsList.addEventListener('touchmove', e => {
-    if (!activeComment) return;
-
-    const currentX = e.touches[0].clientX;
-    const diffX = currentX - startX;
-
-    const commentContent = activeComment.querySelector('.comment-content');
-    const deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
-    if (!commentContent) return;
-
-    if (diffX > 0) {
-      commentContent.style.transform = `translateX(${diffX}px)`;
-      if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(0)`;
-    } else {
-      commentContent.style.transform = `translateX(0)`;
-      if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
-    }
-  });
-
-  commentsList.addEventListener('touchend', e => {
-    if (!activeComment) return;
-
-    const diffX = e.changedTouches[0].clientX - startX;
-    const swipeThreshold = 50;
-
-    const commentContent = activeComment.querySelector('.comment-content');
-    if (!commentContent) {
-      activeComment = null;
-      return;
-    }
-
-    let deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
-    commentContent.style.transition = 'transform 0.3s ease';
-
-    if (diffX > swipeThreshold) {
-      commentContent.style.transform = `translateX(100px)`;
-
-      if (!deleteBtnContainer) {
-        deleteBtnContainer = document.createElement('div');
-        deleteBtnContainer.className = 'delete-btn-container';
-        const deleteBtn = document.createElement('div');
-        deleteBtn.className = 'delete-btn';
-        deleteBtn.textContent = 'Borrar';
-        deleteBtnContainer.appendChild(deleteBtn);
-        activeComment.insertBefore(deleteBtnContainer, commentContent);
-        deleteBtnContainer.style.transform = `translateX(0)`;
-
-        deleteBtn.addEventListener('click', ev => {
-          ev.stopPropagation();
-          const commentData = activeComment.dataset;
-          eliminarComentario(getActiveVideoId(), commentData.texto, commentData.correo);
-        });
-      } else {
-        deleteBtnContainer.style.transform = `translateX(0)`;
-      }
-    } else {
-      commentContent.style.transform = `translateX(0)`;
-      if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
-      activeComment = null;
-    }
-
-    startX = 0;
-  });
-}
-
-
 
 
 
@@ -1885,7 +1794,6 @@ async function verificarComentariosVideos() {
     console.warn("No se pudo verificar comentarios:", err);
   }
 }
-
 
 
 
@@ -2840,7 +2748,7 @@ if (!checkNew) {
         on: {
             init() {
                 updateFixedTitle(this);
-                initSwipeComentarios();
+                activarSwipeParaBorrar();
                 const videoId = getActiveVideoId();
                 if (videoId) renderComentarios(videoId);
                 console.log("✅ Swiper inicializado");
@@ -2853,7 +2761,7 @@ if (!checkNew) {
             slideChange() {
                 cleanupIframesExceptActiveAndAdjacent();
                 updateFixedTitle(this);
-                initSwipeComentarios();
+                activarSwipeParaBorrar();
                 const videoId = getActiveVideoId();
                 if (videoId) {
                     if (!comentariosPorVideo[videoId]) {
@@ -2928,7 +2836,7 @@ if (!checkNew) {
 
     cleanupIframesExceptActiveAndAdjacent();
     updateFixedTitle(swiper);
-    initSwipeComentarios();
+    activarSwipeParaBorrar();
     const videoId = getActiveVideoId();
     if (videoId) renderComentarios(videoId);
 }
@@ -2942,9 +2850,28 @@ if (!checkNew) {
 
 
         
+        function activarSwipeParaBorrar() {
+  const comentarios = document.querySelectorAll(".comentario-propio"); // clase para tus comentarios
 
+  comentarios.forEach(comentario => {
+    let startX = 0;
+    let endX = 0;
 
+    comentario.addEventListener("touchstart", e => {
+      startX = e.touches[0].clientX;
+    });
 
+    comentario.addEventListener("touchmove", e => {
+      endX = e.touches[0].clientX;
+    });
+
+    comentario.addEventListener("touchend", () => {
+      if (startX - endX > 80) {  // si desliza a la izquierda más de 80px
+        eliminarComentario(comentario.dataset.id); // usa el id del comentario
+      }
+    });
+  });
+}
 
 
 // === AUTO REFRESCO EN SEGUNDO PLANO ===
@@ -2956,24 +2883,6 @@ setInterval(() => {
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
