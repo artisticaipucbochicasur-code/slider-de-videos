@@ -1514,31 +1514,34 @@ commentsOverlay.addEventListener('click', (e) => {
 
 
 function initSwipeComentarios() {
-  const commentsList = document.getElementById("comments-list"); // ajusta tu ID
+  const commentsList = document.getElementById("comments-list");
   if (!commentsList) return;
 
   let activeComment = null;
   let startX = 0;
-  let isSwiping = false;
 
   commentsList.addEventListener('touchstart', e => {
-    const commentElement = e.target.closest('li.comentario-propio');
-    if (!commentElement) return; // deja que Swiper maneje el resto
-    startX = e.touches[0].clientX;
+    const commentElement = e.target.closest('.comentario-propio'); // más flexible
+    if (!commentElement) return;
+
     activeComment = commentElement;
-    activeComment.querySelector('.comment-content').style.transition = 'none';
-    isSwiping = false;
+    startX = e.touches[0].clientX;
+
+    const commentContent = activeComment.querySelector('.comment-content');
+    if (commentContent) {
+      commentContent.style.transition = 'none';
+    }
   });
 
   commentsList.addEventListener('touchmove', e => {
     if (!activeComment) return;
+
     const currentX = e.touches[0].clientX;
     const diffX = currentX - startX;
 
-    if (Math.abs(diffX) > 10) isSwiping = true;
-
     const commentContent = activeComment.querySelector('.comment-content');
     const deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
+    if (!commentContent) return;
 
     if (diffX > 0) {
       commentContent.style.transform = `translateX(${diffX}px)`;
@@ -1551,10 +1554,16 @@ function initSwipeComentarios() {
 
   commentsList.addEventListener('touchend', e => {
     if (!activeComment) return;
-    const swipeThreshold = 50;
+
     const diffX = e.changedTouches[0].clientX - startX;
+    const swipeThreshold = 50;
 
     const commentContent = activeComment.querySelector('.comment-content');
+    if (!commentContent) {
+      activeComment = null;
+      return;
+    }
+
     let deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
     commentContent.style.transition = 'transform 0.3s ease';
 
@@ -1579,13 +1588,12 @@ function initSwipeComentarios() {
       } else {
         deleteBtnContainer.style.transform = `translateX(0)`;
       }
-
-      // NO limpiar activeComment para que el botón quede
     } else {
       commentContent.style.transform = `translateX(0)`;
       if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
       activeComment = null;
     }
+
     startX = 0;
   });
 }
@@ -2948,6 +2956,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
