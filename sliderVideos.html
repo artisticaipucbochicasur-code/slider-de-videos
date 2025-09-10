@@ -2918,7 +2918,7 @@ if (!checkNew) {
 
 
         
-     function activarSwipeParaBorrar() {
+    function activarSwipeParaBorrar() {
   const comentarios = document.querySelectorAll(".comments-overlay-container li.deletable");
 
   comentarios.forEach(comentario => {
@@ -2931,7 +2931,7 @@ if (!checkNew) {
     let isSwiping = false;
 
     comentario.addEventListener("touchstart", e => {
-      // 👉 Solo activar si tocamos directamente el contenido del comentario
+      // 👉 Solo si tocas el contenido del comentario (no el input, no el botón enviar)
       if (!e.target.closest(".comment-content")) return;
       startX = e.touches[0].clientX;
       isSwiping = true;
@@ -2946,12 +2946,23 @@ if (!checkNew) {
       if (!isSwiping) return;
       isSwiping = false;
 
+      const diffX = endX - startX;
+
+      // 👉 Swipe a la izquierda: mostrar botón y cerrar otros abiertos
       if (startX - endX > 80) {
-        // 👉 Mostrar botón
+        document.querySelectorAll(".comment-content.swiped").forEach(c => {
+          c.classList.remove("swiped");
+        });
+        document.querySelectorAll(".delete-btn-container.visible").forEach(d => {
+          d.classList.remove("visible");
+        });
+
         content.classList.add("swiped");
         deleteBtnContainer.classList.add("visible");
-      } else if (endX - startX > 80) {
-        // 👉 Ocultar botón
+      }
+
+      // 👉 Swipe a la derecha: cerrar botón de este comentario
+      if (diffX > 80) {
         content.classList.remove("swiped");
         deleteBtnContainer.classList.remove("visible");
       }
@@ -2967,6 +2978,7 @@ if (!checkNew) {
 }
 
 
+
 // === AUTO REFRESCO EN SEGUNDO PLANO ===
 setInterval(() => {
   cargarVideos(true); // solo refresca notificaciones, no toca el slider
@@ -2976,6 +2988,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
