@@ -1587,6 +1587,7 @@ async function cargarComentarios(videoId, render = true, options = {}) {
 
 
 
+// === Renderizar comentarios en el DOM ===
 function renderComentarios(videoId) {
   if (!videoId) return;
 
@@ -1597,16 +1598,6 @@ function renderComentarios(videoId) {
   if (!commentsList || !commentCountValue) {
     console.error("❌ Error: Contenedor de comentarios o contador no encontrado en el DOM");
     return;
-  }
-
-  // --- Guardar el texto y correo del comentario swiped actual ---
-  let swipedData = null;
-  const swipedComment = document.querySelector('li.swiped');
-  if (swipedComment) {
-    swipedData = {
-      texto: swipedComment.dataset.texto,
-      correo: swipedComment.dataset.correo
-    };
   }
 
   commentsList.innerHTML = '';
@@ -1646,22 +1637,6 @@ function renderComentarios(videoId) {
         });
       }
 
-      // --- Si este es el comentario swiped, restaura el swipe ---
-      if (
-        swipedData &&
-        normalizeText(c.correo) === normalizeText(swipedData.correo) &&
-        c.comentario === swipedData.texto
-      ) {
-        li.classList.add('swiped');
-        commentContent.classList.add('swiped');
-        commentContent.style.transform = `translateX(100px)`;
-        const deleteBtnContainer = li.querySelector('.delete-btn-container');
-        if (deleteBtnContainer) {
-          deleteBtnContainer.classList.add('visible');
-          deleteBtnContainer.style.transform = `translateX(0)`;
-        }
-      }
-
       commentsList.appendChild(li);
     });
 
@@ -1669,8 +1644,8 @@ function renderComentarios(videoId) {
   }
 
   console.log(`✅ Renderizados ${lista.length} comentarios para video ${videoId} en orden inverso`);
-    if (window.restoreSwipeAfterRender) window.restoreSwipeAfterRender();
 }
+
 
 // === Enviar un nuevo comentario ===
 async function enviarComentario() {
@@ -2876,148 +2851,111 @@ if (!checkNew) {
 
         
      function activarSwipeParaBorrar() {
-  let swipeInfo = null;
+ // === Swipe-to-delete en móviles ===
+commentsList.addEventListener('touchstart', (e) => {
+  const commentElement = e.target.closest('li');
+  if (!commentElement) return;
+  const commentData = commentElement.dataset;
 
-  commentsList.addEventListener('touchstart', (e) => {
-    const commentElement = e.target.closest('li');
-    if (!commentElement) return;
-    const commentData = commentElement.dataset;
+  if (normalizeText(commentData.correo) === normalizeText(usuarioCorreo)) {
+    startX = e.touches[0].clientX;
+    activeComment = commentElement;
+    activeComment.querySelector('.comment-content').style.transition = 'none';
+    isSwiping = false;
+  }
+});
 
-    if (normalizeText(commentData.correo) === normalizeText(usuarioCorreo)) {
-      startX = e.touches[0].clientX;
-      activeComment = commentElement;
-      activeComment.querySelector('.comment-content').style.transition = 'none';
-      isSwiping = false;
-    }
-  });
+commentsList.addEventListener('touchmove', (e) => {
+  if (!activeComment) return;
+  const currentX = e.touches[0].clientX;
+  const diffX = currentX - startX;
 
-  commentsList.addEventListener('touchmove', (e) => {
-    if (!activeComment) return;
-    const currentX = e.touches[0].clientX;
-    const diffX = currentX - startX;
+  if (Math.abs(diffX) > 10) isSwiping = true;
 
-    if (Math.abs(diffX) > 10) isSwiping = true;
+  const commentContent = activeComment.querySelector('.comment-content');
+  const deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
 
-    const commentContent = activeComment.querySelector('.comment-content');
-    const deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
+  if (diffX > 0) {
+    commentContent.style.transform = `translateX(${diffX}px)`;
+    if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(0)`;
+  } else {
+    commentContent.style.transform = `translateX(0)`;
+    if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
+  }
+});
 
-    if (diffX > 0) {
-      commentContent.style.transform = `translateX(${diffX}px)`;
-      if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(0)`;
-    } else {
-      commentContent.style.transform = `translateX(0)`;
-      if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
-    }
-  });
+commentsList.addEventListener('touchend', (e) => {
+  if (!activeComment) return;
+  const swipeThreshold = 50;
+  const diffX = e.changedTouches[0].clientX - startX;
 
-  commentsList.addEventListener('touchend', (e) => {
-    if (!activeComment) return;
-    const swipeThreshold = 50;
-    const diffX = e.changedTouches[0].clientX - startX;
+  const commentContent = activeComment.querySelector('.comment-content');
+  let deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
+  commentContent.style.transition = 'transform 0.3s ease';
 
-    const commentContent = activeComment.querySelector('.comment-content');
-    let deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
-    commentContent.style.transition = 'transform 0.3s ease';
+  if (diffX > swipeThreshold) {
+    // Mantén el botón visible y marca como swiped
+    commentContent.classList.add('swiped');
+    activeComment.classList.add('swiped');
+    commentContent.style.transform = `translateX(100px)`;
 
-    if (diffX > swipeThreshold) {
-      // Mantén el botón visible y marca como swiped
-      commentContent.classList.add('swiped');
-      activeComment.classList.add('swiped');
-      commentContent.style.transform = `translateX(100px)`;
+    if (!deleteBtnContainer) {
+      deleteBtnContainer = document.createElement('div');
+      deleteBtnContainer.className = 'delete-btn-container visible';
+      const deleteBtn = document.createElement('div');
+      deleteBtn.className = 'delete-btn';
+      deleteBtn.textContent = 'Borrar';
+      deleteBtnContainer.appendChild(deleteBtn);
+      activeComment.insertBefore(deleteBtnContainer, commentContent);
 
-      swipeInfo = {
-        texto: activeComment.dataset.texto,
-        correo: activeComment.dataset.correo
-      };
-
-      if (!deleteBtnContainer) {
-        deleteBtnContainer = document.createElement('div');
-        deleteBtnContainer.className = 'delete-btn-container visible';
-        const deleteBtn = document.createElement('div');
-        deleteBtn.className = 'delete-btn';
-        deleteBtn.textContent = 'Borrar';
-        deleteBtnContainer.appendChild(deleteBtn);
-        activeComment.insertBefore(deleteBtnContainer, commentContent);
-
-        deleteBtn.addEventListener('click', (ev) => {
-          ev.stopPropagation();
-          eliminarComentario(getActiveVideoId(), activeComment.dataset.texto, activeComment.dataset.correo);
-          // Quita el swipe tras borrar
-          commentContent.classList.remove('swiped');
-          activeComment.classList.remove('swiped');
-          commentContent.style.transform = `translateX(0)`;
-          deleteBtnContainer.classList.remove('visible');
-          deleteBtnContainer.style.transform = `translateX(-100%)`;
-          swipeInfo = null;
-          activeComment = null;
-        });
-      } else {
-        deleteBtnContainer.classList.add('visible');
-        deleteBtnContainer.style.transform = `translateX(0)`;
-      }
-    } else {
-      // Solo regresa si no fue swipe suficiente
-      commentContent.classList.remove('swiped');
-      activeComment.classList.remove('swiped');
-      commentContent.style.transform = `translateX(0)`;
-      if (deleteBtnContainer) {
-        deleteBtnContainer.classList.remove('visible');
-        deleteBtnContainer.style.transform = `translateX(-100%)`;
-      }
-      swipeInfo = null;
-      activeComment = null;
-    }
-    startX = 0;
-  });
-
-  // === Oculta el botón Borrar al tocar fuera del comentario swiped ===
-  document.addEventListener('touchstart', (e) => {
-    // Si el target NO está dentro de un comentario swiped, quita el swipe
-    const swiped = document.querySelector('li.swiped');
-    const isDeleteBtn = e.target.classList.contains('delete-btn');
-    if (swiped && !swiped.contains(e.target) && !isDeleteBtn) {
-      const commentContent = swiped.querySelector('.comment-content');
-      const deleteBtnContainer = swiped.querySelector('.delete-btn-container');
-      if (commentContent) {
+      deleteBtn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        eliminarComentario(getActiveVideoId(), activeComment.dataset.texto, activeComment.dataset.correo);
+        // Quita el swipe tras borrar
         commentContent.classList.remove('swiped');
+        activeComment.classList.remove('swiped');
         commentContent.style.transform = `translateX(0)`;
-      }
-      if (deleteBtnContainer) {
         deleteBtnContainer.classList.remove('visible');
         deleteBtnContainer.style.transform = `translateX(-100%)`;
-      }
-      swiped.classList.remove('swiped');
-      swipeInfo = null;
-      activeComment = null;
+        activeComment = null;
+      });
+    } else {
+      deleteBtnContainer.classList.add('visible');
+      deleteBtnContainer.style.transform = `translateX(0)`;
     }
-  });
+  } else {
+    // Solo regresa si no fue swipe suficiente
+    commentContent.classList.remove('swiped');
+    activeComment.classList.remove('swiped');
+    commentContent.style.transform = `translateX(0)`;
+    if (deleteBtnContainer) {
+      deleteBtnContainer.classList.remove('visible');
+      deleteBtnContainer.style.transform = `translateX(-100%)`;
+    }
+    activeComment = null;
+  }
+  startX = 0;
+});
 
-  // === Restaurar swipe tras renderComentarios ===
-  // Debes modificar renderComentarios para incluir este fragmento al final:
-  window.restoreSwipeAfterRender = function() {
-    if (!swipeInfo) return;
-    const commentsList = document.getElementById('commentsList');
-    if (!commentsList) return;
-    const lis = commentsList.querySelectorAll('li');
-    lis.forEach(li => {
-      if (
-        normalizeText(li.dataset.correo) === normalizeText(swipeInfo.correo) &&
-        li.dataset.texto === swipeInfo.texto
-      ) {
-        li.classList.add('swiped');
-        const commentContent = li.querySelector('.comment-content');
-        if (commentContent) {
-          commentContent.classList.add('swiped');
-          commentContent.style.transform = `translateX(100px)`;
-        }
-        const deleteBtnContainer = li.querySelector('.delete-btn-container');
-        if (deleteBtnContainer) {
-          deleteBtnContainer.classList.add('visible');
-          deleteBtnContainer.style.transform = `translateX(0)`;
-        }
-      }
-    });
-  };
+// === Oculta el botón Borrar al tocar fuera del comentario swiped ===
+document.addEventListener('touchstart', (e) => {
+  // Si el target NO está dentro de un comentario swiped, quita el swipe
+  const swiped = document.querySelector('li.swiped');
+  if (swiped && !swiped.contains(e.target)) {
+    const commentContent = swiped.querySelector('.comment-content');
+    const deleteBtnContainer = swiped.querySelector('.delete-btn-container');
+    if (commentContent) {
+      commentContent.classList.remove('swiped');
+      commentContent.style.transform = `translateX(0)`;
+    }
+    if (deleteBtnContainer) {
+      deleteBtnContainer.classList.remove('visible');
+      deleteBtnContainer.style.transform = `translateX(-100%)`;
+    }
+    swiped.classList.remove('swiped');
+    activeComment = null;
+  }
+});
 }
 
 // === AUTO REFRESCO EN SEGUNDO PLANO ===
@@ -3029,6 +2967,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
