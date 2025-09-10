@@ -2918,8 +2918,8 @@ if (!checkNew) {
 
 
         
-   function activarSwipeParaBorrar() {
-  const comentarios = document.querySelectorAll(".comments-overlay-container li.deletable");
+  function activarSwipeParaBorrar() {
+  const comentarios = document.querySelectorAll(".comentario-propio"); // tus comentarios
 
   comentarios.forEach(comentario => {
     const content = comentario.querySelector(".comment-content");
@@ -2928,36 +2928,26 @@ if (!checkNew) {
 
     let startX = 0;
     let endX = 0;
-    let isSwiping = false;
 
     comentario.addEventListener("touchstart", e => {
-      // 👉 Ignoramos si el usuario toca el input o el área de escribir comentarios
-      if (e.target.closest(".comment-input-container")) return;
-
       startX = e.touches[0].clientX;
-      isSwiping = true;
     });
 
     comentario.addEventListener("touchmove", e => {
-      if (!isSwiping) return;
       endX = e.touches[0].clientX;
     });
 
     comentario.addEventListener("touchend", () => {
-      if (!isSwiping) return;
-      isSwiping = false;
-
       const diffX = endX - startX;
 
       if (startX - endX > 80) {
-        // 👉 Swipe izquierda → mostrar botón
-        cerrarOtrosComentarios(); // cierra si había otro abierto
+        // 👉 swipe izquierda → mostrar botón (queda fijo)
         content.classList.add("swiped");
         deleteBtnContainer.classList.add("visible");
       }
 
       if (diffX > 80) {
-        // 👉 Swipe derecha → cerrar este
+        // 👉 swipe derecha → cerrar botón
         content.classList.remove("swiped");
         deleteBtnContainer.classList.remove("visible");
       }
@@ -2966,27 +2956,12 @@ if (!checkNew) {
     if (deleteBtn) {
       deleteBtn.addEventListener("click", e => {
         e.stopPropagation();
-        eliminarComentario(comentario.dataset.id);
+        eliminarComentario(comentario.dataset.id); // aquí sí se elimina
       });
     }
   });
-
-  // 👉 Cierra cualquier comentario abierto al tocar fuera
-  document.addEventListener("click", e => {
-    if (!e.target.closest(".comments-overlay-container li.deletable")) {
-      cerrarOtrosComentarios();
-    }
-  });
-
-  function cerrarOtrosComentarios() {
-    document.querySelectorAll(".comment-content.swiped").forEach(c => {
-      c.classList.remove("swiped");
-    });
-    document.querySelectorAll(".delete-btn-container.visible").forEach(d => {
-      d.classList.remove("visible");
-    });
-  }
 }
+
 
 
 
@@ -3000,6 +2975,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
