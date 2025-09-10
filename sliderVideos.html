@@ -1656,9 +1656,7 @@ async function cargarComentarios(videoId, render = true, options = {}) {
 
 
 
-// Estado para rastrear comentarios deslizados
-let swipedComments = new Map(); // Map<commentId, boolean>
-
+// === Renderizar comentarios en el DOM ===
 function renderComentarios(videoId) {
   if (!videoId) return;
 
@@ -1671,19 +1669,14 @@ function renderComentarios(videoId) {
     return;
   }
 
-  // Guardar el estado de los comentarios deslizados antes de limpiar
-  const currentSwiped = new Map();
-  commentsList.querySelectorAll('.comment-content.swiped').forEach(comment => {
-    const li = comment.closest('li');
-    currentSwiped.set(`${li.dataset.correo}|${li.dataset.texto}`, true);
-  });
-
   commentsList.innerHTML = '';
 
+  // 🔥 FIX2: Reforzado para siempre mostrar mensaje si length === 0 exacto
   if (lista.length === 0) {
     commentsList.innerHTML = '<li>Sé el primero en comentar...</li>';
     commentCountValue.textContent = "0";
   } else {
+    // 🔥 FIX13: Invertir el orden de los comentarios para que el más reciente esté arriba
     const comentariosInvertidos = [...lista].reverse();
     comentariosInvertidos.forEach(c => {
       const li = document.createElement('li');
@@ -1697,12 +1690,9 @@ function renderComentarios(videoId) {
       li.dataset.correo = c.correo;
       li.dataset.texto = c.comentario;
 
-      // Restaurar estado de deslizamiento
-      const commentId = `${c.correo}|${c.comentario}`;
-      if (currentSwiped.has(commentId)) {
-        commentContent.classList.add('swiped');
+      if (normalizeText(c.correo) === normalizeText(usuarioCorreo)) {
         const deleteBtnContainer = document.createElement('div');
-        deleteBtnContainer.className = 'delete-btn-container visible';
+        deleteBtnContainer.className = 'delete-btn-container';
         const deleteBtn = document.createElement('div');
         deleteBtn.className = 'delete-btn';
         deleteBtn.textContent = 'Borrar';
@@ -1714,24 +1704,6 @@ function renderComentarios(videoId) {
           await eliminarComentario(videoId, c.comentario, c.correo);
           renderComentarios(videoId);
         });
-      }
-
-      if (normalizeText(c.correo) === normalizeText(usuarioCorreo)) {
-        if (!li.querySelector('.delete-btn-container')) {
-          const deleteBtnContainer = document.createElement('div');
-          deleteBtnContainer.className = 'delete-btn-container';
-          const deleteBtn = document.createElement('div');
-          deleteBtn.className = 'delete-btn';
-          deleteBtn.textContent = 'Borrar';
-          deleteBtnContainer.appendChild(deleteBtn);
-          li.appendChild(deleteBtnContainer);
-
-          deleteBtn.addEventListener('click', async (ev) => {
-            ev.stopPropagation();
-            await eliminarComentario(videoId, c.comentario, c.correo);
-            renderComentarios(videoId);
-          });
-        }
       }
 
       commentsList.appendChild(li);
@@ -1865,6 +1837,7 @@ async function initSyncComentarios() {
 }
 document.addEventListener('DOMContentLoaded', initSyncComentarios);
 
+// Verifica en el servidor si hubo cambios (con cache-buster)
 async function verificarComentariosVideos() {
   try {
     const res = await fetch(`${SCRIPT_URL}?accion=ultimaActualizacionComentarios&_=${Date.now()}`);
@@ -1873,41 +1846,23 @@ async function verificarComentariosVideos() {
     if (data.timestamp && data.timestamp !== ultimaActualizacionComentarios) {
       ultimaActualizacionComentarios = data.timestamp;
 
+      // 🔥 FIX2: Usar lastVideos para obtener TODOS los videoIds conocidos y recargarlos (sin render, background)
       const videoIds = lastVideos.map(v => v.id);
       for (const videoId of videoIds) {
-        // Cargar comentarios en caché sin renderizar
-        const res = await fetch(
-          `${SCRIPT_URL}?accion=listarComentarios&videoId=${encodeURIComponent(videoId)}&_=${Date.now()}`
-        );
-        const newData = await res.json();
-        const newComments = Array.isArray(newData.data)
-          ? newData.data.map(c => ({
-              autor: c[2] || "Anónimo",
-              comentario: c[1] || "",
-              fecha: c[4] ? new Date(c[4]).toLocaleString() : "",
-              correo: c[3] || ""
-            }))
-          : [];
+        await cargarComentarios(videoId, false, { force: true }); // No render, solo caché fresco
+      }
 
-        // Comparar con comentarios existentes
-        const currentComments = comentariosPorVideo[videoId] || [];
-        const areEqual = JSON.stringify(currentComments) === JSON.stringify(newComments);
-
-        if (!areEqual) {
-          comentariosPorVideo[videoId] = newComments;
-          comentariosCache[videoId] = newComments;
-          // Renderizar solo si es el video activo
-          const videoIdActivo = getActiveVideoId();
-          if (videoId === videoIdActivo) {
-            renderComentarios(videoId);
-          }
-        }
+      // Luego, render solo para el activo (con datos frescos)
+      const videoIdActivo = getActiveVideoId();
+      if (videoIdActivo) {
+        renderComentarios(videoIdActivo);
       }
     }
   } catch (err) {
     console.warn("No se pudo verificar comentarios:", err);
   }
 }
+
 
 
 
@@ -2965,12 +2920,11 @@ if (!checkNew) {
 
         
   function activarSwipeParaBorrar() {
-  const comentarios = document.querySelectorAll(".comentario-propio"); // tus comentarios
+  const comentarios = document.querySelectorAll(".comentario-propio");
 
   comentarios.forEach(comentario => {
     const content = comentario.querySelector(".comment-content");
     const deleteBtnContainer = comentario.querySelector(".delete-btn-container");
-    const deleteBtn = comentario.querySelector(".delete-btn");
 
     let startX = 0;
     let endX = 0;
@@ -2984,29 +2938,28 @@ if (!checkNew) {
     });
 
     comentario.addEventListener("touchend", () => {
-      const diffX = endX - startX;
-
-      if (startX - endX > 80) {
-        // 👉 swipe izquierda → mostrar botón (queda fijo)
+      if (startX - endX > 80) {  
+        // 👉 Mostrar el botón, no borrar todavía
         content.classList.add("swiped");
         deleteBtnContainer.classList.add("visible");
-      }
-
-      if (diffX > 80) {
-        // 👉 swipe derecha → cerrar botón
+      } else if (endX - startX > 80) {
+        // 👉 Si desliza hacia la derecha, se cierra
         content.classList.remove("swiped");
         deleteBtnContainer.classList.remove("visible");
       }
     });
 
+    // 👉 Cuando se toca el botón, ahí sí se elimina
+    const deleteBtn = comentario.querySelector(".delete-btn");
     if (deleteBtn) {
       deleteBtn.addEventListener("click", e => {
         e.stopPropagation();
-        eliminarComentario(comentario.dataset.id); // aquí sí se elimina
+        eliminarComentario(comentario.dataset.id);
       });
     }
   });
 }
+
 
 
 
@@ -3021,6 +2974,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
