@@ -33,7 +33,7 @@
             overflow: hidden;
         }
 
-  /* Botones flotantes */
+    /* Botones flotantes */
 .floating-buttons {
     position: fixed;
     bottom: 90px;
@@ -48,7 +48,9 @@
     height: 40px;
     border-radius: 50%;
     border: none;
-    background: transparent;
+    background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
     color: white;
     font-size: 24px;
     display: flex;
@@ -2918,9 +2920,12 @@ if (!checkNew) {
         
      
         function activarSwipeParaBorrar() {
-  const comentarios = document.querySelectorAll(".comentario-propio"); // clase para tus comentarios
+  const comentarios = document.querySelectorAll(".comments-overlay-container li.deletable");
 
   comentarios.forEach(comentario => {
+    const content = comentario.querySelector(".comment-content");
+    const deleteBtnContainer = comentario.querySelector(".delete-btn-container");
+
     let startX = 0;
     let endX = 0;
 
@@ -2933,13 +2938,25 @@ if (!checkNew) {
     });
 
     comentario.addEventListener("touchend", () => {
-      if (startX - endX > 80) {  // si desliza a la izquierda más de 80px
-        eliminarComentario(comentario.dataset.id); // usa el id del comentario
+      if (startX - endX > 80) {
+        // Mostrar botón: queda abierto
+        content.classList.add("swiped");
+        deleteBtnContainer.classList.add("visible");
+      } else if (endX - startX > 80) {
+        // Si desliza al otro lado, cerramos
+        content.classList.remove("swiped");
+        deleteBtnContainer.classList.remove("visible");
       }
+    });
+
+    // Eliminar al tocar el botón
+    const deleteBtn = comentario.querySelector(".delete-btn");
+    deleteBtn.addEventListener("click", e => {
+      e.stopPropagation();
+      eliminarComentario(comentario.dataset.id);
     });
   });
 }
-
 
 
 // === AUTO REFRESCO EN SEGUNDO PLANO ===
@@ -2951,6 +2968,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
