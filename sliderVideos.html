@@ -1509,75 +1509,6 @@ commentsOverlay.addEventListener('click', (e) => {
   isSwiping = false;
 });
 
-// === Swipe-to-delete en móviles ===
-commentsList.addEventListener('touchstart', (e) => {
-  const commentElement = e.target.closest('li');
-  if (!commentElement) return;
-  const commentData = commentElement.dataset;
-
-  if (normalizeText(commentData.correo) === normalizeText(usuarioCorreo)) {
-    startX = e.touches[0].clientX;
-    activeComment = commentElement;
-    activeComment.querySelector('.comment-content').style.transition = 'none';
-    isSwiping = false;
-  }
-});
-
-commentsList.addEventListener('touchmove', (e) => {
-  if (!activeComment) return;
-  const currentX = e.touches[0].clientX;
-  const diffX = currentX - startX;
-
-  if (Math.abs(diffX) > 10) isSwiping = true;
-
-  const commentContent = activeComment.querySelector('.comment-content');
-  const deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
-
-  if (diffX > 0) {
-    commentContent.style.transform = `translateX(${diffX}px)`;
-    if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(0)`;
-  } else {
-    commentContent.style.transform = `translateX(0)`;
-    if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
-  }
-});
-
-commentsList.addEventListener('touchend', (e) => {
-  if (!activeComment) return;
-  const swipeThreshold = 50;
-  const diffX = e.changedTouches[0].clientX - startX;
-
-  const commentContent = activeComment.querySelector('.comment-content');
-  let deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
-  commentContent.style.transition = 'transform 0.3s ease';
-
-  if (diffX > swipeThreshold) {
-    commentContent.style.transform = `translateX(100px)`;
-    if (!deleteBtnContainer) {
-      deleteBtnContainer = document.createElement('div');
-      deleteBtnContainer.className = 'delete-btn-container';
-      const deleteBtn = document.createElement('div');
-      deleteBtn.className = 'delete-btn';
-      deleteBtn.textContent = 'Borrar';
-      deleteBtnContainer.appendChild(deleteBtn);
-      activeComment.insertBefore(deleteBtnContainer, commentContent);
-      deleteBtnContainer.style.transform = `translateX(0)`;
-
-      deleteBtn.addEventListener('click', (ev) => {
-        ev.stopPropagation();
-        const commentData = activeComment.dataset;
-        eliminarComentario(getActiveVideoId(), commentData.texto, commentData.correo);
-      });
-    } else {
-      deleteBtnContainer.style.transform = `translateX(0)`;
-    }
-  } else {
-    commentContent.style.transform = `translateX(0)`;
-    if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
-  }
-  activeComment = null;
-  startX = 0;
-});
 
 // === Obtener el ID del video activo ===
 function getActiveVideoId() {
@@ -2918,7 +2849,94 @@ if (!checkNew) {
 
 
         
-        
+        function activarSwipeParaBorrar() {
+  const commentsList = document.getElementById("comments-list");
+  if (!commentsList) return;
+
+  let activeComment = null;
+  let startX = 0;
+
+  commentsList.addEventListener("touchstart", (e) => {
+    const commentElement = e.target.closest(".comentario-propio"); // solo propios
+    if (!commentElement) return;
+
+    activeComment = commentElement;
+    startX = e.touches[0].clientX;
+
+    const commentContent = activeComment.querySelector(".comment-content");
+    if (commentContent) {
+      commentContent.style.transition = "none";
+    }
+  });
+
+  commentsList.addEventListener("touchmove", (e) => {
+    if (!activeComment) return;
+
+    const currentX = e.touches[0].clientX;
+    const diffX = currentX - startX;
+
+    const commentContent = activeComment.querySelector(".comment-content");
+    const deleteBtnContainer = activeComment.querySelector(".delete-btn-container");
+    if (!commentContent) return;
+
+    if (diffX > 0) {
+      commentContent.style.transform = `translateX(${diffX}px)`;
+      if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(0)`;
+    } else {
+      commentContent.style.transform = `translateX(0)`;
+      if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
+    }
+  });
+
+  commentsList.addEventListener("touchend", (e) => {
+    if (!activeComment) return;
+
+    const diffX = e.changedTouches[0].clientX - startX;
+    const swipeThreshold = 50;
+
+    const commentContent = activeComment.querySelector(".comment-content");
+    if (!commentContent) {
+      activeComment = null;
+      return;
+    }
+
+    let deleteBtnContainer = activeComment.querySelector(".delete-btn-container");
+    commentContent.style.transition = "transform 0.3s ease";
+
+    if (diffX > swipeThreshold) {
+      // 👉 Mantener el botón visible hasta interacción
+      commentContent.style.transform = `translateX(100px)`;
+
+      if (!deleteBtnContainer) {
+        deleteBtnContainer = document.createElement("div");
+        deleteBtnContainer.className = "delete-btn-container";
+        const deleteBtn = document.createElement("div");
+        deleteBtn.className = "delete-btn";
+        deleteBtn.textContent = "Borrar";
+        deleteBtnContainer.appendChild(deleteBtn);
+        activeComment.insertBefore(deleteBtnContainer, commentContent);
+        deleteBtnContainer.style.transform = `translateX(0)`;
+
+        deleteBtn.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          const commentData = activeComment.dataset;
+          eliminarComentario(getActiveVideoId(), commentData.texto, commentData.correo);
+        });
+      } else {
+        deleteBtnContainer.style.transform = `translateX(0)`;
+      }
+
+      // ❌ No reseteamos activeComment aquí → el botón queda fijo
+    } else {
+      // Si no llega al umbral, vuelve a su lugar
+      commentContent.style.transform = `translateX(0)`;
+      if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
+      activeComment = null;
+    }
+
+    startX = 0;
+  });
+}
 
 
 // === AUTO REFRESCO EN SEGUNDO PLANO ===
@@ -2930,7 +2948,6 @@ setInterval(() => {
     </script>
 </body>
 </html>
-
 
 
 
