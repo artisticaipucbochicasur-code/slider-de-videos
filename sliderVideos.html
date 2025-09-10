@@ -1510,9 +1510,7 @@ commentsOverlay.addEventListener('click', (e) => {
 });
 
 // === Swipe-to-delete en móviles ===
-let activeComment = null;
-let startX = 0;
-let isSwiping = false;
+
 
 commentsList.addEventListener('touchstart', (e) => {
   const commentElement = e.target.closest('li.comentario-propio'); // solo comentarios propios
@@ -2938,6 +2936,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
