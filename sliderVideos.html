@@ -2918,12 +2918,26 @@ if (!checkNew) {
 
 
         
-        function activarSwipeParaBorrar() {
+function activarSwipeParaBorrar() {
   const comentarios = document.querySelectorAll(".comentario-propio"); // clase para tus comentarios
 
   comentarios.forEach(comentario => {
     let startX = 0;
     let endX = 0;
+    let deleteBtn = comentario.querySelector(".btn-eliminar");
+
+    // si no existe el botón, lo creamos
+    if (!deleteBtn) {
+      deleteBtn = document.createElement("button");
+      deleteBtn.textContent = "Eliminar";
+      deleteBtn.className = "btn-eliminar";
+      deleteBtn.style.display = "none"; // oculto por defecto
+      deleteBtn.onclick = (e) => {
+        e.stopPropagation();
+        eliminarComentario(comentario.dataset.id);
+      };
+      comentario.appendChild(deleteBtn);
+    }
 
     comentario.addEventListener("touchstart", e => {
       startX = e.touches[0].clientX;
@@ -2934,12 +2948,20 @@ if (!checkNew) {
     });
 
     comentario.addEventListener("touchend", () => {
-      if (startX - endX > 80) {  // si desliza a la izquierda más de 80px
-        eliminarComentario(comentario.dataset.id); // usa el id del comentario
+      if (startX - endX > 80) {  
+        // mostrar botón en vez de borrar
+        deleteBtn.style.display = "inline-block";
+        comentario.classList.add("mostrar-eliminar"); // opcional, para animar con CSS
+      } else {
+        // si no deslizó lo suficiente, ocultamos el botón
+        deleteBtn.style.display = "none";
+        comentario.classList.remove("mostrar-eliminar");
       }
     });
   });
 }
+
+
 
 
 // === AUTO REFRESCO EN SEGUNDO PLANO ===
@@ -2951,6 +2973,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
