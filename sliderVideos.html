@@ -1656,7 +1656,6 @@ async function cargarComentarios(videoId, render = true, options = {}) {
 
 
 
-// === Renderizar comentarios en el DOM ===
 function renderComentarios(videoId) {
   if (!videoId) return;
 
@@ -1667,6 +1666,16 @@ function renderComentarios(videoId) {
   if (!commentsList || !commentCountValue) {
     console.error("❌ Error: Contenedor de comentarios o contador no encontrado en el DOM");
     return;
+  }
+
+  // --- Guardar el texto y correo del comentario swiped actual ---
+  let swipedData = null;
+  const swipedComment = document.querySelector('li.swiped');
+  if (swipedComment) {
+    swipedData = {
+      texto: swipedComment.dataset.texto,
+      correo: swipedComment.dataset.correo
+    };
   }
 
   commentsList.innerHTML = '';
@@ -1704,6 +1713,22 @@ function renderComentarios(videoId) {
           await eliminarComentario(videoId, c.comentario, c.correo);
           renderComentarios(videoId);
         });
+      }
+
+      // --- Si este es el comentario swiped, restaura el swipe ---
+      if (
+        swipedData &&
+        normalizeText(c.correo) === normalizeText(swipedData.correo) &&
+        c.comentario === swipedData.texto
+      ) {
+        li.classList.add('swiped');
+        commentContent.classList.add('swiped');
+        commentContent.style.transform = `translateX(100px)`;
+        const deleteBtnContainer = li.querySelector('.delete-btn-container');
+        if (deleteBtnContainer) {
+          deleteBtnContainer.classList.add('visible');
+          deleteBtnContainer.style.transform = `translateX(0)`;
+        }
       }
 
       commentsList.appendChild(li);
@@ -3036,6 +3061,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
