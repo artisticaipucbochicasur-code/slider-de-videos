@@ -2849,10 +2849,12 @@ if (!checkNew) {
 
 
 
-        
       function activarSwipeParaBorrar() {
   // === Swipe-to-delete en móviles ===
   commentsList.addEventListener('touchstart', (e) => {
+    // ⚠️ Si ya hay un comentario con botón abierto, no lo sobreescribas
+    if (activeComment) return;
+
     const commentElement = e.target.closest('li');
     if (!commentElement) return;
     const commentData = commentElement.dataset;
@@ -2896,6 +2898,8 @@ if (!checkNew) {
     console.log("TOUCHEND diffX:", diffX, "activeComment:", activeComment);
 
     if (diffX > swipeThreshold) {
+      console.log("➡️ Manteniendo botón visible en", activeComment);
+
       // 👉 Mantener visible el botón
       commentContent.style.transform = `translateX(100px)`;
       if (!deleteBtnContainer) {
@@ -2918,8 +2922,9 @@ if (!checkNew) {
       }
       // ❌ No reseteamos activeComment aquí
     } else {
+      console.log("⬅️ Swipe insuficiente, ocultando en", activeComment);
+
       // 👉 Swipe insuficiente o hacia la izquierda → ocultar botón
-      console.log("OCULTANDO botón");
       commentContent.style.transform = `translateX(0)`;
       if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
 
@@ -2940,6 +2945,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
