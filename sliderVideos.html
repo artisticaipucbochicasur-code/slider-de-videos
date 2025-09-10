@@ -1509,6 +1509,72 @@ commentsOverlay.addEventListener('click', (e) => {
   isSwiping = false;
 });
 
+// === Swipe-to-delete en móviles (solo comentarios propios) ===
+commentsList.addEventListener('touchstart', (e) => {
+  const commentElement = e.target.closest('li.comentario-propio'); // 🔹 Solo los tuyos
+  if (!commentElement) return;
+
+  startX = e.touches[0].clientX;
+  activeComment = commentElement;
+  activeComment.querySelector('.comment-content').style.transition = 'none';
+  isSwiping = false;
+});
+
+commentsList.addEventListener('touchmove', (e) => {
+  if (!activeComment) return;
+  const currentX = e.touches[0].clientX;
+  const diffX = currentX - startX;
+
+  if (Math.abs(diffX) > 10) isSwiping = true;
+
+  const commentContent = activeComment.querySelector('.comment-content');
+  const deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
+
+  if (diffX > 0) {
+    commentContent.style.transform = `translateX(${diffX}px)`;
+    if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(0)`;
+  } else {
+    commentContent.style.transform = `translateX(0)`;
+    if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
+  }
+});
+
+commentsList.addEventListener('touchend', (e) => {
+  if (!activeComment) return;
+  const swipeThreshold = 50;
+  const diffX = e.changedTouches[0].clientX - startX;
+
+  const commentContent = activeComment.querySelector('.comment-content');
+  let deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
+  commentContent.style.transition = 'transform 0.3s ease';
+
+  if (diffX > swipeThreshold) {
+    commentContent.style.transform = `translateX(100px)`;
+    if (!deleteBtnContainer) {
+      deleteBtnContainer = document.createElement('div');
+      deleteBtnContainer.className = 'delete-btn-container';
+      const deleteBtn = document.createElement('div');
+      deleteBtn.className = 'delete-btn';
+      deleteBtn.textContent = 'Borrar';
+      deleteBtnContainer.appendChild(deleteBtn);
+      activeComment.insertBefore(deleteBtnContainer, commentContent);
+      deleteBtnContainer.style.transform = `translateX(0)`;
+
+      deleteBtn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const commentData = activeComment.dataset;
+        eliminarComentario(getActiveVideoId(), commentData.texto, commentData.correo);
+      });
+    } else {
+      deleteBtnContainer.style.transform = `translateX(0)`;
+    }
+  } else {
+    commentContent.style.transform = `translateX(0)`;
+    if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
+  }
+  activeComment = null;
+  startX = 0;
+});
 
 // === Obtener el ID del video activo ===
 function getActiveVideoId() {
@@ -2733,112 +2799,106 @@ async function cargarVideos(checkNew = false) {
     lastVideos = newVideos;
 
     // ✅ Inicializamos Swiper
-  // Dentro de cargarVideos, reemplaza el bloque de inicialización de Swiper con este:
-// Reemplaza solo el bloque de inicialización de Swiper dentro de cargarVideos
-// Reemplaza solo el bloque de inicialización de Swiper dentro de cargarVideos
-if (!checkNew) {
-    if (swiper) swiper.destroy(true, true);
-    swiper = new Swiper(".swiper", {
+    if (!checkNew) {
+      if (swiper) swiper.destroy(true, true);
+      swiper = new Swiper(".swiper", {
         loop: true,
         direction: "vertical",
         slidesPerView: 1,
         spaceBetween: 10,
         pagination: false,
         on: {
-            init() {
-                updateFixedTitle(this);
-                activarSwipeParaBorrar();
-                const videoId = getActiveVideoId();
-                if (videoId) renderComentarios(videoId);
-                console.log("✅ Swiper inicializado");
-                // Inicializar el primer video con reproducción automática
-                const activeCard = this.slides[this.activeIndex].querySelector('.player-card');
-                if (activeCard && !activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
-                    mountIframe(activeCard, true);
-                }
-            },
-            slideChange() {
-                cleanupIframesExceptActiveAndAdjacent();
-                updateFixedTitle(this);
-                activarSwipeParaBorrar();
-                const videoId = getActiveVideoId();
-                if (videoId) {
-                    if (!comentariosPorVideo[videoId]) {
-                        cargarComentarios(videoId, true);
-                    } else {
-                        renderComentarios(videoId);
-                    }
-                }
-            },
-            slideChangeTransitionEnd() {
-                updateFixedTitle(this);
-                const activeIndex = this.activeIndex;
-                const prevIndex = (activeIndex - 1 + this.slides.length) % this.slides.length;
-                const nextIndex = (activeIndex + 1) % this.slides.length;
-
-                // Manejar active
-                const activeCard = this.slides[activeIndex].querySelector('.player-card');
-                if (activeCard) {
-                    const src = activeCard.dataset.embed;
-                    if (!activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
-                        mountIframe(activeCard, true); // Montar con reproducción automática
-                    } else {
-                        const player = players[src];
-                        if (player) {
-                            // Asegurar que el video activo se reproduzca
-                            if (typeof player.playVideo === 'function') {
-                                player.playVideo();
-                            } else if (typeof player.play === 'function') {
-                                player.play().catch(e => console.warn("Error al reproducir:", e));
-                            }
-                            // Actualizar estado del botón central
-                            const centerPlayPauseBtn = activeCard.querySelector('.center-play-pause-btn');
-                            if (centerPlayPauseBtn) {
-                                centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                                centerPlayPauseBtn.style.opacity = 0;
-                            }
-                        }
-                    }
-                }
-
-                // Precargar prev
-                const prevCard = this.slides[prevIndex].querySelector('.player-card');
-                if (prevCard && !prevCard.querySelector("iframe") && !prevCard.querySelector("video")) {
-                    mountIframe(prevCard, false); // Precargar sin reproducir
-                } else if (prevCard) {
-                    const centerPlayPauseBtn = prevCard.querySelector('.center-play-pause-btn');
-                    if (centerPlayPauseBtn) {
-                        centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                        centerPlayPauseBtn.style.opacity = 1;
-                    }
-                }
-
-                // Precargar next
-                const nextCard = this.slides[nextIndex].querySelector('.player-card');
-                if (nextCard && !nextCard.querySelector("iframe") && !nextCard.querySelector("video")) {
-                    mountIframe(nextCard, false); // Precargar sin reproducir
-                } else if (nextCard) {
-                    const centerPlayPauseBtn = nextCard.querySelector('.center-play-pause-btn');
-                    if (centerPlayPauseBtn) {
-                        centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                        centerPlayPauseBtn.style.opacity = 1;
-                    }
-                }
-
-                const videoId = getActiveVideoId();
-                if (videoId && comentariosPorVideo[videoId]) {
-                    renderComentarios(videoId);
-                }
+          init() {
+            updateFixedTitle(this);
+            const videoId = getActiveVideoId();
+            if (videoId) renderComentarios(videoId);
+            console.log("✅ Swiper inicializado");
+            // Inicializar el primer video con reproducción automática
+            const activeCard = this.slides[this.activeIndex].querySelector('.player-card');
+            if (activeCard && !activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
+              mountIframe(activeCard, true);
             }
-        },
-    });
+          },
+          slideChange() {
+            cleanupIframesExceptActiveAndAdjacent();
+            updateFixedTitle(this);
+            const videoId = getActiveVideoId();
+            if (videoId) {
+              if (!comentariosPorVideo[videoId]) {
+                cargarComentarios(videoId, true);
+              } else {
+                renderComentarios(videoId);
+              }
+            }
+          },
+          slideChangeTransitionEnd() {
+            updateFixedTitle(this);
+            const activeIndex = this.activeIndex;
+            const prevIndex = (activeIndex - 1 + this.slides.length) % this.slides.length;
+            const nextIndex = (activeIndex + 1) % this.slides.length;
 
-    cleanupIframesExceptActiveAndAdjacent();
-    updateFixedTitle(swiper);
-    activarSwipeParaBorrar();
-    const videoId = getActiveVideoId();
-    if (videoId) renderComentarios(videoId);
-}
+            // Manejar active
+            const activeCard = this.slides[activeIndex].querySelector('.player-card');
+            if (activeCard) {
+              const src = activeCard.dataset.embed;
+              if (!activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
+                mountIframe(activeCard, true); // Montar con reproducción automática
+              } else {
+                const player = players[src];
+                if (player) {
+                  // Asegurar que el video activo se reproduzca
+                  if (typeof player.playVideo === 'function') {
+                    player.playVideo();
+                  } else if (typeof player.play === 'function') {
+                    player.play().catch(e => console.warn("Error al reproducir:", e));
+                  }
+                  // Actualizar estado del botón central
+                  const centerPlayPauseBtn = activeCard.querySelector('.center-play-pause-btn');
+                  if (centerPlayPauseBtn) {
+                    centerPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    centerPlayPauseBtn.style.opacity = 0;
+                  }
+                }
+              }
+            }
+
+            // Precargar prev
+            const prevCard = this.slides[prevIndex].querySelector('.player-card');
+            if (prevCard && !prevCard.querySelector("iframe") && !prevCard.querySelector("video")) {
+              mountIframe(prevCard, false); // Precargar sin reproducir
+            } else if (prevCard) {
+              const centerPlayPauseBtn = prevCard.querySelector('.center-play-pause-btn');
+              if (centerPlayPauseBtn) {
+                centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                centerPlayPauseBtn.style.opacity = 1;
+              }
+            }
+
+            // Precargar next
+            const nextCard = this.slides[nextIndex].querySelector('.player-card');
+            if (nextCard && !nextCard.querySelector("iframe") && !nextCard.querySelector("video")) {
+              mountIframe(nextCard, false); // Precargar sin reproducir
+            } else if (nextCard) {
+              const centerPlayPauseBtn = nextCard.querySelector('.center-play-pause-btn');
+              if (centerPlayPauseBtn) {
+                centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                centerPlayPauseBtn.style.opacity = 1;
+              }
+            }
+
+            const videoId = getActiveVideoId();
+            if (videoId && comentariosPorVideo[videoId]) {
+              renderComentarios(videoId);
+            }
+          }
+        },
+      });
+
+      cleanupIframesExceptActiveAndAdjacent();
+      updateFixedTitle(swiper);
+      const videoId = getActiveVideoId();
+      if (videoId) renderComentarios(videoId);
+    }
   } catch (e) {
     console.error("❌ Error cargando videos:", e);
   } finally {
@@ -2848,96 +2908,8 @@ if (!checkNew) {
 
 
 
+
         
-        function activarSwipeParaBorrar() {
-  const commentsList = document.getElementById("comments-list");
-  if (!commentsList) return;
-
-  let activeComment = null;
-  let startX = 0;
-
-  commentsList.addEventListener("touchstart", (e) => {
-    const commentElement = e.target.closest(".comentario-propio"); // solo propios
-    if (!commentElement) return;
-
-    activeComment = commentElement;
-    startX = e.touches[0].clientX;
-
-    const commentContent = activeComment.querySelector(".comment-content");
-    if (commentContent) {
-      commentContent.style.transition = "none";
-    }
-  });
-
-  commentsList.addEventListener("touchmove", (e) => {
-    if (!activeComment) return;
-
-    const currentX = e.touches[0].clientX;
-    const diffX = currentX - startX;
-
-    const commentContent = activeComment.querySelector(".comment-content");
-    const deleteBtnContainer = activeComment.querySelector(".delete-btn-container");
-    if (!commentContent) return;
-
-    if (diffX > 0) {
-      commentContent.style.transform = `translateX(${diffX}px)`;
-      if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(0)`;
-    } else {
-      commentContent.style.transform = `translateX(0)`;
-      if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
-    }
-  });
-
-  commentsList.addEventListener("touchend", (e) => {
-    if (!activeComment) return;
-
-    const diffX = e.changedTouches[0].clientX - startX;
-    const swipeThreshold = 50;
-
-    const commentContent = activeComment.querySelector(".comment-content");
-    if (!commentContent) {
-      activeComment = null;
-      return;
-    }
-
-    let deleteBtnContainer = activeComment.querySelector(".delete-btn-container");
-    commentContent.style.transition = "transform 0.3s ease";
-
-    if (diffX > swipeThreshold) {
-      // 👉 Mantener el botón visible hasta interacción
-      commentContent.style.transform = `translateX(100px)`;
-
-      if (!deleteBtnContainer) {
-        deleteBtnContainer = document.createElement("div");
-        deleteBtnContainer.className = "delete-btn-container";
-        const deleteBtn = document.createElement("div");
-        deleteBtn.className = "delete-btn";
-        deleteBtn.textContent = "Borrar";
-        deleteBtnContainer.appendChild(deleteBtn);
-        activeComment.insertBefore(deleteBtnContainer, commentContent);
-        deleteBtnContainer.style.transform = `translateX(0)`;
-
-        deleteBtn.addEventListener("click", (ev) => {
-          ev.stopPropagation();
-          const commentData = activeComment.dataset;
-          eliminarComentario(getActiveVideoId(), commentData.texto, commentData.correo);
-        });
-      } else {
-        deleteBtnContainer.style.transform = `translateX(0)`;
-      }
-
-      // ❌ No reseteamos activeComment aquí → el botón queda fijo
-    } else {
-      // Si no llega al umbral, vuelve a su lugar
-      commentContent.style.transform = `translateX(0)`;
-      if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
-      activeComment = null;
-    }
-
-    startX = 0;
-  });
-}
-
 
 // === AUTO REFRESCO EN SEGUNDO PLANO ===
 setInterval(() => {
