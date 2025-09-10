@@ -606,17 +606,19 @@
         background: transparent;
     }
 
-  /* ✅ Nuevo diseño: óvalo completo */
+/* ✅ Nuevo diseño: óvalo translúcido */
 .comment-input-wrapper {
   display: flex;
   align-items: center;
-  background: transparent;
-  border: 1px solid white;
+  background: rgba(255, 255, 255, 0.2); /* 👈 blanco transparente */
+  border: 1.5px solid rgba(255, 255, 255, 0.4); /* 👈 borde translúcido */
   border-radius: 25px;   /* ovalado completo */
-  width: 95%;            /* 👈 solo ocupa el 80% */
+  width: 95%;            /* 👈 ancho controlado */
   margin: 0 auto;        /* 👈 centrado */
   padding: 4px 8px;      /* 👈 menos alto */
+  backdrop-filter: blur(6px); /* 👈 efecto vidrio esmerilado */
 }
+
 
 
 .comment-input-wrapper input {
@@ -3029,6 +3031,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
