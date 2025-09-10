@@ -2918,43 +2918,51 @@ if (!checkNew) {
 
 
         
-     
-        function activarSwipeParaBorrar() {
+     function activarSwipeParaBorrar() {
   const comentarios = document.querySelectorAll(".comments-overlay-container li.deletable");
 
   comentarios.forEach(comentario => {
     const content = comentario.querySelector(".comment-content");
     const deleteBtnContainer = comentario.querySelector(".delete-btn-container");
+    const deleteBtn = comentario.querySelector(".delete-btn");
 
     let startX = 0;
     let endX = 0;
+    let isSwiping = false;
 
     comentario.addEventListener("touchstart", e => {
+      // 👉 Solo activar si tocamos directamente el contenido del comentario
+      if (!e.target.closest(".comment-content")) return;
       startX = e.touches[0].clientX;
+      isSwiping = true;
     });
 
     comentario.addEventListener("touchmove", e => {
+      if (!isSwiping) return;
       endX = e.touches[0].clientX;
     });
 
     comentario.addEventListener("touchend", () => {
+      if (!isSwiping) return;
+      isSwiping = false;
+
       if (startX - endX > 80) {
-        // Mostrar botón: queda abierto
+        // 👉 Mostrar botón
         content.classList.add("swiped");
         deleteBtnContainer.classList.add("visible");
       } else if (endX - startX > 80) {
-        // Si desliza al otro lado, cerramos
+        // 👉 Ocultar botón
         content.classList.remove("swiped");
         deleteBtnContainer.classList.remove("visible");
       }
     });
 
-    // Eliminar al tocar el botón
-    const deleteBtn = comentario.querySelector(".delete-btn");
-    deleteBtn.addEventListener("click", e => {
-      e.stopPropagation();
-      eliminarComentario(comentario.dataset.id);
-    });
+    if (deleteBtn) {
+      deleteBtn.addEventListener("click", e => {
+        e.stopPropagation();
+        eliminarComentario(comentario.dataset.id);
+      });
+    }
   });
 }
 
@@ -2968,6 +2976,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
