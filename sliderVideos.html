@@ -1738,6 +1738,7 @@ function renderComentarios(videoId) {
   }
 
   console.log(`✅ Renderizados ${lista.length} comentarios para video ${videoId} en orden inverso`);
+    if (window.restoreSwipeAfterRender) window.restoreSwipeAfterRender();
 }
 
 // === Enviar un nuevo comentario ===
@@ -3097,6 +3098,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
