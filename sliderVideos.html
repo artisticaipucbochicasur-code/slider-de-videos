@@ -2918,28 +2918,7 @@ if (!checkNew) {
 
 
         
-        function activarSwipeParaBorrar() {
-  const comentarios = document.querySelectorAll(".comentario-propio"); // clase para tus comentarios
-
-  comentarios.forEach(comentario => {
-    let startX = 0;
-    let endX = 0;
-
-    comentario.addEventListener("touchstart", e => {
-      startX = e.touches[0].clientX;
-    });
-
-    comentario.addEventListener("touchmove", e => {
-      endX = e.touches[0].clientX;
-    });
-
-    comentario.addEventListener("touchend", () => {
-      if (startX - endX > 80) {  // si desliza a la izquierda más de 80px
-        eliminarComentario(comentario.dataset.id); // usa el id del comentario
-      }
-    });
-  });
-}
+        
 
 
 // === AUTO REFRESCO EN SEGUNDO PLANO ===
@@ -2951,6 +2930,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
