@@ -1515,14 +1515,14 @@ commentsList.addEventListener('touchstart', (e) => {
   if (!commentElement) return;
   const commentData = commentElement.dataset;
 
-  // 🔹 Solo permitir swipe en comentarios propios
-  if (commentElement.classList.contains("comentario-propio")) {
+  if (normalizeText(commentData.correo) === normalizeText(usuarioCorreo)) {
     startX = e.touches[0].clientX;
     activeComment = commentElement;
     activeComment.querySelector('.comment-content').style.transition = 'none';
     isSwiping = false;
   }
 });
+
 
 
 commentsList.addEventListener('touchmove', (e) => {
@@ -2927,10 +2927,7 @@ if (!checkNew) {
     let startX = 0;
     let endX = 0;
 
-    comentario.addEventListener("touchstart", e => {
-      startX = e.touches[0].clientX;
-    });
-
+   
     comentario.addEventListener("touchmove", e => {
       endX = e.touches[0].clientX;
     });
@@ -2953,6 +2950,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
