@@ -2918,7 +2918,7 @@ if (!checkNew) {
 
 
         
-    function activarSwipeParaBorrar() {
+   function activarSwipeParaBorrar() {
   const comentarios = document.querySelectorAll(".comments-overlay-container li.deletable");
 
   comentarios.forEach(comentario => {
@@ -2931,8 +2931,9 @@ if (!checkNew) {
     let isSwiping = false;
 
     comentario.addEventListener("touchstart", e => {
-      // 👉 Solo si tocas el contenido del comentario (no el input, no el botón enviar)
-      if (!e.target.closest(".comment-content")) return;
+      // 👉 Ignoramos si el usuario toca el input o el área de escribir comentarios
+      if (e.target.closest(".comment-input-container")) return;
+
       startX = e.touches[0].clientX;
       isSwiping = true;
     });
@@ -2948,21 +2949,15 @@ if (!checkNew) {
 
       const diffX = endX - startX;
 
-      // 👉 Swipe a la izquierda: mostrar botón y cerrar otros abiertos
       if (startX - endX > 80) {
-        document.querySelectorAll(".comment-content.swiped").forEach(c => {
-          c.classList.remove("swiped");
-        });
-        document.querySelectorAll(".delete-btn-container.visible").forEach(d => {
-          d.classList.remove("visible");
-        });
-
+        // 👉 Swipe izquierda → mostrar botón
+        cerrarOtrosComentarios(); // cierra si había otro abierto
         content.classList.add("swiped");
         deleteBtnContainer.classList.add("visible");
       }
 
-      // 👉 Swipe a la derecha: cerrar botón de este comentario
       if (diffX > 80) {
+        // 👉 Swipe derecha → cerrar este
         content.classList.remove("swiped");
         deleteBtnContainer.classList.remove("visible");
       }
@@ -2975,7 +2970,24 @@ if (!checkNew) {
       });
     }
   });
+
+  // 👉 Cierra cualquier comentario abierto al tocar fuera
+  document.addEventListener("click", e => {
+    if (!e.target.closest(".comments-overlay-container li.deletable")) {
+      cerrarOtrosComentarios();
+    }
+  });
+
+  function cerrarOtrosComentarios() {
+    document.querySelectorAll(".comment-content.swiped").forEach(c => {
+      c.classList.remove("swiped");
+    });
+    document.querySelectorAll(".delete-btn-container.visible").forEach(d => {
+      d.classList.remove("visible");
+    });
+  }
 }
+
 
 
 
@@ -2988,6 +3000,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
