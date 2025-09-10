@@ -1633,29 +1633,19 @@ async function cargarComentarios(videoId, render = true, options = {}) {
     );
     const data = await res.json();
 
-    const nuevosComentarios = Array.isArray(data.data)
+    comentariosPorVideo[videoId] = Array.isArray(data.data)
       ? data.data.map(c => ({
           autor: c[2] || "Anónimo",
           comentario: c[1] || "",
+          // 🔹 Formatear fecha siempre a local string
           fecha: c[4] ? new Date(c[4]).toLocaleString() : "",
           correo: c[3] || ""
         }))
       : [];
 
-    // 🔍 Comparar antes de sobrescribir
-    const prev = JSON.stringify(comentariosPorVideo[videoId] || []);
-    const curr = JSON.stringify(nuevosComentarios);
+    comentariosCache[videoId] = comentariosPorVideo[videoId];
 
-    comentariosPorVideo[videoId] = nuevosComentarios;
-    comentariosCache[videoId] = nuevosComentarios;
-
-    // Solo renderizar si realmente hay cambios
-    if (render && prev !== curr) {
-      console.log(`🔄 Cambios detectados en video ${videoId} → re-render`);
-      renderComentarios(videoId);
-    } else {
-      console.log(`✅ Sin cambios en video ${videoId} → no re-renderizo`);
-    }
+    if (render) renderComentarios(videoId);
   } catch (e) {
     console.error("Error cargando comentarios:", e);
     comentariosPorVideo[videoId] = [];
@@ -1848,7 +1838,6 @@ async function initSyncComentarios() {
 document.addEventListener('DOMContentLoaded', initSyncComentarios);
 
 // Verifica en el servidor si hubo cambios (con cache-buster)
-// 🔄 Verifica en el servidor si hubo cambios (con cache-buster)
 async function verificarComentariosVideos() {
   try {
     const res = await fetch(`${SCRIPT_URL}?accion=ultimaActualizacionComentarios&_=${Date.now()}`);
@@ -1857,23 +1846,22 @@ async function verificarComentariosVideos() {
     if (data.timestamp && data.timestamp !== ultimaActualizacionComentarios) {
       ultimaActualizacionComentarios = data.timestamp;
 
-      // 🔥 Recargar todos los videos en background (sin render)
+      // 🔥 FIX2: Usar lastVideos para obtener TODOS los videoIds conocidos y recargarlos (sin render, background)
       const videoIds = lastVideos.map(v => v.id);
       for (const videoId of videoIds) {
-        await cargarComentarios(videoId, false, { force: true });
+        await cargarComentarios(videoId, false, { force: true }); // No render, solo caché fresco
       }
 
-      // 👉 Renderizar solo el activo, y solo si cambió
+      // Luego, render solo para el activo (con datos frescos)
       const videoIdActivo = getActiveVideoId();
       if (videoIdActivo) {
-        await cargarComentarios(videoIdActivo, true, { force: true });
+        renderComentarios(videoIdActivo);
       }
     }
   } catch (err) {
     console.warn("No se pudo verificar comentarios:", err);
   }
 }
-
 
 
 
@@ -2963,7 +2951,6 @@ setInterval(() => {
     </script>
 </body>
 </html>
-
 
 
 
