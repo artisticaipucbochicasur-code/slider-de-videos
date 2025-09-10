@@ -1553,6 +1553,7 @@ commentsList.addEventListener('touchend', (e) => {
 
   if (diffX > swipeThreshold) {
     commentContent.style.transform = `translateX(100px)`;
+
     if (!deleteBtnContainer) {
       deleteBtnContainer = document.createElement('div');
       deleteBtnContainer.className = 'delete-btn-container';
@@ -1571,13 +1572,18 @@ commentsList.addEventListener('touchend', (e) => {
     } else {
       deleteBtnContainer.style.transform = `translateX(0)`;
     }
+
+    // 🚨 Importante: no limpiar activeComment aquí, así el botón queda activo
+    // activeComment = null;
   } else {
     commentContent.style.transform = `translateX(0)`;
     if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
+    activeComment = null; // limpiar solo si no se pasó el umbral
   }
-  activeComment = null;
+
   startX = 0;
 });
+
 
 // === Obtener el ID del video activo ===
 function getActiveVideoId() {
@@ -2919,47 +2925,6 @@ if (!checkNew) {
 
 
         
-  function activarSwipeParaBorrar() {
-  const comentarios = document.querySelectorAll(".comentario-propio");
-
-  comentarios.forEach(comentario => {
-    const content = comentario.querySelector(".comment-content");
-    const deleteBtnContainer = comentario.querySelector(".delete-btn-container");
-
-    let startX = 0;
-    let endX = 0;
-
-    comentario.addEventListener("touchstart", e => {
-      startX = e.touches[0].clientX;
-    });
-
-    comentario.addEventListener("touchmove", e => {
-      endX = e.touches[0].clientX;
-    });
-
-    comentario.addEventListener("touchend", () => {
-      if (startX - endX > 80) {  
-        // 👉 Mostrar el botón, no borrar todavía
-        content.classList.add("swiped");
-        deleteBtnContainer.classList.add("visible");
-      } else if (endX - startX > 80) {
-        // 👉 Si desliza hacia la derecha, se cierra
-        content.classList.remove("swiped");
-        deleteBtnContainer.classList.remove("visible");
-      }
-    });
-
-    // 👉 Cuando se toca el botón, ahí sí se elimina
-    const deleteBtn = comentario.querySelector(".delete-btn");
-    if (deleteBtn) {
-      deleteBtn.addEventListener("click", e => {
-        e.stopPropagation();
-        eliminarComentario(comentario.dataset.id);
-      });
-    }
-  });
-}
-
 
 
 
@@ -2974,6 +2939,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
