@@ -509,20 +509,20 @@
         user-select: none;
     }
     
-    /* El comentario se desliza */
-    .comment-content {
-      width: 100%;
-      padding-left: 10px;
-      padding-right: 10px;
-      box-sizing: border-box;
-      transition: transform 0.3s ease;
-      position: relative;
-      z-index: 1;
-    }
-    
-    .comment-content.swiped {
-      transform: translateX(100px);
-    }
+  .comment-content {
+  width: 100%;
+  padding-left: 10px;
+  padding-right: 10px;
+  box-sizing: border-box;
+  transition: transform 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.comment-content.swiped {
+  transform: translateX(100px);
+}
+
     
     .delete-btn-container.visible {
         transform: translateX(0);
@@ -906,6 +906,13 @@
   <i class="fas fa-sync-alt"></i>
 </button>
 
+
+
+<li class="comentario-propio swiper-no-swiping" data-correo="..." data-texto="...">
+  <div class="comment-content">Texto del comentario</div>
+</li>
+
+
     
 <div class="comments-overlay-container hidden-overlay" id="commentsOverlay">
   <ul id="commentsList"></ul>
@@ -1288,9 +1295,7 @@ const notificationList = document.getElementById('notification-list');
 
 let comentariosPorVideo = {}; // videoId: [ {autor, correo, fecha, comentario} ]
 let lastTapTime = 0;
-let activeComment = null;
-let startX = 0;
-let isSwiping = false;
+
 
 const refreshBtn = document.getElementById("refreshBtn");
 
@@ -1523,6 +1528,7 @@ function initSwipeComentarios() {
   commentsList.addEventListener('touchstart', e => {
     const commentElement = e.target.closest('li.comentario-propio');
     if (!commentElement) return; // deja que Swiper maneje el resto
+    commentElement.classList.add('swiper-no-swiping'); // 🔥 evita interferencia con Swiper
     startX = e.touches[0].clientX;
     activeComment = commentElement;
     activeComment.querySelector('.comment-content').style.transition = 'none';
@@ -1537,7 +1543,7 @@ function initSwipeComentarios() {
     if (Math.abs(diffX) > 10) isSwiping = true;
 
     const commentContent = activeComment.querySelector('.comment-content');
-    const deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
+    let deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
 
     if (diffX > 0) {
       commentContent.style.transform = `translateX(${diffX}px)`;
@@ -1579,16 +1585,16 @@ function initSwipeComentarios() {
         deleteBtnContainer.style.transform = `translateX(0)`;
       }
 
-      // NO limpiar activeComment para que el botón quede
+      // 🔥 mantener activeComment para que el botón quede visible
     } else {
       commentContent.style.transform = `translateX(0)`;
       if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
       activeComment = null;
     }
+
     startX = 0;
   });
 }
-
 
 
 
@@ -2946,6 +2952,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
