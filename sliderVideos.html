@@ -746,59 +746,61 @@
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.5);
 }
 
-/* ✨ Resaltado temporal + zoom del título */
-.highlight-title-zoom {
-    background-color: rgba(0, 150, 255, 0.3);
-    padding: 3px 6px;
-    border-radius: 5px;
-    animation: highlightZoom 0.4s ease-in-out;
-    transition: background-color 1s ease;
-}
-
-/* 🎥 Animación de zoom */
-@keyframes highlightZoom {
-    0% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.2);
-    }
-    100% {
-        transform: scale(1);
-    }
-}
-
-    #savedList {
-    scroll-behavior: smooth;
-}
 
         
     </style>
 </head>
 <body>
-<!-- BOTÓN GUARDAR/VER -->
+
+<!-- 🔖 Botón Guardar -->
 <button id="saveBtn" style="
+  width: 40px;
+    height: 40px;
     position: fixed;
     bottom: 300px;
     right: 18px;
-    width: 40px;
-    height: 40px;
     background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+   align-items: center;
+    justify-content: center;
+  display: flex;
     color: white;
     border: none;
+    padding: 10px 14px;
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    font-size: 24px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     cursor: pointer;
     z-index: 2000;
 ">
-    <i class="far fa-bookmark" style="font-size: 24px;"></i>
+    <i class="fa-solid fa-bookmark"></i>
 </button>
 
+<!-- 📂 Botón Ver Guardados -->
+<button id="viewSavedBtn" style="
+   width: 40px;
+    height: 40px;
+    position: fixed;
+    bottom: 350px;
+    right: 18px;
+    background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+   align-items: center;
+    justify-content: center;
+  display: flex;
+    color: white;
+    border: none;
+    padding: 10px 14px;
+    border-radius: 50%;
+    font-size: 24px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    z-index: 2000;
+">
+    <i class="fa-solid fa-list"></i>
+</button>
 
 <!-- 📌 Modal Guardados -->
 <div id="savedModal" style="
@@ -812,11 +814,11 @@
     backdrop-filter: blur(4px);
     z-index: 10000;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
     flex-direction: column;
     padding: 15px;
 ">
-    <div id="savedModalInner" style="
+    <div style="
         background-color: #1c1c1c;
         color: white;
         width: 90%;
@@ -827,21 +829,9 @@
         display: flex;
         flex-direction: column;
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-        overflow: hidden;
-        margin-top: 16vh;
-        transition: margin-top 0.25s ease;
     ">
         <!-- Encabezado -->
-        <div style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            background-color: #1c1c1c;
-            z-index: 20;
-            padding-bottom: 8px;
-        ">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
             <h2 style="margin: 0; font-size: 18px; color: white;">🔖 Guardados</h2>
             <button id="closeSavedBtn" style="
                 background: none;
@@ -859,9 +849,6 @@
             type="text"
             placeholder="Buscar guardados..."
             style="
-                position: sticky;
-                top: 40px;
-                z-index: 15;
                 margin-top: 12px;
                 padding: 10px;
                 border: none;
@@ -877,14 +864,11 @@
             list-style: none;
             padding: 0;
             margin: 15px 0 0;
-            max-height: 250px;
+            max-height: 300px;
             overflow-y: auto;
-            scrollbar-width: thin;
-            scrollbar-color: #555 #1c1c1c;
         "></ul>
     </div>
 </div>
-
 
 
 
@@ -931,7 +915,7 @@
 <!-- Notificaciones -->
 <div id="notification-wrapper">
   <button id="notification-btn">
-    <i class="far fa-bell"></i>
+    <i class="fas fa-bell"></i>
     <span id="notification-count"></span>
   </button>
   <div id="notification-list" class="hidden"></div>
@@ -989,291 +973,6 @@
     <script>
         const SCRIPT_URL =
             "https://script.google.com/macros/s/AKfycbwyY6m3H8WD494cnoQbNXwspsZtD1sGu97yio9mk9DTozGSuyo6gHXB1W6HArcpYfP2/exec";
-
-
-// ==========================
-// 🔖 GUARDAR Y VER VIDEOS
-// ==========================
-const saveBtn = document.getElementById("saveBtn");
-const viewSavedBtn = document.getElementById("viewSavedBtn");
-const savedModal = document.getElementById("savedModal");
-const savedList = document.getElementById("savedList");
-const savedSearchInput = document.getElementById("savedSearchInput");
-const closeSavedBtn = document.getElementById("closeSavedBtn");
-const savedModalInner = document.getElementById("savedModalInner");
-
-// ==========================
-// ✅ FUNCIONES DE COOKIES (Compatibilidad WebViewer)
-// ==========================
-function setSavedVideos(data) {
-    document.cookie = "savedVideos=" + encodeURIComponent(JSON.stringify(data)) + "; path=/; max-age=31536000";
-}
-
-function getSavedVideos() {
-    const match = document.cookie.match(/(^| )savedVideos=([^;]+)/);
-    return match ? JSON.parse(decodeURIComponent(match[2])) : [];
-}
-
-// 🔧 Normaliza texto: minúsculas, sin tildes, sin espacios extras
-function normalizeText(text) {
-    return text
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/\s+/g, " ")
-        .trim();
-}
-
-// ==========================
-// 💾 GUARDAR VIDEO ACTUAL
-// ==========================
-function saveCurrentVideo() {
-    if (!swiper || lastVideos.length === 0) {
-        showToast("⚠️ No hay videos para guardar");
-        return;
-    }
-
-    const currentIndex = swiper.realIndex;
-    const currentVideo = lastVideos[currentIndex];
-
-    let saved = getSavedVideos();
-
-    if (!saved.find(item => item.id === currentVideo.id)) {
-        saved.push({
-            id: currentVideo.id,
-            // 👇 Ajuste aquí: usar title (si no existe, usa desc o texto genérico)
-            titulo: currentVideo.title || currentVideo.desc || "Video sin título",
-            desc: currentVideo.desc || ""
-        });
-        setSavedVideos(saved);
-        showToast("✅ Video guardado");
-    } else {
-        showToast("ℹ️ Este video ya está guardado");
-    }
-}
-
-
-// ==========================
-// 📜 RENDERIZAR VIDEOS GUARDADOS
-// ==========================
-function renderSavedVideos(filter = "") {
-    const saved = getSavedVideos();
-    savedList.innerHTML = "";
-
-    const filtered = saved.filter(item =>
-        normalizeText(item.titulo).includes(normalizeText(filter))
-    );
-
-    // 🔹 Contenedor de botones (Guardar actual + Eliminar todo)
-    const buttonsContainer = document.createElement("div");
-    buttonsContainer.style.display = "flex";
-    buttonsContainer.style.justifyContent = "space-between";
-    buttonsContainer.style.gap = "10px";
-    buttonsContainer.style.margin = "8px 0 10px";
-
-    // Botón Guardar actual (siempre visible)
-    const saveCurrentBtn = document.createElement("button");
-    saveCurrentBtn.textContent = "💾 Guardar actual";
-    saveCurrentBtn.style.flex = "1";
-    saveCurrentBtn.style.background = "#007bff";
-    saveCurrentBtn.style.color = "#fff";
-    saveCurrentBtn.style.border = "none";
-    saveCurrentBtn.style.borderRadius = "6px";
-    saveCurrentBtn.style.padding = "6px 12px";
-    saveCurrentBtn.style.cursor = "pointer";
-    saveCurrentBtn.style.fontSize = "13px";
-    saveCurrentBtn.style.transition = "background 0.2s ease";
-
-    saveCurrentBtn.addEventListener("mouseenter", () => {
-        saveCurrentBtn.style.background = "#3399ff";
-    });
-    saveCurrentBtn.addEventListener("mouseleave", () => {
-        saveCurrentBtn.style.background = "#007bff";
-    });
-    saveCurrentBtn.addEventListener("click", () => {
-        saveCurrentVideo();
-        renderSavedVideos(filter); // refresca la lista
-    });
-
-    buttonsContainer.appendChild(saveCurrentBtn);
-
-    // Botón Eliminar todo (solo si hay más de uno)
-    if (filtered.length > 1) {
-        const clearAllBtn = document.createElement("button");
-        clearAllBtn.textContent = "Eliminar todo";
-        clearAllBtn.style.flex = "1";
-        clearAllBtn.style.background = "#2c2c2c";
-        clearAllBtn.style.color = "#ccc";
-        clearAllBtn.style.border = "1px solid #444";
-        clearAllBtn.style.borderRadius = "6px";
-        clearAllBtn.style.padding = "6px 12px";
-        clearAllBtn.style.cursor = "pointer";
-        clearAllBtn.style.fontSize = "13px";
-        clearAllBtn.style.transition = "background 0.2s ease";
-
-        clearAllBtn.addEventListener("mouseenter", () => {
-            clearAllBtn.style.background = "#3a3a3a";
-        });
-        clearAllBtn.addEventListener("mouseleave", () => {
-            clearAllBtn.style.background = "#2c2c2c";
-        });
-        clearAllBtn.addEventListener("click", () => {
-            setSavedVideos([]);
-            renderSavedVideos();
-            showToast("✅ Todos los videos fueron eliminados");
-        });
-
-        buttonsContainer.appendChild(clearAllBtn);
-    }
-
-    savedList.appendChild(buttonsContainer);
-
-    if (filtered.length === 0) {
-        // ⬇️ Crear mensaje vacío sin borrar el botón
-        const emptyMsg = document.createElement("li");
-        emptyMsg.textContent = "No hay videos guardados";
-        emptyMsg.style.color = "#777";
-        emptyMsg.style.padding = "10px";
-        savedList.appendChild(emptyMsg);
-
-        savedModalInner.style.transform = "translateY(-60px)";
-    } else {
-        savedModalInner.style.transform = "translateY(0)";
-    }
-
-    // 🔹 Renderizar cada item guardado
-    filtered.forEach(item => {
-        const li = document.createElement("li");
-        li.style.display = "flex";
-        li.style.justifyContent = "space-between";
-        li.style.alignItems = "center";
-        li.style.padding = "10px";
-        li.style.borderBottom = "1px solid #333";
-        li.style.color = "#fff";
-        li.style.transition = "opacity 0.3s ease, transform 0.3s ease";
-
-        const titleSpan = document.createElement("span");
-        titleSpan.textContent = item.titulo;
-        titleSpan.style.cursor = "pointer";
-        titleSpan.style.flex = "1";
-
-        // Click → ir al video
-        titleSpan.addEventListener("click", () => {
-            const videoIndex = lastVideos.findIndex(v => v.id === item.id);
-
-            if (videoIndex !== -1) {
-                swiper.slideToLoop(videoIndex, 0, false);
-                savedModal.style.display = "none";
-
-                setTimeout(() => {
-                    const tituloActual = document.querySelector("#video-title-fixed .video-title");
-                    if (tituloActual) {
-                        tituloActual.classList.add("highlight-title-zoom");
-                        tituloActual.scrollIntoView({ behavior: "smooth", block: "center" });
-                        setTimeout(() => {
-                            tituloActual.classList.remove("highlight-title-zoom");
-                        }, 2000);
-                    }
-                }, 400);
-            } else {
-                showToast("⚠️ Este video ya no está disponible");
-            }
-        });
-
-        // Botón eliminar ❌
-        const deleteBtn = document.createElement("button");
-        deleteBtn.textContent = "✕";
-        deleteBtn.style.background = "transparent";
-        deleteBtn.style.border = "none";
-        deleteBtn.style.color = "#aaa";
-        deleteBtn.style.fontSize = "14px";
-        deleteBtn.style.cursor = "pointer";
-        deleteBtn.style.marginLeft = "10px";
-        deleteBtn.style.transition = "color 0.2s ease";
-
-        deleteBtn.addEventListener("mouseenter", () => {
-            deleteBtn.style.color = "#fff";
-        });
-        deleteBtn.addEventListener("mouseleave", () => {
-            deleteBtn.style.color = "#aaa";
-        });
-
-        deleteBtn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            li.style.opacity = "0";
-            li.style.transform = "translateX(30px)";
-
-            setTimeout(() => {
-                const updated = saved.filter(s => s.id !== item.id);
-                setSavedVideos(updated);
-                renderSavedVideos(filter);
-                showToast("🗑️ Eliminado de guardados");
-            }, 300);
-        });
-
-        li.appendChild(titleSpan);
-        li.appendChild(deleteBtn);
-        savedList.appendChild(li);
-    });
-}
-
-
-
-
-
-
-
-// ==========================
-// 📌 EVENTOS DE LOS BOTONES
-// ==========================
-saveBtn.addEventListener("click", () => {
-    savedSearchInput.value = "";
-    renderSavedVideos();
-    setTimeout(() => {
-        savedModal.style.display = "flex";
-        savedList.scrollTop = 0;
-    }, 50);
-});
-
-savedSearchInput.addEventListener("input", (e) => {
-    renderSavedVideos(e.target.value);
-});
-
-closeSavedBtn.addEventListener("click", () => {
-    savedModal.style.display = "none";
-});
-
-savedModal.addEventListener("click", (e) => {
-    if (e.target === savedModal) {
-        savedModal.style.display = "none";
-    }
-});
-
-// ==========================
-// 🍞 TOASTS PERSONALIZADOS
-// ==========================
-function showToast(msg) {
-    const toast = document.createElement("div");
-    toast.textContent = msg;
-    toast.style.position = "fixed";
-    toast.style.bottom = "80px";
-    toast.style.left = "50%";
-    toast.style.transform = "translateX(-50%)";
-    toast.style.background = "rgba(0,0,0,0.85)";
-    toast.style.color = "white";
-    toast.style.padding = "10px 16px";
-    toast.style.borderRadius = "6px";
-    toast.style.fontSize = "14px";
-    toast.style.zIndex = "100000";
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 2500);
-}
-
-
-
-
-
-        
 
 // === Comentarios móviles ===
 const commentsOverlay = document.getElementById('commentsOverlay');
@@ -1479,22 +1178,9 @@ document.querySelector('.swiper').addEventListener('click', (e) => {
     if (refreshBtn) {
       refreshBtn.classList.toggle("hidden-overlay");
     }
-
-    // 🆕 Ocultar/mostrar guardar y ver guardados
-    const saveBtn = document.getElementById("saveBtn");
-    const viewSavedBtn = document.getElementById("viewSavedBtn");
-    if (saveBtn) saveBtn.classList.toggle("hidden-overlay");
-    if (viewSavedBtn) viewSavedBtn.classList.toggle("hidden-overlay");
-
-    // 🆕 Ocultar/mostrar contenedor de botones flotantes
-    const floatingButtons = document.querySelector(".floating-buttons");
-    if (floatingButtons) {
-      floatingButtons.classList.toggle("hidden-overlay");
-    }
   }
   lastTapTime = currentTime;
 });
-
 
 
 
@@ -1509,7 +1195,75 @@ commentsOverlay.addEventListener('click', (e) => {
   isSwiping = false;
 });
 
+// === Swipe-to-delete en móviles ===
+commentsList.addEventListener('touchstart', (e) => {
+  const commentElement = e.target.closest('li');
+  if (!commentElement) return;
+  const commentData = commentElement.dataset;
 
+  if (normalizeText(commentData.correo) === normalizeText(usuarioCorreo)) {
+    startX = e.touches[0].clientX;
+    activeComment = commentElement;
+    activeComment.querySelector('.comment-content').style.transition = 'none';
+    isSwiping = false;
+  }
+});
+
+commentsList.addEventListener('touchmove', (e) => {
+  if (!activeComment) return;
+  const currentX = e.touches[0].clientX;
+  const diffX = currentX - startX;
+
+  if (Math.abs(diffX) > 10) isSwiping = true;
+
+  const commentContent = activeComment.querySelector('.comment-content');
+  const deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
+
+  if (diffX > 0) {
+    commentContent.style.transform = `translateX(${diffX}px)`;
+    if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(0)`;
+  } else {
+    commentContent.style.transform = `translateX(0)`;
+    if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
+  }
+});
+
+commentsList.addEventListener('touchend', (e) => {
+  if (!activeComment) return;
+  const swipeThreshold = 50;
+  const diffX = e.changedTouches[0].clientX - startX;
+
+  const commentContent = activeComment.querySelector('.comment-content');
+  let deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
+  commentContent.style.transition = 'transform 0.3s ease';
+
+  if (diffX > swipeThreshold) {
+    commentContent.style.transform = `translateX(100px)`;
+    if (!deleteBtnContainer) {
+      deleteBtnContainer = document.createElement('div');
+      deleteBtnContainer.className = 'delete-btn-container';
+      const deleteBtn = document.createElement('div');
+      deleteBtn.className = 'delete-btn';
+      deleteBtn.textContent = 'Borrar';
+      deleteBtnContainer.appendChild(deleteBtn);
+      activeComment.insertBefore(deleteBtnContainer, commentContent);
+      deleteBtnContainer.style.transform = `translateX(0)`;
+
+      deleteBtn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const commentData = activeComment.dataset;
+        eliminarComentario(getActiveVideoId(), commentData.texto, commentData.correo);
+      });
+    } else {
+      deleteBtnContainer.style.transform = `translateX(0)`;
+    }
+  } else {
+    commentContent.style.transform = `translateX(0)`;
+    if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
+  }
+  activeComment = null;
+  startX = 0;
+});
 
 // === Obtener el ID del video activo ===
 function getActiveVideoId() {
@@ -1842,10 +1596,8 @@ let lastVideos = [];
 function renderNotifications() {
   const list = document.getElementById("notification-list");
   const count = document.getElementById("notification-count");
-  const notificationBtn = document.getElementById("notification-btn");
-  const bellIcon = notificationBtn.querySelector("i"); // Seleccionar el elemento <i> de la campana
 
-  if (!list || !count || !notificationBtn || !bellIcon) {
+  if (!list || !count) {
     console.error("❌ Error: Elementos de notificaciones no encontrados en el DOM");
     return;
   }
@@ -1856,7 +1608,6 @@ function renderNotifications() {
     list.innerHTML = "<div>Sin notificaciones</div>";
     count.textContent = "";
     count.style.display = "none";
-    bellIcon.className = "far fa-bell"; // Campana vacía cuando no hay notificaciones
 
     try {
       if (typeof AppInventor !== "undefined" && AppInventor.setWebViewString) {
@@ -1870,151 +1621,113 @@ function renderNotifications() {
 
   count.textContent = notifications.length;
   count.style.display = "block";
-  bellIcon.className = "fas fa-bell"; // Campana rellena cuando hay notificaciones
 
   notifications.forEach((notif, i) => {
     if (!notif || !notif.link || !notif.title || !notif.id) {
       console.warn("⚠️ Notificación inválida detectada:", notif);
-      return;
+      return; // 🔥 FIX7: Evitar procesar notificaciones vacías/inválidas
     }
 
     const item = document.createElement("div");
     item.textContent = notif.title;
     item.style.cursor = "pointer";
-    item.style.padding = "10px";
-    item.style.userSelect = "none";
 
     item.onclick = () => {
-      console.log("🔹 Click en notificación detectado:", notif.title, "ID:", notif.id);
-
-      // Marcar como leída y cerrar panel INMEDIATAMENTE
-      notifications.splice(i, 1);
-      renderNotifications();
-      document.getElementById("notification-list").classList.add("hidden");
-      console.log("✅ Notificación marcada como leída y panel cerrado");
-
       const wrapper = document.getElementById("slides");
-      if (!wrapper || !swiper) {
-        console.error("❌ Error: Contenedor de slides o Swiper no encontrado");
+      if (!wrapper) {
+        console.error("❌ Error: Contenedor de slides no encontrado");
         return;
       }
 
-      // Guardar y precargar comentarios del video actual
+      // 🔥 FIX7: Guardar y precargar comentarios del video actual solo si no están en caché
       const currentVideoId = getActiveVideoId();
       if (currentVideoId && !comentariosPorVideo[currentVideoId]) {
-        cargarComentarios(currentVideoId, false, { force: true }).catch(e => console.warn("Error precargando comentarios actuales:", e));
+        cargarComentarios(currentVideoId, false, { force: true });
         console.log(`✅ Precargando comentarios para video actual ${currentVideoId}`);
       }
 
-      // Buscar si ya existe el slide usando videoId
-      let slide = Array.from(wrapper.children).find(s => s.dataset.videoid === notif.id);
-      let isNewSlide = !slide;
-      let targetIndex = -1;
+      // Buscar si ya existe el slide del anuncio
+      let slide = Array.from(wrapper.children).find(s => {
+        const card = s.querySelector('.player-card');
+        return card && card.dataset.embed === notif.link;
+      });
 
-      if (isNewSlide) {
-        // Desactivar loop temporalmente si hay pocos slides para evitar bugs
-        const originalLoop = swiper.params.loop;
-        if (swiper.slides.length < 3) {
-          swiper.params.loop = false;
-          swiper.update();
-          console.log("🔹 Loop desactivado temporalmente (pocos slides)");
-        }
-
+      let isNewSlide = false;
+      // Si no existe, crearlo y agregarlo
+      if (!slide) {
+        isNewSlide = true;
         const nuevoSlide = createSlide(notif.title, notif.link, notif.desc, notif.id);
-        swiper.appendSlide(nuevoSlide);
-        swiper.update(); // Actualizar estructura
-        swiper.loopFix(); // Reparar clones y loop mode
-        console.log("✅ Nuevo slide añadido, loopFix aplicado, ID:", notif.id);
-
-        // Reactivar loop si se desactivó
-        if (swiper.slides.length < 3 && originalLoop) {
-          swiper.params.loop = true;
-          swiper.update();
-          swiper.loopFix();
-          console.log("🔹 Loop reactivado");
+        if (swiper) {
+          swiper.appendSlide(nuevoSlide);
+          console.log("✅ Nuevo slide añadido al final con appendSlide");
+        } else {
+          wrapper.appendChild(nuevoSlide);
         }
-
-        targetIndex = swiper.slides.length - 1;
         lastVideos.push({ title: notif.title, link: notif.link, desc: notif.desc, id: notif.id });
-        cargarComentarios(notif.id, false, { force: true }).catch(e => console.warn("Error precargando comentarios del nuevo video:", e));
-      } else {
-        // Para slide existente, usar método de Swiper para índice real en loop
-        targetIndex = swiper.getSlideIndexByData('videoid', notif.id);
-        if (targetIndex === undefined) {
-          // Fallback manual
-          swiper.slides.forEach((s, idx) => {
-            if (s.dataset.videoid === notif.id) targetIndex = idx;
-          });
-        }
-        console.log(`✅ Slide existente encontrado en índice: ${targetIndex}, ID: ${notif.id}`);
+        // 🔥 FIX7: Precargar comentarios del nuevo video para evitar alternancia
+        cargarComentarios(notif.id, false, { force: true });
       }
 
-      if (targetIndex !== -1) {
-        console.log(`🔹 Iniciando navegación a índice ${targetIndex} con slideToLoop`);
-        setTimeout(() => {
-          cleanupIframesExceptActiveAndAdjacent(); // Limpiar después de adición
-          swiper.slideToLoop(targetIndex, 500); // Transición más lenta para WebView
+      // 🔥 FIX7: Delay para sincronización del DOM/Swiper
+      setTimeout(() => {
+        // Buscar índice real del slide en Swiper
+        let realIndex = -1;
+        if (swiper) {
+          swiper.slides.forEach((s, idx) => {
+            const card = s.querySelector('.player-card');
+            if (card && card.dataset.embed === notif.link) {
+              realIndex = idx;
+            }
+          });
+          if (isNewSlide && realIndex === -1) {
+            realIndex = swiper.slides.length - 1;
+            console.log(`✅ Nuevo video posicionado en índice final: ${realIndex}`);
+          }
+        }
+
+        if (swiper && realIndex !== -1) {
+          cleanupIframesExceptActive();
+          swiper.slideTo(realIndex, 0);
           updateFixedTitle(swiper);
 
-          // Montaje del video con delay adicional
-          setTimeout(() => {
-            const activeCard = swiper.slides[swiper.activeIndex]?.querySelector('.player-card');
-            if (activeCard) {
-              const src = activeCard.dataset.embed;
-              if (!activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
-                mountIframe(activeCard, true);
-                console.log("✅ Video montado y reproducido");
-              } else {
-                const player = players[src];
-                if (player) {
-                  if (typeof player.playVideo === 'function') {
-                    player.playVideo();
-                  } else if (typeof player.play === 'function') {
-                    player.play().catch(e => console.warn("Error al reproducir:", e));
-                  }
-                  console.log("🔹 Video existente reproducido");
-                }
-              }
-            }
-
-            const videoId = getActiveVideoId();
-            if (videoId) {
-              if (!comentariosPorVideo[videoId] || comentariosPorVideo[videoId].length === 0) {
-                cargarComentarios(videoId, true, { force: true }).catch(e => console.warn("Error cargando comentarios:", e));
-              } else {
-                renderComentarios(videoId);
-              }
-              console.log(`✅ Comentarios manejados para video ${videoId}`);
-            }
-          }, 300);
-        }, 500); // Retraso inicial mayor para WebView
-
-        // Listener para fin de transición
-        swiper.once('slideChangeTransitionEnd', () => {
-          console.log("✅ Transición completada, índice activo:", swiper.activeIndex);
-          swiper.loopFix(); // Reparar loop nuevamente si es necesario
-          cleanupIframesExceptActiveAndAdjacent();
-          const activeCard = document.querySelector('.swiper-slide-active .player-card');
-          if (activeCard && !activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
-            mountIframe(activeCard, true);
-            console.log("✅ Video montado tras transición");
-          }
-          const videoIdFinal = getActiveVideoId();
-          if (videoIdFinal) {
-            if (!comentariosPorVideo[videoIdFinal] || comentariosPorVideo[videoIdFinal].length === 0) {
-              cargarComentarios(videoIdFinal, true, { force: true }).catch(e => console.warn("Error en comentarios finales:", e));
+          const videoId = getActiveVideoId();
+          if (videoId) {
+            if (!comentariosPorVideo[videoId] || comentariosPorVideo[videoId].length === 0) {
+              cargarComentarios(videoId, true, { force: true });
             } else {
-              renderComentarios(videoIdFinal);
+              renderComentarios(videoId);
             }
           }
-          if (currentVideoId && comentariosPorVideo[currentVideoId]) {
-            console.log(`✅ Restaurando comentarios para video original ${currentVideoId}`);
-            renderComentarios(currentVideoId);
-          }
-        });
-      } else {
-        console.error("❌ Error: Índice no válido para video, ID:", notif.id);
-      }
+
+          swiper.once('slideChangeTransitionEnd', () => {
+            cleanupIframesExceptActive();
+            const activeCard = document.querySelector('.swiper-slide-active .player-card');
+            if (activeCard && !activeCard.querySelector("iframe") && !activeCard.querySelector("video")) {
+              mountIframe(activeCard);
+            }
+            const videoIdFinal = getActiveVideoId();
+            if (videoIdFinal) {
+              if (!comentariosPorVideo[videoIdFinal] || comentariosPorVideo[videoIdFinal].length === 0) {
+                cargarComentarios(videoIdFinal, true, { force: true });
+              } else {
+                renderComentarios(videoIdFinal);
+              }
+            }
+            // 🔥 FIX7: Restaurar comentarios del video original si están en caché
+            if (currentVideoId && comentariosPorVideo[currentVideoId]) {
+              console.log(`✅ Restaurando comentarios para video original ${currentVideoId}`);
+              renderComentarios(currentVideoId);
+            }
+          });
+        } else {
+          console.error("❌ Error: Swiper o índice no válido al intentar navegar al nuevo video");
+        }
+      }, 100);
+
+      // Marcar como leída y cerrar panel
+      notifications.splice(i, 1);
+      renderNotifications();
+      document.getElementById("notification-list").classList.add("hidden");
     };
 
     list.appendChild(item);
@@ -2849,98 +2562,27 @@ if (!checkNew) {
 
 
 
-     let swipeTimeout = null;
+        
+        function activarSwipeParaBorrar() {
+  const comentarios = document.querySelectorAll(".comentario-propio"); // clase para tus comentarios
 
-function activarSwipeParaBorrar() {
-  // === Swipe-to-delete en móviles ===
-  commentsList.addEventListener('touchstart', (e) => {
-    const commentElement = e.target.closest('li');
-    if (!commentElement) return;
-    const commentData = commentElement.dataset;
+  comentarios.forEach(comentario => {
+    let startX = 0;
+    let endX = 0;
 
-    if (normalizeText(commentData.correo) === normalizeText(usuarioCorreo)) {
+    comentario.addEventListener("touchstart", e => {
       startX = e.touches[0].clientX;
-      activeComment = commentElement;
-      activeComment.querySelector('.comment-content').style.transition = 'none';
-      isSwiping = false;
-    }
-  });
+    });
 
-  commentsList.addEventListener('touchmove', (e) => {
-    if (!activeComment) return;
-    const currentX = e.touches[0].clientX;
-    const diffX = currentX - startX;
+    comentario.addEventListener("touchmove", e => {
+      endX = e.touches[0].clientX;
+    });
 
-    if (Math.abs(diffX) > 10) isSwiping = true;
-
-    const commentContent = activeComment.querySelector('.comment-content');
-    const deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
-
-    if (diffX > 0) {
-      commentContent.style.transform = `translateX(${diffX}px)`;
-      if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(0)`;
-    } else {
-      commentContent.style.transform = `translateX(0)`;
-      if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
-    }
-  });
-
-  commentsList.addEventListener('touchend', (e) => {
-    if (!activeComment) return;
-    const swipeThreshold = 50;
-    const diffX = e.changedTouches[0].clientX - startX;
-
-    const commentContent = activeComment.querySelector('.comment-content');
-    let deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
-    commentContent.style.transition = 'transform 0.3s ease';
-
-    console.log("TOUCHEND diffX:", diffX, "activeComment:", activeComment);
-
-    if (diffX > swipeThreshold) {
-      // 👉 Mantener visible el botón
-      commentContent.style.transform = `translateX(100px)`;
-      if (!deleteBtnContainer) {
-        deleteBtnContainer = document.createElement('div');
-        deleteBtnContainer.className = 'delete-btn-container';
-        const deleteBtn = document.createElement('div');
-        deleteBtn.className = 'delete-btn';
-        deleteBtn.textContent = 'Borrar';
-        deleteBtnContainer.appendChild(deleteBtn);
-        activeComment.insertBefore(deleteBtnContainer, commentContent);
-        deleteBtnContainer.style.transform = `translateX(0)`;
-
-        deleteBtn.addEventListener('click', (ev) => {
-          ev.stopPropagation();
-          const commentData = activeComment.dataset;
-          eliminarComentario(getActiveVideoId(), commentData.texto, commentData.correo);
-          // ✅ Cancelamos el timeout porque se borró antes del minuto
-          if (swipeTimeout) clearTimeout(swipeTimeout);
-          activeComment = null;
-        });
-      } else {
-        deleteBtnContainer.style.transform = `translateX(0)`;
+    comentario.addEventListener("touchend", () => {
+      if (startX - endX > 80) {  // si desliza a la izquierda más de 80px
+        eliminarComentario(comentario.dataset.id); // usa el id del comentario
       }
-
-      // ⏱️ Programar autocierre a 1 minuto
-      if (swipeTimeout) clearTimeout(swipeTimeout);
-      swipeTimeout = setTimeout(() => {
-        if (activeComment) {
-          console.log("⏳ Cerrando swipe por timeout (1 min)");
-          commentContent.style.transform = `translateX(0)`;
-          if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
-          activeComment = null;
-        }
-      }, 60000); // 1 minuto (60000 ms)
-
-    } else {
-      // 👉 Swipe insuficiente o hacia la izquierda → ocultar botón
-      console.log("OCULTANDO botón");
-      commentContent.style.transform = `translateX(0)`;
-      if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
-      activeComment = null;
-      if (swipeTimeout) clearTimeout(swipeTimeout);
-    }
-    startX = 0;
+    });
   });
 }
 
@@ -2954,10 +2596,6 @@ setInterval(() => {
     </script>
 </body>
 </html>
-
-
-
-
 
 
 
