@@ -1656,10 +1656,7 @@ async function cargarComentarios(videoId, render = true, options = {}) {
 
 
 
-// Asegúrate de tener estas variables globales (puedes ponerlas al inicio del script)
-window.swipeTimeout = window.swipeTimeout || null; // temporizador global para autocierre
-// activeComment ya lo usas en otros lugares: let activeComment = null;
-
+// === Renderizar comentarios en el DOM ===
 function renderComentarios(videoId) {
   if (!videoId) return;
 
@@ -1672,112 +1669,51 @@ function renderComentarios(videoId) {
     return;
   }
 
-  // Helper: crear key única aproximada para cada comentario
-  const makeKey = (correo, comentario, fecha = "") =>
-    `${normalizeText(correo || "")}||${normalizeText(comentario || "")}||${normalizeText(fecha || "")}`;
-
-  // 1) Detectar si ya había un comentario con swipe abierto (preferimos activeComment)
-  let openKey = null;
-  if (activeComment && activeComment.dataset) {
-    openKey = makeKey(activeComment.dataset.correo || "", activeComment.dataset.texto || "", activeComment.dataset.fecha || "");
-  } else {
-    // fallback: intentar detectar por clase swipe-open en el DOM actual
-    const domOpen = commentsList.querySelector('li.swipe-open');
-    if (domOpen) {
-      openKey = makeKey(domOpen.dataset.correo || "", domOpen.dataset.texto || "", domOpen.dataset.fecha || "");
-    }
-  }
-
-  // Limpiar la lista (re-render)
   commentsList.innerHTML = '';
 
+  // 🔥 FIX2: Reforzado para siempre mostrar mensaje si length === 0 exacto
   if (lista.length === 0) {
     commentsList.innerHTML = '<li>Sé el primero en comentar...</li>';
     commentCountValue.textContent = "0";
-    // si no hay comentarios limpios, también limpiar estado abierto
-    if (window.swipeTimeout) { clearTimeout(window.swipeTimeout); window.swipeTimeout = null; }
-    activeComment = null;
-    return;
+  } else {
+    // 🔥 FIX13: Invertir el orden de los comentarios para que el más reciente esté arriba
+    const comentariosInvertidos = [...lista].reverse();
+    comentariosInvertidos.forEach(c => {
+      const li = document.createElement('li');
+      li.classList.add('deletable');
+
+      const commentContent = document.createElement('div');
+      commentContent.className = 'comment-content';
+      commentContent.textContent = `${c.autor} (${c.fecha}) - ${c.comentario}`;
+      li.appendChild(commentContent);
+
+      li.dataset.correo = c.correo;
+      li.dataset.texto = c.comentario;
+
+      if (normalizeText(c.correo) === normalizeText(usuarioCorreo)) {
+        const deleteBtnContainer = document.createElement('div');
+        deleteBtnContainer.className = 'delete-btn-container';
+        const deleteBtn = document.createElement('div');
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.textContent = 'Borrar';
+        deleteBtnContainer.appendChild(deleteBtn);
+        li.appendChild(deleteBtnContainer);
+
+        deleteBtn.addEventListener('click', async (ev) => {
+          ev.stopPropagation();
+          await eliminarComentario(videoId, c.comentario, c.correo);
+          renderComentarios(videoId);
+        });
+      }
+
+      commentsList.appendChild(li);
+    });
+
+    commentCountValue.textContent = lista.length;
   }
 
-  const comentariosInvertidos = [...lista].reverse();
-  comentariosInvertidos.forEach(c => {
-    const li = document.createElement('li');
-    li.classList.add('deletable');
-
-    const commentContent = document.createElement('div');
-    commentContent.className = 'comment-content';
-    commentContent.textContent = `${c.autor} (${c.fecha}) - ${c.comentario}`;
-    li.appendChild(commentContent);
-
-    // dataset para identificar y para la lógica de borrar
-    li.dataset.correo = c.correo || "";
-    li.dataset.texto = c.comentario || "";
-    li.dataset.fecha = c.fecha || "";
-
-    // crear/componer key y guardarla en el li
-    const key = makeKey(c.correo, c.comentario, c.fecha);
-    li.dataset.key = key;
-
-    if (normalizeText(c.correo) === normalizeText(usuarioCorreo)) {
-      const deleteBtnContainer = document.createElement('div');
-      deleteBtnContainer.className = 'delete-btn-container';
-      const deleteBtn = document.createElement('div');
-      deleteBtn.className = 'delete-btn';
-      deleteBtn.textContent = 'Borrar';
-      deleteBtnContainer.appendChild(deleteBtn);
-      li.appendChild(deleteBtnContainer);
-
-      deleteBtn.addEventListener('click', async (ev) => {
-        ev.stopPropagation();
-        // cancelar timeout si hay
-        if (window.swipeTimeout) {
-          clearTimeout(window.swipeTimeout);
-          window.swipeTimeout = null;
-        }
-        await eliminarComentario(videoId, c.comentario, c.correo);
-        // tras eliminar, recargar la lista (renderComentarios se llamará)
-        renderComentarios(videoId);
-      });
-    }
-
-    commentsList.appendChild(li);
-
-    // Si este li coincide con el que estaba abierto antes, restáuralo
-    if (key === openKey) {
-      // mostrar swipe abierto visualmente
-      commentContent.style.transition = 'transform 0.3s ease';
-      commentContent.style.transform = 'translateX(100px)';
-      const del = li.querySelector('.delete-btn-container');
-      if (del) del.style.transform = 'translateX(0)';
-      li.classList.add('swipe-open');
-
-      // restaurar referencia activeComment
-      activeComment = li;
-
-      // (re)programar autocierre a 1 minuto
-      if (window.swipeTimeout) clearTimeout(window.swipeTimeout);
-      window.swipeTimeout = setTimeout(() => {
-        if (activeComment && activeComment.dataset.key === key) {
-          const acContent = activeComment.querySelector('.comment-content');
-          const acDel = activeComment.querySelector('.delete-btn-container');
-          if (acContent) {
-            acContent.style.transition = 'transform 0.3s ease';
-            acContent.style.transform = 'translateX(0)';
-          }
-          if (acDel) acDel.style.transform = 'translateX(-100%)';
-          activeComment.classList.remove('swipe-open');
-          activeComment = null;
-          window.swipeTimeout = null;
-        }
-      }, 60000);
-    }
-  });
-
-  commentCountValue.textContent = lista.length;
   console.log(`✅ Renderizados ${lista.length} comentarios para video ${videoId} en orden inverso`);
 }
-
 
 // === Enviar un nuevo comentario ===
 async function enviarComentario() {
@@ -1916,16 +1852,25 @@ async function verificarComentariosVideos() {
         await cargarComentarios(videoId, false, { force: true }); // No render, solo caché fresco
       }
 
-      // Luego, render solo para el activo (con datos frescos)
+      // Luego, render solo para el activo (con datos frescos si cambiaron)
       const videoIdActivo = getActiveVideoId();
       if (videoIdActivo) {
-        renderComentarios(videoIdActivo);
+        const prev = JSON.stringify(comentariosCache[videoIdActivo] || []);
+        const curr = JSON.stringify(comentariosPorVideo[videoIdActivo] || []);
+
+        if (prev !== curr) {
+          console.log("🔄 Cambios detectados → re-render");
+          renderComentarios(videoIdActivo);
+        } else {
+          console.log("✅ Sin cambios → no re-renderizo, mantengo swipe");
+        }
       }
     }
   } catch (err) {
     console.warn("No se pudo verificar comentarios:", err);
   }
 }
+
 
 
 
