@@ -2849,12 +2849,11 @@ if (!checkNew) {
 
 
 
-      function activarSwipeParaBorrar() {
+     let swipeTimeout = null;
+
+function activarSwipeParaBorrar() {
   // === Swipe-to-delete en móviles ===
   commentsList.addEventListener('touchstart', (e) => {
-    // ⚠️ Si ya hay un comentario con botón abierto, no lo sobreescribas
-    if (activeComment) return;
-
     const commentElement = e.target.closest('li');
     if (!commentElement) return;
     const commentData = commentElement.dataset;
@@ -2898,8 +2897,6 @@ if (!checkNew) {
     console.log("TOUCHEND diffX:", diffX, "activeComment:", activeComment);
 
     if (diffX > swipeThreshold) {
-      console.log("➡️ Manteniendo botón visible en", activeComment);
-
       // 👉 Mantener visible el botón
       commentContent.style.transform = `translateX(100px)`;
       if (!deleteBtnContainer) {
@@ -2916,20 +2913,32 @@ if (!checkNew) {
           ev.stopPropagation();
           const commentData = activeComment.dataset;
           eliminarComentario(getActiveVideoId(), commentData.texto, commentData.correo);
+          // ✅ Cancelamos el timeout porque se borró antes del minuto
+          if (swipeTimeout) clearTimeout(swipeTimeout);
+          activeComment = null;
         });
       } else {
         deleteBtnContainer.style.transform = `translateX(0)`;
       }
-      // ❌ No reseteamos activeComment aquí
-    } else {
-      console.log("⬅️ Swipe insuficiente, ocultando en", activeComment);
 
+      // ⏱️ Programar autocierre a 1 minuto
+      if (swipeTimeout) clearTimeout(swipeTimeout);
+      swipeTimeout = setTimeout(() => {
+        if (activeComment) {
+          console.log("⏳ Cerrando swipe por timeout (1 min)");
+          commentContent.style.transform = `translateX(0)`;
+          if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
+          activeComment = null;
+        }
+      }, 60000); // 1 minuto (60000 ms)
+
+    } else {
       // 👉 Swipe insuficiente o hacia la izquierda → ocultar botón
+      console.log("OCULTANDO botón");
       commentContent.style.transform = `translateX(0)`;
       if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
-
-      // ✅ Solo aquí limpiamos porque ya se ocultó
       activeComment = null;
+      if (swipeTimeout) clearTimeout(swipeTimeout);
     }
     startX = 0;
   });
@@ -2945,6 +2954,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
