@@ -1514,67 +1514,82 @@ commentsOverlay.addEventListener('click', (e) => {
 
 
 function initSwipeComentarios() {
-  const comentarios = document.querySelectorAll(".comentario-propio"); // clase para tus comentarios
+  const commentsList = document.getElementById("comments-list"); // ajusta tu ID
+  if (!commentsList) return;
 
-  comentarios.forEach(comentario => {
-    let startX = 0;
-    let active = false; // indica si se ha deslizado lo suficiente
-    let commentContent = comentario.querySelector('.comment-content');
-    let deleteBtnContainer = comentario.querySelector('.delete-btn-container');
+  let activeComment = null;
+  let startX = 0;
+  let isSwiping = false;
 
-    comentario.addEventListener("touchstart", e => {
-      startX = e.touches[0].clientX;
-      if (commentContent) commentContent.style.transition = 'none';
-    });
+  commentsList.addEventListener('touchstart', e => {
+    const commentElement = e.target.closest('li.comentario-propio');
+    if (!commentElement) return; // deja que Swiper maneje el resto
+    startX = e.touches[0].clientX;
+    activeComment = commentElement;
+    activeComment.querySelector('.comment-content').style.transition = 'none';
+    isSwiping = false;
+  });
 
-    comentario.addEventListener("touchmove", e => {
-      const diffX = e.touches[0].clientX - startX;
-      if (diffX > 0) { // swipe a la derecha
-        if (commentContent) commentContent.style.transform = `translateX(${diffX}px)`;
-        if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(0)`;
+  commentsList.addEventListener('touchmove', e => {
+    if (!activeComment) return;
+    const currentX = e.touches[0].clientX;
+    const diffX = currentX - startX;
+
+    if (Math.abs(diffX) > 10) isSwiping = true;
+
+    const commentContent = activeComment.querySelector('.comment-content');
+    const deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
+
+    if (diffX > 0) {
+      commentContent.style.transform = `translateX(${diffX}px)`;
+      if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(0)`;
+    } else {
+      commentContent.style.transform = `translateX(0)`;
+      if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
+    }
+  });
+
+  commentsList.addEventListener('touchend', e => {
+    if (!activeComment) return;
+    const swipeThreshold = 50;
+    const diffX = e.changedTouches[0].clientX - startX;
+
+    const commentContent = activeComment.querySelector('.comment-content');
+    let deleteBtnContainer = activeComment.querySelector('.delete-btn-container');
+    commentContent.style.transition = 'transform 0.3s ease';
+
+    if (diffX > swipeThreshold) {
+      commentContent.style.transform = `translateX(100px)`;
+
+      if (!deleteBtnContainer) {
+        deleteBtnContainer = document.createElement('div');
+        deleteBtnContainer.className = 'delete-btn-container';
+        const deleteBtn = document.createElement('div');
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.textContent = 'Borrar';
+        deleteBtnContainer.appendChild(deleteBtn);
+        activeComment.insertBefore(deleteBtnContainer, commentContent);
+        deleteBtnContainer.style.transform = `translateX(0)`;
+
+        deleteBtn.addEventListener('click', ev => {
+          ev.stopPropagation();
+          const commentData = activeComment.dataset;
+          eliminarComentario(getActiveVideoId(), commentData.texto, commentData.correo);
+        });
       } else {
-        if (commentContent) commentContent.style.transform = `translateX(0)`;
-        if (deleteBtnContainer) deleteBtnContainer?.style.transform = `translateX(-100%)`;
+        deleteBtnContainer.style.transform = `translateX(0)`;
       }
-    });
 
-    comentario.addEventListener("touchend", e => {
-      const diffX = e.changedTouches[0].clientX - startX;
-      const swipeThreshold = 50;
-
-      if (!commentContent) return;
-
-      commentContent.style.transition = 'transform 0.3s ease';
-
-      if (diffX > swipeThreshold) {
-        commentContent.style.transform = `translateX(100px)`; // deja el comentario desplazado
-        active = true;
-
-        if (!deleteBtnContainer) {
-          deleteBtnContainer = document.createElement('div');
-          deleteBtnContainer.className = 'delete-btn-container';
-          const deleteBtn = document.createElement('div');
-          deleteBtn.className = 'delete-btn';
-          deleteBtn.textContent = 'Borrar';
-          deleteBtnContainer.appendChild(deleteBtn);
-          comentario.insertBefore(deleteBtnContainer, commentContent);
-          deleteBtnContainer.style.transform = `translateX(0)`;
-
-          deleteBtn.addEventListener('click', ev => {
-            ev.stopPropagation();
-            eliminarComentario(getActiveVideoId(), comentario.dataset.texto, comentario.dataset.correo);
-          });
-        } else {
-          deleteBtnContainer.style.transform = `translateX(0)`;
-        }
-
-      } else {
-        if (!active) commentContent.style.transform = `translateX(0)`;
-        if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
-      }
-    });
+      // NO limpiar activeComment para que el botón quede
+    } else {
+      commentContent.style.transform = `translateX(0)`;
+      if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
+      activeComment = null;
+    }
+    startX = 0;
   });
 }
+
 
 
 
@@ -2933,6 +2948,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
