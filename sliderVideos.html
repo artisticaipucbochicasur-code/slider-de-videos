@@ -1510,17 +1510,17 @@ commentsOverlay.addEventListener('click', (e) => {
 });
 
 // === Swipe-to-delete en móviles ===
-commentsList.addEventListener('touchstart', (e) => {
-  const commentElement = e.target.closest('li');
-  if (!commentElement) return;
-  const commentData = commentElement.dataset;
+let activeComment = null;
+let startX = 0;
+let isSwiping = false;
 
-  if (normalizeText(commentData.correo) === normalizeText(usuarioCorreo)) {
-    startX = e.touches[0].clientX;
-    activeComment = commentElement;
-    activeComment.querySelector('.comment-content').style.transition = 'none';
-    isSwiping = false;
-  }
+commentsList.addEventListener('touchstart', (e) => {
+  const commentElement = e.target.closest('li.comentario-propio'); // solo comentarios propios
+  if (!commentElement) return; // si no es comentario, dejar que Swiper maneje
+  startX = e.touches[0].clientX;
+  activeComment = commentElement;
+  activeComment.querySelector('.comment-content').style.transition = 'none';
+  isSwiping = false;
 });
 
 commentsList.addEventListener('touchmove', (e) => {
@@ -1572,17 +1572,16 @@ commentsList.addEventListener('touchend', (e) => {
     } else {
       deleteBtnContainer.style.transform = `translateX(0)`;
     }
-
-    // 🚨 Importante: no limpiar activeComment aquí, así el botón queda activo
-    // activeComment = null;
+    // NO limpiar activeComment aquí para que el botón quede visible
   } else {
     commentContent.style.transform = `translateX(0)`;
     if (deleteBtnContainer) deleteBtnContainer.style.transform = `translateX(-100%)`;
-    activeComment = null; // limpiar solo si no se pasó el umbral
+    activeComment = null; // limpiar solo si no pasa el umbral
   }
 
   startX = 0;
 });
+
 
 
 // === Obtener el ID del video activo ===
@@ -2939,6 +2938,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
