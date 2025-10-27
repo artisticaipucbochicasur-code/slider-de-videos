@@ -2467,14 +2467,15 @@ deleteConfirm.onclick = async () => {
       centerPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
       centerPlayPauseBtn.style.opacity = 1;
     });
-  } else {
-    const iframe = document.createElement("iframe");
-    iframe.className = "player-iframe";
-    iframe.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share");
-    iframe.setAttribute("allowfullscreen", "true");
-    iframe.src = src + (src.includes("?") ? "&" : "?") + (autoplay ? "autoplay=1" : "");
-    cardEl.appendChild(iframe);
-  }
+ } else {
+  const iframe = document.createElement("iframe");
+  iframe.className = "player-iframe";
+  iframe.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share");
+  iframe.setAttribute("allowfullscreen", "true");
+  iframe.setAttribute("title", "Video"); // Añadido para evitar que muestre la URL
+  iframe.src = src + (src.includes("?") ? "&" : "?") + (autoplay ? "autoplay=1" : "");
+  cardEl.appendChild(iframe);
+}
 }
 
         
@@ -3159,6 +3160,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
