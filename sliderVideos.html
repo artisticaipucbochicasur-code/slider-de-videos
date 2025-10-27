@@ -1616,6 +1616,12 @@ document.querySelector('.swiper').addEventListener('click', (e) => {
     if (floatingButtons) {
       floatingButtons.classList.toggle("hidden-overlay");
     }
+
+    // 🆕 Alternar el encabezado DECOM y botones
+    const socialHeader = document.getElementById("socialHeader");
+    if (socialHeader) {
+      socialHeader.classList.toggle("hidden-overlay");
+    }
   }
   lastTapTime = currentTime;
 });
@@ -3154,6 +3160,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
