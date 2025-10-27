@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
-<meta charset="UTF-8" />
+<head>
+    <meta charset="UTF-8" />
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
@@ -10,6 +11,46 @@
         href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"
     />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- PWA y Iconos para Android e iOS -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Iconos para Android (Chrome) -->
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+
+    <!-- Meta tags para iOS (Safari) -->
+    <link rel="apple-touch-icon" href="apple-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="DECOM">
+
+    <!-- Meta para color de barra de estado en Android/iOS -->
+    <meta name="theme-color" content="#111111">
+
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <title>DECOM - Videos</title> <!-- Título específico para evitar que la URL se use como título implícito -->
+
+    <style>
+        /* ... (tu CSS existente) ... */
+        #socialHeader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 10001;
+            padding: 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+            opacity: 1 !important; /* Forzar visibilidad */
+            pointer-events: auto !important; /* Asegurar interacción */
+        }
+        /* ... (resto de tu CSS) ... */
+    </style>
+</head>
     <style>
 
         :root {
@@ -3159,6 +3200,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
