@@ -1712,6 +1712,15 @@ document.addEventListener("DOMContentLoaded", () => {
       currentAuthorEmail = u.correo;
     }
 
+    // 🔹 Mostrar comentarios al iniciar sesión (como antes)
+    const commentsOverlay = document.getElementById("commentsOverlay");
+    const commentsCounter = document.getElementById("commentsCounter");
+    const commentInputContainer = document.querySelector(".comment-input-container");
+
+    commentsOverlay?.classList.remove("hidden-overlay");
+    commentsCounter?.classList.remove("hidden-overlay");
+    commentInputContainer?.classList.remove("hidden-overlay");
+
     userBtn.addEventListener("click", () => {
       userMenu.style.display = userMenu.style.display === "block" ? "none" : "block";
     });
@@ -1732,6 +1741,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
 
 
 
@@ -3331,6 +3341,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
