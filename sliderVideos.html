@@ -2364,19 +2364,32 @@ document.addEventListener("click", (e) => {
 
 // --- MANEJO DE ELIMINACIÓN ---
 
-// Variables para almacenar los datos del usuario, obtenidos de la URL
+// Variables para almacenar los datos del usuario
 let currentAuthorName  = "";
 let currentAuthorEmail = "";
 
-// Función para obtener los parámetros 'name' y 'email' de la URL
+// Función para obtener los datos de usuario de la URL o localStorage
 function getUsuarioDataFromUrl() {
     const params = new URLSearchParams(window.location.search);
-    currentAuthorName  = params.get("name") || "";
-    currentAuthorEmail = params.get("email") || "";
+    const nameFromUrl = params.get("name");
+    const emailFromUrl = params.get("email");
+
+    if (nameFromUrl && emailFromUrl) {
+        currentAuthorName  = nameFromUrl;
+        currentAuthorEmail = emailFromUrl;
+    } else {
+        // Intentar obtener del localStorage
+        const usuario = JSON.parse(localStorage.getItem("usuario"));
+        if (usuario) {
+            currentAuthorName  = usuario.nombre || "";
+            currentAuthorEmail = usuario.correo || "";
+        }
+    }
 }
 
-// Llamar a la función al cargar la página para obtener los datos
+// Llamar a la función al cargar la página
 document.addEventListener("DOMContentLoaded", getUsuarioDataFromUrl);
+
 
 // NUEVO: Variables para el modal de alerta personalizada
 const customAlertModal = document.getElementById("custom-alert-modal");
@@ -3318,6 +3331,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
