@@ -1644,8 +1644,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ======================================================================================
-  // 👇 Código original de selección de botones, notificaciones y login
+  // 👇 Tu código original (sin tocar)
   // ======================================================================================
+
   const currentUrl = window.location.href;
   const imagesBtn = document.querySelector('a[href="https://artisticaipucbochicasur-code.github.io/pase-de-fotos-vertical/fotos.html"]');
   const videosBtn = document.querySelector('a[href="https://artisticaipucbochicasur-code.github.io/slider-de-videos/sliderVideos.html"]');
@@ -1655,6 +1656,7 @@ document.addEventListener("DOMContentLoaded", () => {
     videosBtn?.classList.add("selected");
   }
 
+  // 🔔 Inicializar icono de notificaciones
   const lblContador = document.getElementById('lblContador');
   if (lblContador) {
     lblContador.innerHTML = `
@@ -1679,11 +1681,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
             console.log(`Datos de usuario actualizados. Nombre: ${currentAuthorName}, Correo: ${currentAuthorEmail}`);
           }
-        } catch (e) {}
+        } catch (e) {
+          // Otros comandos
+        }
       }
     }, 500);
   }
 
+  // === 🔐 INICIO DE SESIÓN LOCAL ===
   const userBtn = document.getElementById("userBtn");
   const userMenu = document.getElementById("userMenu");
   const userName = document.getElementById("userName");
@@ -1707,6 +1712,7 @@ document.addEventListener("DOMContentLoaded", () => {
       currentAuthorEmail = u.correo;
     }
 
+    // 🔹 Mostrar comentarios al iniciar sesión (como antes)
     const commentsOverlay = document.getElementById("commentsOverlay");
     const commentsCounter = document.getElementById("commentsCounter");
     const commentInputContainer = document.querySelector(".comment-input-container");
@@ -1732,46 +1738,6 @@ document.addEventListener("DOMContentLoaded", () => {
       setTimeout(() => {
         location.reload();
       }, 1200);
-    });
-  }
-
-  // ======================================================================================
-  // 🔹 NUEVO: Toggle completo de overlays y header al tocar el slider
-  // ======================================================================================
-  let lastTapTime = 0;
-  const swiperEl = document.querySelector(".swiper");
-  if (swiperEl) {
-    const notificationWrapper = document.getElementById("notificationWrapper");
-    const notificationList = document.getElementById("notificationList");
-    const refreshBtn = document.getElementById("refreshBtn");
-    const saveBtn = document.getElementById("saveBtn");
-    const viewSavedBtn = document.getElementById("viewSavedBtn");
-    const floatingButtons = document.querySelector(".floating-buttons");
-    const videoTitleFixed = document.getElementById("video-title-fixed");
-    const socialHeader = document.getElementById("socialHeader");
-
-    swiperEl.addEventListener("click", (e) => {
-      if (e.target.closest("#video-title-fixed")) return;
-
-      const currentTime = new Date().getTime();
-      if (currentTime - lastTapTime > 300) {
-        commentsOverlay?.classList.toggle("hidden-overlay");
-        commentsCounter?.classList.toggle("hidden-overlay");
-        commentInputContainer?.classList.toggle("hidden-overlay");
-
-        notificationWrapper?.classList.toggle("hidden-overlay");
-        notificationList?.classList.add("hidden");
-
-        videoTitleFixed?.classList.toggle("hidden-overlay");
-
-        refreshBtn?.classList.toggle("hidden-overlay");
-        saveBtn?.classList.toggle("hidden-overlay");
-        viewSavedBtn?.classList.toggle("hidden-overlay");
-
-        floatingButtons?.classList.toggle("hidden-overlay");
-        socialHeader?.classList.toggle("hidden-overlay");
-      }
-      lastTapTime = currentTime;
     });
   }
 });
@@ -3376,6 +3342,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
