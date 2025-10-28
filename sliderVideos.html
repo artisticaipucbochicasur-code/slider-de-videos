@@ -921,18 +921,43 @@ body {
 <body>
 
 <header id="socialHeader">
-  <div class="header-content">
+  <div class="header-content" style="display:flex;align-items:center;justify-content:space-between;">
     <h1>DECOM</h1>
-    <div class="header-buttons">
-      <a href="https://artisticaipucbochicasur-code.github.io/pase-de-fotos-vertical/fotos.html" class="header-btn" title="Imágenes">
+
+    <div class="header-buttons" style="display:flex;align-items:center;gap:10px;">
+      <a href="https://artisticaipucbochicasur-code.github.io/pase-de-fotos-vertical/fotos.html" 
+         class="header-btn" title="Imágenes">
         <i class="fas fa-image"></i>
       </a>
-      <a href="https://artisticaipucbochicasur-code.github.io/slider-de-videos/sliderVideos.html" class="header-btn" title="Videos">
+      <a href="https://artisticaipucbochicasur-code.github.io/slider-de-videos/sliderVideos.html" 
+         class="header-btn" title="Videos">
         <i class="fas fa-video"></i>
       </a>
       <a href="#" class="header-btn" id="publishBtn" title="Publicar">
         <i class="fas fa-plus-circle"></i>
       </a>
+
+      <!-- 🔹 Botón de usuario (ahora al lado del botón Publicar) -->
+      <div id="userMenuContainer" style="position:relative;">
+        <div id="userBtn" 
+             style="background:#0077cc;color:white;width:40px;height:40px;border-radius:50%;
+                    display:flex;align-items:center;justify-content:center;
+                    font-weight:bold;cursor:pointer;">
+        </div>
+
+        <div id="userMenu" 
+             style="display:none;position:absolute;top:50px;right:0;background:white;
+                    border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.2);
+                    padding:10px;min-width:180px;text-align:left;z-index:999;">
+          <p id="userName" style="margin:5px 0;font-weight:bold;"></p>
+          <p id="userEmail" style="margin:5px 0;font-size:14px;color:#555;"></p>
+          <button id="logoutBtn" 
+                  style="margin-top:8px;width:100%;padding:8px;border:none;
+                         background:#e74c3c;color:white;border-radius:6px;">
+            🚪 Cerrar sesión
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </header>
@@ -1465,6 +1490,23 @@ if (refreshBtn) {
 
         
 document.addEventListener("DOMContentLoaded", async () => {
+  // 🔹 Cargar usuario desde localStorage para mantener sesión entre páginas
+  const userBtn = document.getElementById("userBtn");
+  const userName = document.getElementById("userName");
+  const userEmail = document.getElementById("userEmail");
+
+  const nombreUsuario = localStorage.getItem("autor");
+  const correoUsuario = localStorage.getItem("correo");
+
+  if (nombreUsuario && correoUsuario) {
+    if (userBtn) {
+      const iniciales = nombreUsuario.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
+      userBtn.textContent = iniciales;
+    }
+    if (userName) userName.textContent = nombreUsuario;
+    if (userEmail) userEmail.textContent = correoUsuario;
+  }
+
   // Resaltar el botón activo según la página actual
   const currentUrl = window.location.href.toLowerCase();
   const imagesBtn = document.querySelector('a[href="https://artisticaipucbochicasur-code.github.io/pase-de-fotos-vertical/fotos.html"]');
@@ -3202,6 +3244,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
