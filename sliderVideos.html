@@ -1740,33 +1740,8 @@ document.addEventListener("DOMContentLoaded", () => {
       }, 1200);
     });
   }
-
-  // 🔹 Mostrar/ocultar encabezado y comentarios al tocar el slider
-  let lastTapTime = 0;
-  const swiperEl = document.querySelector('.swiper'); // asegúrate que exista tu slider
-  if (swiperEl) {
-    swiperEl.addEventListener('click', (e) => {
-      // Evitar toggle si se hace click en el título del video
-      if (e.target.closest('#video-title-fixed')) return;
-
-      const currentTime = new Date().getTime();
-      if (currentTime - lastTapTime > 300) {
-        const commentsOverlay = document.getElementById("commentsOverlay");
-        const commentsCounter = document.getElementById("commentsCounter");
-        const commentInputContainer = document.querySelector(".comment-input-container");
-
-        commentsOverlay?.classList.toggle('hidden-overlay');
-        commentsCounter?.classList.toggle('hidden-overlay');
-        commentInputContainer?.classList.toggle('hidden-overlay');
-
-        // Alternar encabezado DECOM
-        const socialHeader = document.getElementById("socialHeader");
-        if (socialHeader) socialHeader.classList.toggle("hidden-overlay");
-      }
-      lastTapTime = currentTime;
-    });
-  }
 });
+
 
 
 
@@ -3367,6 +3342,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
