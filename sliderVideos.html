@@ -908,14 +908,13 @@ body {
     <h1>DECOM</h1>
 
     <div class="header-buttons" style="display:flex;align-items:center;gap:10px;">
-      <a href="https://artisticaipucbochicasur-code.github.io/pase-de-fotos-vertical/fotos.html" 
-         class="header-btn" title="Imágenes">
-        <i class="fas fa-image"></i>
-      </a>
-      <a href="https://artisticaipucbochicasur-code.github.io/slider-de-videos/sliderVideos.html" 
-         class="header-btn" title="Videos">
-        <i class="fas fa-video"></i>
-      </a>
+       <a href="./fotos.html" class="header-btn" title="Imágenes">
+  <i class="fas fa-image"></i>
+</a>
+
+<a href="./videosSesion2.html" class="header-btn" title="Videos">
+  <i class="fas fa-video"></i>
+</a>
       <a href="#" class="header-btn" id="publishBtn" title="Publicar">
         <i class="fas fa-plus-circle"></i>
       </a>
@@ -1625,23 +1624,56 @@ document.addEventListener("DOMContentLoaded", () => {
         location.reload();
       });
     }
-    return; // No ejecutar el resto hasta iniciar sesión
+    return;
   }
 
   // ======================================================================================
-  // 👇 Tu código original (sin tocar)
+  // 👇 Mantener navegación interna (sin salir de la app principal)
   // ======================================================================================
+  const imagesBtn = document.querySelector('a[title="Imágenes"]');
+  const videosBtn = document.querySelector('a[title="Videos"]');
 
-  const currentUrl = window.location.href;
-  const imagesBtn = document.querySelector('a[href="https://artisticaipucbochicasur-code.github.io/pase-de-fotos-vertical/fotos.html"]');
-  const videosBtn = document.querySelector('a[href="https://artisticaipucbochicasur-code.github.io/slider-de-videos/sliderVideos.html"]');
-  if (currentUrl.includes("/pase-de-fotos-vertical/fotos.html")) {
-    imagesBtn?.classList.add("selected");
-  } else if (currentUrl.includes("/slider-de-videos/sliderVideos.html")) {
-    videosBtn?.classList.add("selected");
+  if (imagesBtn) {
+    imagesBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      cargarVistaInterna("fotos/fotos.html", imagesBtn);
+    });
   }
 
+  if (videosBtn) {
+    videosBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      cargarVistaInterna("videos/sliderVideos.html", videosBtn);
+    });
+  }
+
+  // 🔹 Función reutilizable para cargar contenido dentro del mismo DOM
+  function cargarVistaInterna(ruta, botonActivo) {
+    const contenedor = document.getElementById("mainContent");
+    if (!contenedor) {
+      window.location.href = ruta; // fallback si no existe contenedor
+      return;
+    }
+
+    // 🔹 Resaltar el botón activo
+    document.querySelectorAll(".header-btn.selected").forEach(btn => btn.classList.remove("selected"));
+    botonActivo.classList.add("selected");
+
+    contenedor.innerHTML = `<div class="loading">Cargando...</div>`;
+    fetch(ruta)
+      .then(res => res.text())
+      .then(html => {
+        contenedor.innerHTML = html;
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      })
+      .catch(() => {
+        contenedor.innerHTML = `<p style="color:red;">Error al cargar la vista ${ruta}</p>`;
+      });
+  }
+
+  // ======================================================================================
   // 🔔 Inicializar icono de notificaciones
+  // ======================================================================================
   const lblContador = document.getElementById('lblContador');
   if (lblContador) {
     lblContador.innerHTML = `
@@ -1651,6 +1683,9 @@ document.addEventListener("DOMContentLoaded", () => {
     lblContador.style.display = "flex";
   }
 
+  // ======================================================================================
+  // 📱 Integración con AppInventor
+  // ======================================================================================
   if (window.AppInventor) {
     setInterval(() => {
       const comando = window.AppInventor.getWebViewString?.();
@@ -1673,7 +1708,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 500);
   }
 
-  // === 🔐 INICIO DE SESIÓN LOCAL ===
+  // ======================================================================================
+  // 👤 Manejo de usuario (igual que el slider de fotos)
+  // ======================================================================================
   const userBtn = document.getElementById("userBtn");
   const userMenu = document.getElementById("userMenu");
   const userName = document.getElementById("userName");
@@ -1697,7 +1734,6 @@ document.addEventListener("DOMContentLoaded", () => {
       currentAuthorEmail = u.correo;
     }
 
-    // 🔹 Mostrar comentarios al iniciar sesión (como antes)
     const commentsOverlay = document.getElementById("commentsOverlay");
     const commentsCounter = document.getElementById("commentsCounter");
     const commentInputContainer = document.querySelector(".comment-input-container");
@@ -1717,12 +1753,8 @@ document.addEventListener("DOMContentLoaded", () => {
       currentAuthorName = "";
       currentAuthorEmail = "";
       userMenu.style.display = "none";
-
       mostrarAviso("🚪 Sesión cerrada", "info");
-
-      setTimeout(() => {
-        location.reload();
-      }, 1200);
+      setTimeout(() => location.reload(), 1200);
     });
   }
 });
@@ -3329,6 +3361,7 @@ setInterval(() => {
     </script>
 </body>
 </html>
+
 
 
 
